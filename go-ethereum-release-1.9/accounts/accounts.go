@@ -33,7 +33,7 @@ import (
 type Account struct {
 	Address common.Address `json:"address"` // Ethereum account address derived from the key
 	URL     URL            `json:"url"`     // Optional resource locator within a backend
-}
+} //以太坊地址类型结构
 
 const (
 	MimetypeDataWithValidator = "data/validator"
@@ -44,16 +44,17 @@ const (
 
 // Wallet represents a software or hardware wallet that might contain one or more
 // accounts (derived from the same seed).
+//钱包接口
 type Wallet interface {
 	// URL retrieves the canonical path under which this wallet is reachable. It is
 	// user by upper layers to define a sorting order over all wallets from multiple
 	// backends.
-	URL() URL
+	URL() URL  //获取该钱包可以访问的规范路径
 
 	// Status returns a textual status to aid the user in the current state of the
 	// wallet. It also returns an error indicating any failure the wallet might have
 	// encountered.
-	Status() (string, error)
+	Status() (string, error)  //钱包的状态
 
 	// Open initializes access to a wallet instance. It is not meant to unlock or
 	// decrypt account keys, rather simply to establish a connection to hardware
