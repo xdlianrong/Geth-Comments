@@ -24,6 +24,8 @@ goja 是一个 Go 实现的 ECMAScript 5.1(+)。
 
 **3.控制台原理**
 
+其实主要原理就是在bridge.go中定义交互中间件，之后用goja包创建js交互环境，再根据输入的命令调用底层链的RPC端口，有点bcos-browser内味。建立rpc客户端时用的go官方自带的rpc包没有用到工具，自行封装的，所以代码比较繁琐。
+
 geth/main.go
 
 ```go
