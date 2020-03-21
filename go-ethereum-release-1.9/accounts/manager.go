@@ -164,6 +164,7 @@ func (am *Manager) Wallets() []Wallet {
 }
 
 // walletsNoLock returns all registered wallets. Callers must hold am.lock.
+//返回所有注册的钱包，保持am.lock
 func (am *Manager) walletsNoLock() []Wallet {
 	cpy := make([]Wallet, len(am.wallets))
 	copy(cpy, am.wallets)
@@ -187,6 +188,7 @@ func (am *Manager) Wallet(url string) (Wallet, error) {
 	return nil, ErrUnknownWallet
 }
 // Accounts returns all account addresses of all wallets within the account manager
+//返回账户管理器中所有钱包的所有账户地址
 func (am *Manager) Accounts() []common.Address {
 	am.lock.RLock()
 	defer am.lock.RUnlock()
