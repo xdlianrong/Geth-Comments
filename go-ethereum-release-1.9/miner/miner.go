@@ -42,6 +42,7 @@ type Backend interface {
 }
 
 // Config is the configuration parameters of mining.
+/* FuM:挖矿的配置参数 */
 type Config struct {
 	Etherbase common.Address `toml:",omitempty"` // Public address for block mining rewards (default = first account)
 	Notify    []string       `toml:",omitempty"` // HTTP URL list to be notified of new work packages(only useful in ethash).
