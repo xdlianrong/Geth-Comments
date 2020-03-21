@@ -21,7 +21,7 @@ gas avail：用来记录剩余汽油费
 
 
 
-![](images\EVM_01.jpg)
+![](./images/EVM_01.jpg)
 
 ## 3 代码实现
 
