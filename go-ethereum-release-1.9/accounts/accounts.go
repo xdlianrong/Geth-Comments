@@ -115,12 +115,14 @@ type Wallet interface {
 	// about which fields or actions are needed. The user may retry by providing
 	// the needed details via SignDataWithPassphrase, or by other means (e.g. unlock
 	// the account in a keystore).
+	//SignData请求钱包对给定数据的哈希签名，仅通过包含在其中的地址查找指定的账户                                      
 	SignData(account Account, mimeType string, data []byte) ([]byte, error)
 
 	// SignDataWithPassphrase is identical to SignData, but also takes a password
 	// NOTE: there's an chance that an erroneous call might mistake the two strings, and
 	// supply password in the mimetype field, or vice versa. Thus, an implementation
 	// should never echo the mimetype or return the mimetype in the error-response
+	//这里与signdata是一样的
 	SignDataWithPassphrase(account Account, passphrase, mimeType string, data []byte) ([]byte, error)
 
 	// SignText requests the wallet to sign the hash of a given piece of data, prefixed
@@ -134,6 +136,7 @@ type Wallet interface {
 	// about which fields or actions are needed. The user may retry by providing
 	// the needed details via SignHashWithPassphrase, or by other means (e.g. unlock
 	// the account in a keystore).
+	//对给定数据片段的哈希值进行签名
 	SignText(account Account, text []byte) ([]byte, error)
 
 	// SignTextWithPassphrase is identical to Signtext, but also takes a password
@@ -188,6 +191,7 @@ type Backend interface {
 //   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
+//这是一个辅助函数，可为给定的消息计算哈希值
 func TextHash(data []byte) []byte {
 	hash, _ := TextAndHash(data)
 	return hash
@@ -200,6 +204,7 @@ func TextHash(data []byte) []byte {
 //   keccak256("\x19Ethereum Signed Message:\n"${message length}${message}).
 //
 // This gives context to the signed message and prevents signing of transactions.
+//功能同上
 func TextAndHash(data []byte) ([]byte, string) {
 	msg := fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(data), string(data))
 	hasher := sha3.NewLegacyKeccak256()
