@@ -269,14 +269,13 @@ func (a *App) Run(arguments []string) (err error) {
 
 ```go
 // /go-ethereum/cmd/geth/consolecmd.go
-// localConsole starts a new geth node, attaching a JavaScript console to it at the
+/ localConsole starts a new geth node, attaching a JavaScript console to it at the
 // same time.
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-  //ctx主要是解析过的命令和参数，其他值没怎么研究
 	prepare(ctx)
-	node := makeFullNode(ctx)
-	startNode(ctx, node)
+	node := makeFullNode(ctx)/* FuM:初始化一些配置信息 */
+	startNode(ctx, node)/* FuM:开启节点 */
 	defer node.Close()
 
 	// Attach to the newly started node and start the JavaScript console
@@ -304,13 +303,13 @@ func localConsole(ctx *cli.Context) error {
 	}
 	// Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
-	console.Interactive()
+	console.Interactive()/* FuM:进入命令行 */
 
 	return nil
 }
 ```
 
-先大致解析一下``/go-ethereum/cmd/geth/main.go prepare``函数
+先大致解析一下``/go-ethereum/cmd/geth/main.go prepare``函数。``prepare``函数主要是对虚拟机内存进行了配置。
 
 ```go
 // 准备操作内存高速缓存配额并设置度量系统。
@@ -360,4 +359,80 @@ func prepare(ctx *cli.Context) {
 }
 ```
 
-之后就是**makeFullNode**，在**刘明哲 geth启动代码分析（2）**中有解析与接下来的分析。
+之后就是**makeFullNode**，源码如下
+
+```go
+/* FuM:该函数先构造了一个节点，然后注册一个Ethereum Service */
+func makeFullNode(ctx *cli.Context) *node.Node {
+	stack, cfg := makeConfigNode(ctx) /* FuM:构造了一个节点 */
+	if ctx.GlobalIsSet(utils.OverrideIstanbulFlag.Name) {
+		cfg.Eth.OverrideIstanbul = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideIstanbulFlag.Name))
+	}
+	if ctx.GlobalIsSet(utils.OverrideMuirGlacierFlag.Name) {
+		cfg.Eth.OverrideMuirGlacier = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideMuirGlacierFlag.Name))
+	}
+	utils.RegisterEthService(stack, &cfg.Eth)
+
+	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
+	shhEnabled := enableWhisper(ctx)
+	shhAutoEnabled := !ctx.GlobalIsSet(utils.WhisperEnabledFlag.Name) && ctx.GlobalIsSet(utils.DeveloperFlag.Name)
+	if shhEnabled || shhAutoEnabled {
+		if ctx.GlobalIsSet(utils.WhisperMaxMessageSizeFlag.Name) {
+			cfg.Shh.MaxMessageSize = uint32(ctx.Int(utils.WhisperMaxMessageSizeFlag.Name))
+		}
+		if ctx.GlobalIsSet(utils.WhisperMinPOWFlag.Name) {
+			cfg.Shh.MinimumAcceptedPOW = ctx.Float64(utils.WhisperMinPOWFlag.Name)
+		}
+		if ctx.GlobalIsSet(utils.WhisperRestrictConnectionBetweenLightClientsFlag.Name) {
+			cfg.Shh.RestrictConnectionBetweenLightClients = true
+		}
+		utils.RegisterShhService(stack, &cfg.Shh)
+	}
+	// Configure GraphQL if requested
+	if ctx.GlobalIsSet(utils.GraphQLEnabledFlag.Name) {
+		utils.RegisterGraphQLService(stack, cfg.Node.GraphQLEndpoint(), cfg.Node.GraphQLCors, cfg.Node.GraphQLVirtualHosts, cfg.Node.HTTPTimeouts)
+	}
+	// Add the Ethereum Stats daemon if requested.
+	if cfg.Ethstats.URL != "" {
+		utils.RegisterEthStatsService(stack, cfg.Ethstats.URL)
+	}
+	return stack
+}
+```
+
+继续往下看``makeConfigNode``函数，此函数主要是初始化了``gethConfig``变量进行了一些基本配置
+
+```go
+func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
+	// Load defaults.
+	cfg := gethConfig{
+		Eth:  eth.DefaultConfig,     /* FuM: 配置eth的一些基本信息，里面设置NetWorkId等 */
+		Shh:  whisper.DefaultConfig, /* FuM: 配置了两个参数：1.MaxMessageSize 2.MinimumAcceptedPOW */
+		Node: defaultNodeConfig(),   /* FuM: 初始化了节点的配置，主要有网络的一些配置，还有数据的存储路径 */
+	}
+
+	// Load config file.
+	if file := ctx.GlobalString(configFileFlag.Name); file != "" {
+		if err := loadConfig(file, &cfg); err != nil {
+			utils.Fatalf("%v", err)
+		}
+	}
+
+	// Apply flags.
+	utils.SetNodeConfig(ctx, &cfg.Node) /* FuM:设置了P2P,IPC,HTTP,WS,DataDir,KeyStoreDir的值 */
+	stack, err := node.New(&cfg.Node)/* FuM:构建新节点 */
+	if err != nil {
+		utils.Fatalf("Failed to create the protocol stack: %v", err)
+	}
+	utils.SetEthConfig(ctx, stack, &cfg.Eth) /* FuM:设置NetWorkId的值 */
+	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
+		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
+	}
+	utils.SetShhConfig(ctx, stack, &cfg.Shh)
+
+	return stack, cfg
+}
+```
+
+之后运行``localConsole(ctx *cli.Context)``中的``startNode(ctx, node)``开启节点，监听必要的端口。节点启动以后就在控制台输出相关信息后输出欢迎语句。``localConsole(ctx *cli.Context)``中的``console.Interactive()``处理用户于控制台之间的交互，对命令的合法性进行检测并运行命令，使用一个无限循环处理用户输入。
+

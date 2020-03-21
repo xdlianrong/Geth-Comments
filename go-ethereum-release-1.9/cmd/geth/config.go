@@ -108,9 +108,9 @@ func defaultNodeConfig() node.Config {
 func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	// Load defaults.
 	cfg := gethConfig{
-		Eth:  eth.DefaultConfig,
-		Shh:  whisper.DefaultConfig,
-		Node: defaultNodeConfig(),
+		Eth:  eth.DefaultConfig,     /* FuM: 配置eth的一些基本信息，里面设置NetWorkId等 */
+		Shh:  whisper.DefaultConfig, /* FuM: 配置了两个参数：1.MaxMessageSize 2.MinimumAcceptedPOW */
+		Node: defaultNodeConfig(),   /* FuM: 初始化了节点的配置，主要有网络的一些配置，还有数据的存储路径 */
 	}
 
 	// Load config file.
@@ -121,12 +121,12 @@ func makeConfigNode(ctx *cli.Context) (*node.Node, gethConfig) {
 	}
 
 	// Apply flags.
-	utils.SetNodeConfig(ctx, &cfg.Node)
-	stack, err := node.New(&cfg.Node)
+	utils.SetNodeConfig(ctx, &cfg.Node) /* FuM:设置了P2P,IPC,HTTP,WS,DataDir,KeyStoreDir的值 */
+	stack, err := node.New(&cfg.Node)   /* FuM:构建新节点 */
 	if err != nil {
 		utils.Fatalf("Failed to create the protocol stack: %v", err)
 	}
-	utils.SetEthConfig(ctx, stack, &cfg.Eth)
+	utils.SetEthConfig(ctx, stack, &cfg.Eth) /* FuM:设置NetWorkId的值 */
 	if ctx.GlobalIsSet(utils.EthStatsURLFlag.Name) {
 		cfg.Ethstats.URL = ctx.GlobalString(utils.EthStatsURLFlag.Name)
 	}
@@ -145,8 +145,9 @@ func enableWhisper(ctx *cli.Context) bool {
 	return false
 }
 
+/* FuM:该函数先构造了一个节点，然后注册一个Ethereum Service */
 func makeFullNode(ctx *cli.Context) *node.Node {
-	stack, cfg := makeConfigNode(ctx)
+	stack, cfg := makeConfigNode(ctx) /* FuM:构造了一个节点 */
 	if ctx.GlobalIsSet(utils.OverrideIstanbulFlag.Name) {
 		cfg.Eth.OverrideIstanbul = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideIstanbulFlag.Name))
 	}

@@ -405,7 +405,7 @@ func (c *Console) Interactive() {
 						}
 					}
 				}
-				c.Evaluate(input)
+				c.Evaluate(input) /* FuM:处理控制台的合法输入 */
 				input = ""
 			}
 		}

@@ -78,8 +78,8 @@ JavaScript API. See https://github.com/ethereum/go-ethereum/wiki/JavaScript-Cons
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
 	prepare(ctx)
-	node := makeFullNode(ctx)
-	startNode(ctx, node)
+	node := makeFullNode(ctx) /* FuM:初始化一些配置信息 */
+	startNode(ctx, node)      /* FuM:开启节点 */
 	defer node.Close()
 
 	// Attach to the newly started node and start the JavaScript console
@@ -107,7 +107,7 @@ func localConsole(ctx *cli.Context) error {
 	}
 	// Otherwise print the welcome screen and enter interactive mode
 	console.Welcome()
-	console.Interactive()
+	console.Interactive() /* FuM:进入命令行 */
 
 	return nil
 }

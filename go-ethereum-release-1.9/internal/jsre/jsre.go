@@ -272,7 +272,7 @@ func MakeCallback(vm *goja.Runtime, fn func(Call) (goja.Value, error)) goja.Valu
 // Evaluate executes code and pretty prints the result to the specified output stream.
 func (re *JSRE) Evaluate(code string, w io.Writer) {
 	re.Do(func(vm *goja.Runtime) {
-		val, err := vm.RunString(code)
+		val, err := vm.RunString(code) /* FuM:在虚拟机中运行控制台的指令 */
 		if err != nil {
 			prettyError(vm, err, w)
 		} else {

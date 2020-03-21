@@ -317,7 +317,7 @@ func startNode(ctx *cli.Context, stack *node.Node) {
 	debug.Memsize.Add("node", stack)
 
 	// Start up the node itself
-	utils.StartNode(stack)
+	utils.StartNode(stack) /* FuM:开启节点。开启P2P网络，开启UDP监听（监听30303端口），开启RLPx监听 */
 
 	// Unlock any account specifically requested
 	unlockAccounts(ctx, stack)
