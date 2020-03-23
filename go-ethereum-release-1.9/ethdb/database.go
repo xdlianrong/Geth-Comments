@@ -20,6 +20,7 @@ package ethdb
 import "io"
 
 // KeyValueReader wraps the Has and Get method of a backing data store.
+/* zr 封装了Has和Get两个函数，Has用来确认参数key是否存在于数据存储中，Get用过key来获取value */
 type KeyValueReader interface {
 	// Has retrieves if a key is present in the key-value data store.
 	Has(key []byte) (bool, error)
@@ -29,6 +30,7 @@ type KeyValueReader interface {
 }
 
 // KeyValueWriter wraps the Put method of a backing data store.
+/* zr 封装了Put和Delete两个函数，Put插入k-v，Delete用于删除*/
 type KeyValueWriter interface {
 	// Put inserts the given value into the key-value data store.
 	Put(key []byte, value []byte) error
@@ -36,6 +38,8 @@ type KeyValueWriter interface {
 	// Delete removes the key from the key-value data store.
 	Delete(key []byte) error
 }
+
+/* zr 以上这四个函数在ethdb/leveldb/leveldb.go和ethdb/memorydb/memorydb.go中，目前大致观察是直接封装leveldb.db.XXX，后续修改*/
 
 // Stater wraps the Stat method of a backing data store.
 type Stater interface {
