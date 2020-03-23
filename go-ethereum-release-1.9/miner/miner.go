@@ -76,7 +76,7 @@ func New(eth Backend, config *Config, chainConfig *params.ChainConfig, mux *even
 		worker:   newWorker(config, chainConfig, engine, eth, mux, isLocalBlock, true),
 		canStart: 1,
 	}
-	go miner.update()
+	go miner.update() /* FuM:使用单独线程,该线程等待mux上的来自downloader模块的事件通知用来控制挖矿开始或停止*/
 
 	return miner
 }
@@ -120,6 +120,7 @@ func (miner *Miner) update() {
 	}
 }
 
+/* FuM: 启动挖矿进程*/
 func (miner *Miner) Start(coinbase common.Address) {
 	atomic.StoreInt32(&miner.shouldStart, 1)
 	miner.SetEtherbase(coinbase)
@@ -141,6 +142,7 @@ func (miner *Miner) Close() {
 	close(miner.exitCh)
 }
 
+/* FuM:标示是否正在挖矿 */
 func (miner *Miner) Mining() bool {
 	return miner.worker.isRunning()
 }

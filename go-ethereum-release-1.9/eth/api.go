@@ -107,6 +107,7 @@ func NewPrivateMinerAPI(e *Ethereum) *PrivateMinerAPI {
 // usable by this process. If mining is already running, this method adjust the
 // number of threads allowed to use and updates the minimum price required by the
 // transaction pool.
+/* FuM:参数即挖矿所需协程数量 */
 func (api *PrivateMinerAPI) Start(threads *int) error {
 	if threads == nil {
 		return api.e.StartMining(runtime.NumCPU())

@@ -171,6 +171,7 @@ search:
 
 				// Seal and return a block (if still needed)
 				select {
+				/* FuM:根据nonce值重新组装区块*/
 				case found <- block.WithSeal(header):
 					logger.Trace("Ethash nonce found and reported", "attempts", nonce-seed, "nonce", nonce)
 				case <-abort:
@@ -178,6 +179,7 @@ search:
 				}
 				break search
 			}
+			/* FuM:每次循环nonce+1*/
 			nonce++
 		}
 	}

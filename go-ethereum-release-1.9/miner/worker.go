@@ -181,18 +181,19 @@ type worker struct {
 
 func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, isLocalBlock func(*types.Block) bool, init bool) *worker {
 	worker := &worker{
-		config:             config,
-		chainConfig:        chainConfig,
-		engine:             engine,
-		eth:                eth,
-		mux:                mux,
-		chain:              eth.BlockChain(),
-		isLocalBlock:       isLocalBlock,
+		config:       config,
+		chainConfig:  chainConfig,
+		engine:       engine,
+		eth:          eth,
+		mux:          mux, /* FuM: 向外部发布已经挖到新Block*/
+		chain:        eth.BlockChain(),
+		isLocalBlock: isLocalBlock,
+		/* FuM:以上几项均来自Miner */
 		localUncles:        make(map[common.Hash]*types.Block),
 		remoteUncles:       make(map[common.Hash]*types.Block),
 		unconfirmed:        newUnconfirmedBlocks(eth.BlockChain(), miningLogAtDepth),
 		pendingTasks:       make(map[common.Hash]*task),
-		txsCh:              make(chan core.NewTxsEvent, txChanSize),
+		txsCh:              make(chan core.NewTxsEvent, txChanSize), /* FuM: 从后台eth接收新的Block的Channel*/
 		chainHeadCh:        make(chan core.ChainHeadEvent, chainHeadChanSize),
 		chainSideCh:        make(chan core.ChainSideEvent, chainSideChanSize),
 		newWorkCh:          make(chan *newWorkReq),
@@ -408,11 +409,12 @@ func (w *worker) mainLoop() {
 
 	for {
 		select {
+		/* FuM:区块链中已经加入了一个新的区块作为整个链的链头，这时worker的回应是立即开始准备挖掘下一个新区块 */
 		case req := <-w.newWorkCh:
-			w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
-
+			w.commitNewWork(req.interrupt, req.noempty, req.timestamp) /* FuM: 挖矿工作 */
+		/* FuM:区块链中加入了一个新区块作为当前链头的旁支，worker会把这个区块收纳进localUncles[]或remoteUncles[]，作为下一个挖掘新区块可能的Uncle之一 */
 		case ev := <-w.chainSideCh:
-			// Short circuit for duplicate side blocks
+			// Short circuit for duplicate side blocks /* FuM:出现重复 */
 			if _, exist := w.localUncles[ev.Block.Hash()]; exist {
 				continue
 			}
@@ -449,7 +451,7 @@ func (w *worker) mainLoop() {
 					w.commit(uncles, nil, true, start)
 				}
 			}
-
+		/* FuM:	一个新的交易tx被加入了TxPool，这时如果worker没有处于挖掘中，那么就去执行这个tx，并把它收纳进Work.txs数组，为下次挖掘新区块备用*/
 		case ev := <-w.txsCh:
 			// Apply transactions to the pending state if we're not mining.
 			//
@@ -593,6 +595,7 @@ func (w *worker) resultLoop() {
 				logs = append(logs, receipt.Logs...)
 			}
 			// Commit block and state to database.
+			/* FuM:将区块写入到区块链中 */
 			_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, true)
 			if err != nil {
 				log.Error("Failed writing block to chain", "err", err)
@@ -602,6 +605,7 @@ func (w *worker) resultLoop() {
 				"elapsed", common.PrettyDuration(time.Since(task.createdAt)))
 
 			// Broadcast the block and announce chain insertion event
+			/* FuM:向其他节点广播区块*/
 			w.mux.Post(core.NewMinedBlockEvent{Block: block})
 
 			// Insert the block into the set of pending ones to resultLoop for confirmations
@@ -839,8 +843,9 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		log.Info("Mining too far in the future", "wait", common.PrettyDuration(wait))
 		time.Sleep(wait)
 	}
-
+	/* FuM:创建区块头 */
 	num := parent.Number()
+	/* FuM: 设置区块头的Coinbase，为出块奖励矿工做准备*/
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
@@ -856,11 +861,13 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		}
 		header.Coinbase = w.coinbase
 	}
+	/* FuM: 设置出块难度*/
 	if err := w.engine.Prepare(w.chain, header); err != nil {
 		log.Error("Failed to prepare header for mining", "err", err)
 		return
 	}
 	// If we are care about TheDAO hard-fork check whether to override the extra-data or not
+	/* FuM: 是否支持DAO事件硬分叉*/
 	if daoBlock := w.chainConfig.DAOForkBlock; daoBlock != nil {
 		// Check whether the block is among the fork extra-override range
 		limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)
@@ -888,6 +895,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	uncles := make([]*types.Header, 0, 2)
 	commitUncles := func(blocks map[common.Hash]*types.Block) {
 		// Clean up stale uncle blocks first
+		/* FuM: 删除旧块*/
 		for hash, uncle := range blocks {
 			if uncle.NumberU64()+staleThreshold <= header.Number.Uint64() {
 				delete(blocks, hash)
@@ -897,6 +905,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			if len(uncles) == 2 {
 				break
 			}
+			/* FuM: 校验一些参数，提交叔块*/
 			if err := w.commitUncle(env, uncle.Header()); err != nil {
 				log.Trace("Possible uncle rejected", "hash", hash, "reason", err)
 			} else {
@@ -912,6 +921,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	if !noempty {
 		// Create an empty block based on temporary copied state for sealing in advance without waiting block
 		// execution finished.
+		/* FuM:出块 */
 		w.commit(uncles, nil, false, tstart)
 	}
 
