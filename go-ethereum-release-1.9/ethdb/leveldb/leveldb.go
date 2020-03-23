@@ -40,8 +40,10 @@ import (
 const (
 	// degradationWarnInterval specifies how often warning should be printed if the
 	// leveldb database cannot keep up with requested writes.
+        /* zr 指定如果leveldb数据库跟不上请求的写入，则多久打印一次警告。*/
 	degradationWarnInterval = time.Minute
-
+	
+	/* zr minCache和minHandles是分配给leveldb读写缓存的最小内存量（以兆字节为单位）和文件最小处理数*/
 	// minCache is the minimum amount of memory in megabytes to allocate to leveldb
 	// read and write caching, split half and half.
 	minCache = 16
@@ -52,13 +54,16 @@ const (
 
 	// metricsGatheringInterval specifies the interval to retrieve leveldb database
 	// compaction, io and pause stats to report to the user.
+	/* zr 指定检索 leveldb数据库压缩，io和暂停统计信息以报告给用户的时间间隔。*/
 	metricsGatheringInterval = 3 * time.Second
 )
 
 // Database is a persistent key-value store. Apart from basic data storage
 // functionality it also supports batch writes and iterating over the keyspace in
 // binary-alphabetical order.
+/* zr Database是一个持久的键值存储。 除了基本的数据存储功能外，还支持批量写入(batch)和以二进制-字母顺序在键空间上进行迭代(iterate)。*/
 type Database struct {
+	/* zr 这个结构大致分为5个部分，文件名 leveldb实例 Mertrics用来记录数据库的使用情况 quitChan用于处理停止时的一些情况 log是一个跟踪数据库路径的上下文记录器*/
 	fn string      // filename for reporting
 	db *leveldb.DB // LevelDB instance
 
@@ -83,6 +88,7 @@ type Database struct {
 
 // New returns a wrapped LevelDB object. The namespace is the prefix that the
 // metrics reporting should use for surfacing internal stats.
+/* zr new一个database对象ldb，中间有些东西还没弄懂*/
 func New(file string, cache int, handles int, namespace string) (*Database, error) {
 	// Ensure we have some minimal caching and file guarantees
 	if cache < minCache {
