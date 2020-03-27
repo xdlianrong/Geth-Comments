@@ -42,18 +42,23 @@ const (
 type Key struct {
 	Id uuid.UUID // Version 4 "random" for unique id not derived from key data
 	// to simplify lookups we also store the address
+	//为了简化查找，存储了地址
 	Address common.Address
 	// we only store privkey as pubkey/address can be derived from it
 	// privkey in this struct is always in plaintext
+	//只存储privkey，因为pubkey/address可以从中获取，此结构中的privkey始终为纯文本
 	PrivateKey *ecdsa.PrivateKey
 }
 
 type keyStore interface {
 	// Loads and decrypts the key from disk.
+	//从磁盘加载和解密密钥
 	GetKey(addr common.Address, filename string, auth string) (*Key, error)
 	// Writes and encrypts the key.
+	//写入并加密密钥
 	StoreKey(filename string, k *Key, auth string) error
 	// Joins filename with the key directory unless it is already absolute.
+	//将文件名与密钥目录连接，除非它已经是绝对目录。
 	JoinPath(filename string) string
 }
 
@@ -126,7 +131,7 @@ func (k *Key) UnmarshalJSON(j []byte) (err error) {
 
 	return nil
 }
-
+//从椭圆数字签名来的新的Key	
 func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 	id := uuid.NewRandom()
 	key := &Key{
@@ -140,6 +145,7 @@ func newKeyFromECDSA(privateKeyECDSA *ecdsa.PrivateKey) *Key {
 // NewKeyForDirectICAP generates a key whose address fits into < 155 bits so it can fit
 // into the Direct ICAP spec. for simplicity and easier compatibility with other libs, we
 // retry until the first byte is 0.
+//NewKeyForDirectICAP生成一个密钥，其地址适合<155位，因此可以适合Direct ICAP规范。
 func NewKeyForDirectICAP(rand io.Reader) *Key {
 	randBytes := make([]byte, 64)
 	_, err := rand.Read(randBytes)
@@ -157,7 +163,7 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 	}
 	return key
 }
-
+//将私钥进行椭圆数字签名
 func newKey(rand io.Reader) (*Key, error) {
 	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
 	if err != nil {
@@ -165,7 +171,7 @@ func newKey(rand io.Reader) (*Key, error) {
 	}
 	return newKeyFromECDSA(privateKeyECDSA), nil
 }
-
+//存储新的key
 func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Account, error) {
 	key, err := newKey(rand)
 	if err != nil {
@@ -181,7 +187,7 @@ func storeNewKey(ks keyStore, rand io.Reader, auth string) (*Key, accounts.Accou
 	}
 	return key, a, err
 }
-
+//写入暂时的Key文件
 func writeTemporaryKeyFile(file string, content []byte) (string, error) {
 	// Create the keystore directory with appropriate permissions
 	// in case it is not present yet.
@@ -203,7 +209,7 @@ func writeTemporaryKeyFile(file string, content []byte) (string, error) {
 	f.Close()
 	return f.Name(), nil
 }
-
+//写入Key文件
 func writeKeyFile(file string, content []byte) error {
 	name, err := writeTemporaryKeyFile(file, content)
 	if err != nil {
@@ -214,6 +220,7 @@ func writeKeyFile(file string, content []byte) error {
 
 // keyFileName implements the naming convention for keyfiles:
 // UTC--<created_at UTC ISO8601>-<address hex>
+//keyFileName实现密钥文件的命名约定
 func keyFileName(keyAddr common.Address) string {
 	ts := time.Now().UTC()
 	return fmt.Sprintf("UTC--%s--%s", toISO8601(ts), hex.EncodeToString(keyAddr[:]))
