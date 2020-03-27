@@ -36,89 +36,132 @@ import (
 	"github.com/ethereum/go-ethereum/params"
 )
 
+/* FuM:定义了挖矿流程相关的一些常数 */
 const (
+	/* Fu.M:指用于监听验证结果的通道（worker.resultCh）的缓存大小。这里的验证结果是已经被签名了的区块。*/
 	// resultQueueSize is the size of channel listening to sealing result.
 	resultQueueSize = 10
 
+	/*FuM:指用于监听事件 core.NewTxsEvent 的通道（worker.txsCh）的缓存大小。这里的缓存大小引用自事务池的大小。
+	其中，事件 core.NewTxsEvent 是事务列表（[]types.Transaction）的封装器。
+	*/
 	// txChanSize is the size of channel listening to NewTxsEvent.
 	// The number is referenced from the size of tx pool.
 	txChanSize = 4096
 
+	/* FuM:指用于监听事件 core.ChainHeadEvent 的通道（worker.chainHeadCh）的缓存大小。事件 core.ChainHeadEvent 是区块（types.Block）的封装器。*/
 	// chainHeadChanSize is the size of channel listening to ChainHeadEvent.
 	chainHeadChanSize = 10
 
+	/* FuM:用于监听事件 core.ChainSideEvent 的通道（worker.chainSideCh）的缓存大小。事件 core.ChainSideEvent 是区块（types.Block）的封装器。*/
 	// chainSideChanSize is the size of channel listening to ChainSideEvent.
 	chainSideChanSize = 10
 
+	/*指用于重新提交间隔调整的通道（worker.resubmitAdjustCh）的缓存大小。 缓存的消息结构为 intervalAdjust，用于描述下一次提交间隔的调整因数。*/
 	// resubmitAdjustChanSize is the size of resubmitting interval adjustment channel.
 	resubmitAdjustChanSize = 10
 
+	/*FuM:指记录成功挖矿时需要达到的确认数。是 miner.unconfirmedBlocks 的深度 。即本地节点挖出的最新区块如果需要得到整个网络的确认，需要整个网络再挖出 miningLogAtDepth 个区块。
+	举个例子：本地节点挖出了编号为 1 的区块，需要等到整个网络中某个节点（也可以是本地节点）挖出编号为 8 的区块（8 = 1 + miningLogAtDepth, miningLogAtDepth = 7）之后，则编号为 1 的区块就成为了经典链的一部分。
+	*/
 	// miningLogAtDepth is the number of confirmations before logging successful mining.
 	miningLogAtDepth = 7
 
+	/* FuM:指使用任何新到达的事务重新创建挖矿区块的最小时间间隔。当用户设定的重新提交间隔太小时进行修正。*/
 	// minRecommitInterval is the minimal time interval to recreate the mining block with
 	// any newly arrived transactions.
 	minRecommitInterval = 1 * time.Second
 
+	/* FuM:指使用任何新到达的事务重新创建挖矿区块的最大时间间隔。当用户设定的重新提交间隔太大时进行修正。*/
 	// maxRecommitInterval is the maximum time interval to recreate the mining block with
 	// any newly arrived transactions.
 	maxRecommitInterval = 15 * time.Second
 
+	/* FuM:指单个间隔调整对验证工作重新提交间隔的影响因子。与参数 intervalAdjustBias 一起决定下一次提交间隔。*/
 	// intervalAdjustRatio is the impact a single interval adjustment has on sealing work
 	// resubmitting interval.
 	intervalAdjustRatio = 0.1
 
+	/* FuM:指在新的重新提交间隔计算期间应用intervalAdjustBias，有利于增加上限或减少下限，以便可以访问限制。与参数 intervalAdjustRatio 一起决定下一次提交间隔。*/
 	// intervalAdjustBias is applied during the new resubmit interval calculation in favor of
 	// increasing upper limit or decreasing lower limit so that the limit can be reachable.
 	intervalAdjustBias = 200 * 1000.0 * 1000.0
 
+	/* FuM:指可接受的旧区块的最大深度。注意，目前，这个值与 miningLogAtDepth 都是 7，且表达的意思也基本差不多，是不是有一定的内存联系。*/
 	// staleThreshold is the maximum depth of the acceptable stale block.
 	staleThreshold = 7
 )
 
+/* FuM:定义了数据结构 environment，用于描述当前挖矿所需的环境。
+最主要的状态信息有：签名者（即本地节点的矿工）、状态树（主要是记录账户余额等状态？）、
+缓存的祖先区块、缓存的叔区块、当前周期内的事务数量、当前打包中区块的区块头、
+事务列表（用于构建当前打包中区块）、收据列表（用于和事务列表一一对应，构建当前打包中区块）
+*/
 // environment is the worker's current environment and holds all of the current state information.
 type environment struct {
-	signer types.Signer
+	signer types.Signer /*FuM:签名者，即本地节点的矿工，用于对区块进行签名。*/
 
-	state     *state.StateDB // apply state changes here
-	ancestors mapset.Set     // ancestor set (used for checking uncle parent validity)
-	family    mapset.Set     // family set (used for checking uncle invalidity)
-	uncles    mapset.Set     // uncle set
-	tcount    int            // tx count in cycle
-	gasPool   *core.GasPool  // available gas used to pack transactions
-
+	/* FuM:状态树，用于描述账户相关的状态改变，merkle trie 数据结构。可以在此修改本节节点的状态信息。*/
+	state *state.StateDB // apply state changes here
+	/* FuM:ancestors 区块集合（用于检查叔区块的有效性）。缓存。缓存数据结构中往往存的是区块的哈希。可以简单地认为区块、区块头、区块哈希、区块头哈希能够等价地描述区块，其中的任何一种方式都能惟一标识同一个区块。甚至可以放宽到区块编号。*/
+	ancestors mapset.Set // ancestor set (used for checking uncle parent validity)
+	/* FuM:family 区块集合（用于验证无效叔区块）。family 区块集合比 ancestors 区块集合多了各祖先区块的叔区块。ancestors 区块集合是区块的直接父区块一级一级连接起来的。*/
+	family mapset.Set // family set (used for checking uncle invalidity)
+	/* FuM:叔区块集合，即当前区块的叔区块集合，或者说当前正在挖的区块的叔区块集合。*/
+	uncles mapset.Set // uncle set
+	/* FuM:一个周期里面的事务数量*/
+	tcount int // tx count in cycle
+	/* FuM:用于打包事务的可用 gas*/
+	gasPool *core.GasPool // available gas used to pack transactions
+	/* FuM:区块头。区块头需要满足通用的以太坊协议共识，还需要满足特定的 PoA 共识协议。
+	与 PoA 共识协议相关的区块头 types.Header 字段用 Clique.Prepare() 方法进行主要的设置，Clique.Finalize() 方法进行最终的补充设置。
+	那么以太坊协议共识相关的字段在哪里设置？或者说在 worker 的哪个方法中设置。*/
 	header   *types.Header
-	txs      []*types.Transaction
-	receipts []*types.Receipt
+	txs      []*types.Transaction /* FuM:事务（types.Transaction）列表。当前需要打包的事务列表（或者备选事务列表），可不可以理解为事务池。*/
+	receipts []*types.Receipt     /* FuM:收据（types.Receipt）列表。Receipt 表示与 Transaction 一一对应的结果。*/
 }
 
+/* FuM:定义了数据结构 task，包含共识引擎签名和签名之后的结果提交的所有信息。
+添加了签名的区块即为最终的结果区块，即签名区块或待确认区块。
+数据结构 task是通道 worker.taskCh 发送或接收的消息*/
 // task contains all information for consensus engine sealing and result submitting.
 type task struct {
-	receipts  []*types.Receipt
-	state     *state.StateDB
+	receipts []*types.Receipt /* FuM:收据（types.Receipt）列表*/
+	state    *state.StateDB   /* FuM:状态树，用于描述账户相关的状态改变，merkle trie 数据结构。可以在此修改本节节点的状态信息。*/
+	/* FuM:待签名的区块。此时，区块已经全部组装好了，包信了事务列表、叔区块列表。
+	同时，区块头中的字段已经全部组装好了，就差最后的签名。
+	签名后的区块是在此原有区块上新创建的区块，并被发送到结果通道，用于驱动本地节点已经挖出新区块之后的流程。*/
 	block     *types.Block
-	createdAt time.Time
+	createdAt time.Time /*task 的创建时间*/
 }
 
+/* FuM:定义了中断相关的一些枚举值，用于描述中断信号。*/
 const (
-	commitInterruptNone int32 = iota
-	commitInterruptNewHead
-	commitInterruptResubmit
+	commitInterruptNone     int32 = iota /* FuM:无效的中断值*/
+	commitInterruptNewHead               /* FuM:描述新区块头到达的中断值，当 worker 启动或重新启动时也是这个中断值。*/
+	commitInterruptResubmit              /* FuM:描述 worker 根据接收到的新事务，中止之前挖矿，并重新开始挖矿的中断值。*/
 )
 
+/* FuM:数据结构 newWorkReq 表示使用相应的中断值通知程序提交新签名工作的请求。
+数据结构 newWorkReq 也是通道 worker.newWorkCh 发送或接收的消息。*/
 // newWorkReq represents a request for new sealing work submitting with relative interrupt notifier.
 type newWorkReq struct {
-	interrupt *int32
-	noempty   bool
-	timestamp int64
+	interrupt *int32 /* FuM:具体的中断值，为 commitInterruptNewHead 或 commitInterruptResubmit 之一。*/
+	noempty   bool   /* FuM:可能表示创建的区块是否包含事务，待确认*/
+	timestamp int64  /* FuM:可能表示区块开始组装的时间，待确认*/
 }
 
+/* FuM:数据结构 intervalAdjust 表示重新提交间隔调整。*/
 // intervalAdjust represents a resubmitting interval adjustment.
 type intervalAdjust struct {
-	ratio float64
-	inc   bool
+	ratio float64 /* FuM:间隔调整的比例*/
+	inc   bool    /* FuM:是上调还是下调*/
+	/* FuM:在当前区块时计算下一区块的出块大致时间，在基本的时间间隔之上进行一定的微调，
+	微调的参数就是用数据结构 intervalAdjust 描述的，并发送给对应的通道 resubmitAdjustCh。
+	下一个区块在打包时从通道 resubmitAdjustCh 中获取其对应的微调参数 intervalAdjust 实行微调。*/
 }
 
+/* FuM:定义了数据结构 worker。对象 worker 是挖矿的主要实现，启动了多个协程来执行独立的逻辑流程*/
 // worker is the main object which takes care of submitting new work to consensus engine
 // and gathering the sealing result.
 type worker struct {
@@ -179,6 +222,7 @@ type worker struct {
 	resubmitHook func(time.Duration, time.Duration) // Method to call upon updating resubmitting interval.
 }
 
+/* FuM:用于根据给定参数构建 worker */
 func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, isLocalBlock func(*types.Block) bool, init bool) *worker {
 	worker := &worker{
 		config:       config,
@@ -229,6 +273,7 @@ func newWorker(config *Config, chainConfig *params.ChainConfig, engine consensus
 	return worker
 }
 
+/* FuM:用于初始化区块 coinbase 字段的 etherbase */
 // setEtherbase sets the etherbase used to initialize the block coinbase field.
 func (w *worker) setEtherbase(addr common.Address) {
 	w.mu.Lock()
@@ -236,6 +281,7 @@ func (w *worker) setEtherbase(addr common.Address) {
 	w.coinbase = addr
 }
 
+/* FuM:用于初始化区块额外字段的内容*/
 // setExtra sets the content used to initialize the block extra field.
 func (w *worker) setExtra(extra []byte) {
 	w.mu.Lock()
@@ -243,11 +289,13 @@ func (w *worker) setExtra(extra []byte) {
 	w.extra = extra
 }
 
+/* FuM:更新矿工签名工作重新提交的间隔 */
 // setRecommitInterval updates the interval for miner sealing work recommitting.
 func (w *worker) setRecommitInterval(interval time.Duration) {
 	w.resubmitIntervalCh <- interval
 }
 
+/* FuM:返回待处理的状态和相应的区块 */
 // pending returns the pending state and corresponding block.
 func (w *worker) pending() (*types.Block, *state.StateDB) {
 	// return a snapshot to avoid contention on currentMu mutex
@@ -259,6 +307,7 @@ func (w *worker) pending() (*types.Block, *state.StateDB) {
 	return w.snapshotBlock, w.snapshotState.Copy()
 }
 
+/* FuM:返回待处理的区块 */
 // pendingBlock returns pending block.
 func (w *worker) pendingBlock() *types.Block {
 	// return a snapshot to avoid contention on currentMu mutex
@@ -267,28 +316,33 @@ func (w *worker) pendingBlock() *types.Block {
 	return w.snapshotBlock
 }
 
+/* FuM:采用原子操作将 running 字段置为 1，并触发新工作的提交*/
 // start sets the running status as 1 and triggers new work submitting.
 func (w *worker) start() {
 	atomic.StoreInt32(&w.running, 1)
 	w.startCh <- struct{}{}
 }
 
+/* FuM:采用原子操作将 running 字段置为 0 */
 // stop sets the running status as 0.
 func (w *worker) stop() {
 	atomic.StoreInt32(&w.running, 0)
 }
 
+/* FuM:返回 worker 是否正在运行的指示符 */
 // isRunning returns an indicator whether worker is running or not.
 func (w *worker) isRunning() bool {
 	return atomic.LoadInt32(&w.running) == 1
 }
 
+/* FuM:终止由 worker 维护的所有后台线程。注意 worker 不支持被关闭多次，这是由 Go 语言不允许多次关闭同一个通道决定的。*/
 // close terminates all background threads maintained by the worker.
 // Note the worker does not support being closed multiple times.
 func (w *worker) close() {
 	close(w.exitCh)
 }
 
+/* FuM:是一个独立的协程，基于接收到的事件提交新的挖矿工作。*/
 // newWorkLoop is a standalone goroutine to submit new mining work upon received events.
 func (w *worker) newWorkLoop(recommit time.Duration) {
 	var (
@@ -401,6 +455,7 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 	}
 }
 
+/* FuM:是一个独立的协程，用于根据接收到的事件重新生成签名任务 */
 // mainLoop is a standalone goroutine to regenerate the sealing task based on the received event.
 func (w *worker) mainLoop() {
 	defer w.txsSub.Unsubscribe()
@@ -502,6 +557,7 @@ func (w *worker) mainLoop() {
 	}
 }
 
+/* FuM:是一个独立的协程，用于从生成器中获取待签名任务，并将它们提交给共识引擎*/
 // taskLoop is a standalone goroutine to fetch sealing task from the generator and
 // push them to consensus engine.
 func (w *worker) taskLoop() {
@@ -549,6 +605,7 @@ func (w *worker) taskLoop() {
 	}
 }
 
+/* FuM:是一个独立的协程，用于处理签名区块的提交和广播，以及更新相关数据到数据库*/
 // resultLoop is a standalone goroutine to handle sealing result submitting
 // and flush relative data to the database.
 func (w *worker) resultLoop() {
@@ -617,6 +674,7 @@ func (w *worker) resultLoop() {
 	}
 }
 
+/* FuM:为当前周期创建新的环境 environment*/
 // makeCurrent creates a new environment for the current cycle.
 func (w *worker) makeCurrent(parent *types.Block, header *types.Header) error {
 	state, err := w.chain.StateAt(parent.Root())
@@ -647,6 +705,7 @@ func (w *worker) makeCurrent(parent *types.Block, header *types.Header) error {
 	return nil
 }
 
+/* FuM:将给定的区块添加至叔区块集合中，如果添加失败则返回错误*/
 // commitUncle adds the given block to uncle block set, returns error if failed to add.
 func (w *worker) commitUncle(env *environment, uncle *types.Header) error {
 	hash := uncle.Hash()
@@ -666,6 +725,7 @@ func (w *worker) commitUncle(env *environment, uncle *types.Header) error {
 	return nil
 }
 
+/* FuM:更新待处理区块和状态的快照。注意，此函数确保当前变量是线程安全的。*/
 // updateSnapshot updates pending snapshot block and state.
 // Note this function assumes the current variable is thread safe.
 func (w *worker) updateSnapshot() {
@@ -713,6 +773,7 @@ func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Addres
 	return receipt.Logs, nil
 }
 
+/* FuM:提交交易列表 txs，并附上交易的发起者地址。根据整个交易列表 txs 是否都被有效提交，返回 true 或 false。*/
 func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coinbase common.Address, interrupt *int32) bool {
 	// Short circuit if current is nil
 	if w.current == nil {
@@ -826,6 +887,7 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 	return false
 }
 
+/* FuM:基于父区块生成几个新的签名任务。*/
 // commitNewWork generates several new sealing tasks based on the parent block.
 func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) {
 	w.mu.RLock()
@@ -843,9 +905,9 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		log.Info("Mining too far in the future", "wait", common.PrettyDuration(wait))
 		time.Sleep(wait)
 	}
-	/* FuM:创建区块头 */
+
 	num := parent.Number()
-	/* FuM: 设置区块头的Coinbase，为出块奖励矿工做准备*/
+	/* FuM:创建区块头 */
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
@@ -861,7 +923,6 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		}
 		header.Coinbase = w.coinbase
 	}
-	/* FuM: 设置出块难度*/
 	if err := w.engine.Prepare(w.chain, header); err != nil {
 		log.Error("Failed to prepare header for mining", "err", err)
 		return
@@ -959,6 +1020,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	w.commit(uncles, w.fullTaskHook, true, tstart)
 }
 
+/* FuM:运行任何交易的后续状态修改，组装最终区块，并在共识引擎运行时提交新工作。*/
 // commit runs any post-transaction state modifications, assembles the final block
 // and commits new work if consensus engine is running.
 func (w *worker) commit(uncles []*types.Header, interval func(), update bool, start time.Time) error {
@@ -979,13 +1041,14 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 		}
 		select {
 		case w.taskCh <- &task{receipts: receipts, state: s, block: block, createdAt: time.Now()}:
-			w.unconfirmed.Shift(block.NumberU64() - 1)
+			w.unconfirmed.Shift(block.NumberU64() - 1) //删除待确认区块列表中的过期区块
 
 			feesWei := new(big.Int)
 			for i, tx := range block.Transactions() {
+				//累计区块 block 中所有交易消耗 Gas 的总和 feesWei。第 i 个交易 tx 消耗的 Gas 计算方式： receipts[i].GasUsed * tx.GasPrice()。没有交易就不累计。
 				feesWei.Add(feesWei, new(big.Int).Mul(new(big.Int).SetUint64(receipts[i].GasUsed), tx.GasPrice()))
 			}
-			feesEth := new(big.Float).Quo(new(big.Float).SetInt(feesWei), new(big.Float).SetInt(big.NewInt(params.Ether)))
+			feesEth := new(big.Float).Quo(new(big.Float).SetInt(feesWei), new(big.Float).SetInt(big.NewInt(params.Ether))) //将 feesWei 转换成 feesEth，即消耗的总以太币
 
 			log.Info("Commit new mining work", "number", block.Number(), "sealhash", w.engine.SealHash(block.Header()),
 				"uncles", len(uncles), "txs", w.current.tcount, "gas", block.GasUsed(), "fees", feesEth, "elapsed", common.PrettyDuration(time.Since(start)))
