@@ -26,7 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb"
 )
-
+/* 基本上就是封装了一个内存的Map结构。然后使用了一把锁来对多线程进行资源保护*/
 var (
 	// errMemorydbClosed is returned if a memory database was already closed at the
 	// invocation of a data access operation.
@@ -177,6 +177,7 @@ func (db *Database) NewIteratorWithPrefix(prefix []byte) ethdb.Iterator {
 	)
 	// Collect the keys from the memory database corresponding to the given prefix
 	for key := range db.db {
+		//HasPrefix检测字符串是否以指定的前缀开头。
 		if strings.HasPrefix(key, pr) {
 			keys = append(keys, key)
 		}
@@ -250,6 +251,7 @@ func (b *batch) ValueSize() int {
 }
 
 // Write flushes any accumulated data to the memory database.
+// 将所有累积的数据刷新到内存数据库
 func (b *batch) Write() error {
 	b.db.lock.Lock()
 	defer b.db.lock.Unlock()

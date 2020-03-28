@@ -40,7 +40,7 @@ import (
 const (
 	// degradationWarnInterval specifies how often warning should be printed if the
 	// leveldb database cannot keep up with requested writes.
-        /* zr 指定如果leveldb数据库跟不上请求的写入，则多久打印一次警告。*/
+	/* zr 指定如果leveldb数据库跟不上请求的写入，则多久打印一次警告。*/
 	degradationWarnInterval = time.Minute
 	
 	/* zr minCache和minHandles是分配给leveldb读写缓存的最小内存量（以兆字节为单位）和文件最小处理数*/
@@ -231,6 +231,7 @@ func (db *Database) Path() string {
 
 // meter periodically retrieves internal leveldb counters and reports them to
 // the metrics subsystem.
+/* 定期检索内部leveldb计数器，并将其报告给metrics子系统。*/
 //
 // This is how a LevelDB stats table looks like (currently):
 //   Compactions
