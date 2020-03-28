@@ -576,11 +576,12 @@ func (w *worker) taskLoop() {
 	for {
 		select {
 		case task := <-w.taskCh:
+			//Hook函数好像是代码测试用的，待探究
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
 			}
 			// Reject duplicate sealing work due to resubmitting.
-			sealHash := w.engine.SealHash(task.block.Header())
+			sealHash := w.engine.SealHash(task.block.Header()) //获取区块在被签名之前的哈希值
 			if sealHash == prev {
 				continue
 			}
@@ -591,10 +592,10 @@ func (w *worker) taskLoop() {
 			if w.skipSealHook != nil && w.skipSealHook(task) {
 				continue
 			}
-			w.pendingMu.Lock()
-			w.pendingTasks[w.engine.SealHash(task.block.Header())] = task
+			w.pendingMu.Lock()                                            //读写🔒
+			w.pendingTasks[w.engine.SealHash(task.block.Header())] = task //构造map
 			w.pendingMu.Unlock()
-
+			//调用的共识引擎的块封装函数Seal来执行具体的挖矿操作。
 			if err := w.engine.Seal(w.chain, task.block, w.resultCh, stopCh); err != nil {
 				log.Warn("Block sealing failed", "err", err)
 			}
@@ -636,6 +637,7 @@ func (w *worker) resultLoop() {
 				receipts = make([]*types.Receipt, len(task.receipts))
 				logs     []*types.Log
 			)
+			// 处理交易生成收据
 			for i, receipt := range task.receipts {
 				// add block location fields
 				receipt.BlockHash = hash
@@ -982,11 +984,11 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 	if !noempty {
 		// Create an empty block based on temporary copied state for sealing in advance without waiting block
 		// execution finished.
-		/* FuM:出块 */
 		w.commit(uncles, nil, false, tstart)
 	}
 
 	// Fill the block with all available pending transactions.
+	//从交易池中取交易
 	pending, err := w.eth.TxPool().Pending()
 	if err != nil {
 		log.Error("Failed to fetch pending transactions", "err", err)
@@ -1005,6 +1007,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			localTxs[account] = txs
 		}
 	}
+	//对取出的交易集进行了一下整理，并没有执行
 	if len(localTxs) > 0 {
 		txs := types.NewTransactionsByPriceAndNonce(w.current.signer, localTxs)
 		if w.commitTransactions(txs, w.coinbase, interrupt) {
@@ -1017,7 +1020,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			return
 		}
 	}
-	w.commit(uncles, w.fullTaskHook, true, tstart)
+	w.commit(uncles, w.fullTaskHook, true, tstart) //开始出块
 }
 
 /* FuM:运行任何交易的后续状态修改，组装最终区块，并在共识引擎运行时提交新工作。*/

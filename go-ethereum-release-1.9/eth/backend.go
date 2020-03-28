@@ -452,9 +452,9 @@ func (s *Ethereum) StartMining(threads int) error {
 	// If the miner was not running, initialize it
 	if !s.IsMining() {
 		// Propagate the initial price point to the transaction pool
-		s.lock.RLock()
+		s.lock.RLock() //RLock锁定rw通道以进行read
 		price := s.gasPrice
-		s.lock.RUnlock()
+		s.lock.RUnlock() //RUnlock撤销rw通道的锁定
 		s.txPool.SetGasPrice(price)
 
 		// Configure the local mining address
