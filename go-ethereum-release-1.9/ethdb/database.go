@@ -39,7 +39,7 @@ type KeyValueWriter interface {
 	Delete(key []byte) error
 }
 
-/* zr 以上这四个函数在ethdb/leveldb/leveldb.go和ethdb/memorydb/memorydb.go中，目前大致观察是直接封装leveldb.db.XXX，后续修改*/
+/* zr 以上这四个函数在ethdb/leveldb/leveldb.go和ethdb/memorydb/memorydb.go中*/
 
 // Stater wraps the Stat method of a backing data store.
 type Stater interface {
