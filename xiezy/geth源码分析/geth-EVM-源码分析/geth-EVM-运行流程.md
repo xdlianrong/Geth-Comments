@@ -1,11 +1,11 @@
-# EVM虚拟机源码分析
+# EVM源码分析（运行原理）
 
 ## 1 简介
 
 evm虚拟机用于处理和执行一笔交易，在代码中会有两种情况
 
 1. 如果交易转入方的地址为null，则调用creat（）创建智能合约
-2. 如果交易转入方的地址不为null，则调用call（）创建智能合约
+2. 如果交易转入方的地址不为null，则调用creat（）创建智能合约
 
 ##  2 操作流程
 
@@ -18,8 +18,6 @@ memory：存储instructions在执行中的临时变量
 storage：存储账户中的重要数据
 
 gas avail：用来记录剩余汽油费
-
-
 
 ![](./images/EVM_01.jpg)
 
@@ -64,7 +62,6 @@ func ApplyMessage(evm *vm.EVM, msg Message, gp *GasPool) ([]byte, uint64, bool, 
 下面TransitionDb函数主要实现的是
 
 ```go
-
 func (st *StateTransition/**一笔交易中的状态信息**/) TransitionDb() (ret []byte, usedGas uint64, failed bool, err error) {
     // 检查交易的 Nonce 值是否正确
    if err = st.preCheck(); err != nil {
@@ -118,6 +115,7 @@ func (st *StateTransition/**一笔交易中的状态信息**/) TransitionDb() (r
    }
    // 退还剩余gas费，将交易方账户余额增加剩余的gas费
    st.refundGas()
+   // 给矿工支付费用
    st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
 
    return ret, st.gasUsed(), vmerr != nil, err
@@ -126,7 +124,9 @@ func (st *StateTransition/**一笔交易中的状态信息**/) TransitionDb() (r
 
 ### 3.2 core/vm包
 
-#### 3.2.1 core/vm包的目录如下
+#### 3.2.1 目录
+
+core/vm包的目录如下
 
 ```
 .
@@ -301,9 +301,9 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 }
 ```
 
-总之，以太坊在每处理一笔交易时，都会调用NewEVM函数创建EVM对象，哪怕不涉及合约、只是一笔简单的转账。NewEVM的实现也很简单，只是记录相关的参数，同时创建一个解释器对象。Config.JumpTable字段在开始时是无效的，在创建解释器对象时对其进行了填充。
+总之，以太坊在每处理一笔交易时，都会调用NewEVM函数创建EVM对象，哪怕不涉及合约、只是一笔简单的转账。NewEVM的实现也很简单，只是记录相关的参数，同时创建一个解释器对象。`Config.JumpTable`字段在开始时是无效的，在创建解释器对象时对其进行了填充。
 
-#### 3.3.3 Create方法
+#### 3.2.3 Create方法
 
 Create方法先创建一个合约地址，然后调用更细节的create方法，并返回
 
@@ -362,7 +362,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
    }
    start := time.Now()
 
-   // 将evm对象 合约对象传入run函数开始执行，此函数是核心，等一会分析到Call入口的时候最终也会调用此函数
+   // 将evm对象 合约对象传入run函数开始执行，编译合约，此函数是核心，
    ret, err := run(evm, contract, nil, false)
    // 上述函数执行完成后返回的就是我前一章所说的初始化后的合约代码
    // 也就是我们在remix上看到runtime的字节码 以后调用合约代码其实质就是
@@ -388,7 +388,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
    if maxCodeSizeExceeded || (err != nil && (evm.chainRules.IsHomestead || err != ErrCodeStoreOutOfGas)) {
       // 更改以太坊状态数据库至快照的状态
       evm.StateDB.RevertToSnapshot(snapshot)
-      // 如果没有发生快照的恢复执行错误，不给相应账户退回任何gas值
+      // 如果没有发生快照的恢复执行错误，将返还gas清零。
       if err != errExecutionReverted {
          contract.UseGas(contract.Gas)
       }
@@ -417,9 +417,88 @@ func (c *Contract) UseGas(gas uint64) (ok bool) {
 }
 ```
 
-#### 3.3.4 run方法
+到了这里整个部署合约流程就完成了, 部署合约时是从`evm.Create->run->interper.run` 然后在执行codeCopy指令后把runtime的内容返回出来。 在`evm.Create`函数中我们也看到了当run执行完成后会把runtime的合约代码最终设置到合约地址名下。 整个合约部署就算完成了。
 
-run方法真正运行智能合约的方法，利用字节码解释器进行预编译，在将来要说的call方法中也将调用
+#### 3.2.4 Call方法
+
+分析完合约创建接着就该分析合约调用代码了。 调用智能合约和部署在以太坊交易上看来就是to的地址不在是nil而是一个具体的合约地址了。 同时input的内容不再是整个合约编译后的字节码了而是调用函数和对应的实参组合的内容。 这里就涉及到另一个东西那就是abi的概念。 abi描述了整个接口的详细信息， 根据abi可以解包和打包input调用的数据。
+
+```go
+func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+   // 智能合约递归调用检验，将所有gas退还给账户，同creat（）方法 
+   if evm.vmConfig.NoRecursion && evm.depth > 0 {
+      return nil, gas, nil
+   }
+
+   // evm深度检验，同creat（）方法 
+   if evm.depth > int(params.CallCreateDepth) {
+      return nil, gas, ErrDepth
+   }
+   // 外部账户余额检验，同creat（）方法
+   if !evm.Context.CanTransfer(evm.StateDB, caller.Address(), value) {
+      return nil, gas, ErrInsufficientBalance
+   }
+
+   var (
+      to       = AccountRef(addr)		 // 定义合约账户地址
+      snapshot = evm.StateDB.Snapshot()  // 拍摄快照
+   )
+   // 判断调用的合约账户是否存在
+   // 1.当解释码处于EIP158阶段，直接退回全部gas，完成一笔空交易
+   // 2.当处于其他阶段，创建合约账户
+   if !evm.StateDB.Exist(addr) {
+      precompiles := PrecompiledContractsHomestead
+      if evm.chainRules.IsByzantium {
+         precompiles = PrecompiledContractsByzantium
+      }
+      if evm.chainRules.IsIstanbul {
+         precompiles = PrecompiledContractsIstanbul
+      }
+      if precompiles[addr] == nil && evm.chainRules.IsEIP158 && value.Sign() == 0 {
+         // Calling a non existing account, don't do anything, but ping the tracer
+         if evm.vmConfig.Debug && evm.depth == 0 {
+            evm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+            evm.vmConfig.Tracer.CaptureEnd(ret, 0, 0, nil)
+         }
+         return nil, gas, nil
+      }
+      // 创建合约账户，同creat（）
+      evm.StateDB.CreateAccount(addr)
+   }
+   // 以太币转账，value的单位是wei
+   evm.Transfer(evm.StateDB, caller.Address(), to.Address(), value)
+   // 创建合约对象，同creat（）
+   contract := NewContract(caller, to, value, gas)
+   contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
+
+	// 即使合约账户中没有代码，也要开始，因为代码可能是预编译的
+   start := time.Now()
+
+   // 在调试模式下对一笔交易进行的信息捕获
+   if evm.vmConfig.Debug && evm.depth == 0 {
+      evm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+
+      defer func() { // Lazy evaluation of the parameters
+         evm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
+      }()
+   }
+   // 编译合约，与creat（）不同在于input，creat方法这里是nil
+   ret, err = run(evm, contract, input, false)
+
+   // 报错处理，同creat（)
+   if err != nil {
+      evm.StateDB.RevertToSnapshot(snapshot)
+      if err != errExecutionReverted {
+         contract.UseGas(contract.Gas)
+      }
+   }
+   return ret, contract.Gas, err
+}
+```
+
+### 3.3 run方法
+
+run方法真正运行智能合约的方法，利用字节码解释器进行预编译，creat和call方法中都会调用
 
 ```go
 func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, error) {
@@ -461,7 +540,7 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
 下面是Run方法，这才是真正的合约编译地点，通过适合的解释器运行，但是可以发现适合的解释器仅有EVMInterpreter，所以下面是函数的整体结构
 
 1. Run循环，从第0个字节开始，并使用给定的输入数据评估合同的代码，并返回返回字节片，如果发生错误则返回错误。
-2. 重要的是要注意，解释器返回的任何错误都应被视为“还原并消耗所有gas”操作，但errExecutionReverted除外，这意味着“还原并保留gas”。
+2. 重要的是要注意，解释器返回的任何错误都应被视为“还原并消耗所有gas”操作，但`errExecutionReverted`除外，这意味着“还原并保留gas”。
 
 ```go
 func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
@@ -497,8 +576,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
    // 其实它的执行流程就和上一章我们人肉执行的流程一样
    var (
       op    OpCode        // current opcode
-      mem   = NewMemory() // bound memory
-      stack = newstack()  // local stack
+      mem   = NewMemory() // 新建Memory用于内存块存储
+      stack = newstack()  // 栈存储
       // For optimisation reason we're using uint64 as the program counter.
       // It's theoretically possible to go above 2^64. The YP defines the PC
       // to be uint256. Practically much less so feasible.
@@ -632,11 +711,72 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 }
 ```
 
-到了这里整个部署合约流程就完成了, 部署合约时是从evm.Create->run->interper.run 然后在执行codeCopy指令后把runtime的内容返回出来。 在evm.Create函数中我们也看到了当run执行完成后会把runtime的合约代码最终设置到合约地址名下。 整个合约部署就算完成了。
+到这里，以上是evm的核心功能代码实现
 
-#### 3.3.5 Call方法
+### 3.4 evm中的一些辅助对象
 
-分析完合约创建接着就该分析合约调用代码了。 调用智能合约和部署在以太坊交易上看来就是to的地址不在是nil而是一个具体的合约地址了。 同时input的内容不再是整个合约编译后的字节码了而是调用函数和对应的实参组合的内容。 这里就涉及到另一个东西那就是abi的概念。 abi描述了整个接口的详细信息， 根据abi可以解包和打包input调用的数据。
+#### 3.4.1 intpool
+
+evm里所有`big.Int`的操作在intpool中完成，可以说这个对象是`big.Int`的一个缓存池
+
+当`big.Int`没有执行的时候被放在stack对象中
+
+下面是intpool对象实现的两个比较重要的方法（core/vm/intpool.go)
+
+```go
+// 在pool中取一个big.Int，如果没有则新建一个big.Int
+func (p *intPool) get() *big.Int {
+   if p.pool.len() > 0 {
+      return p.pool.pop()
+   }
+   return new(big.Int)
+}
+
+// 销毁一个pool中的big.Int
+func (p *intPool) put(is ...*big.Int) {
+	if len(p.pool.data) > poolLimit {
+		return
+	}
+	for _, i := range is {
+		// verifyPool is a build flag. Pool verification makes sure the integrity
+		// of the integer pool by comparing values to a default value.
+		if verifyPool {
+			i.Set(checkVal)
+		}
+		p.pool.push(i)
+	}
+}
+```
+
+#### 3.4.2 logger
+
+在evm运行和调试的时候的一些输出，由这个对象来实现，log 对象有 `JSONLogger` 和 `StructLogger` 两种
+
+core/vm/logger.go 
+
+```go
+// 在调试的时候被调用，跟踪evm执行状态，根据情况，输出一些详细的log
+type StructLogger struct {
+   cfg LogConfig
+
+   logs          []StructLog
+   changedValues map[common.Address]Storage
+   output        []byte
+   err           error
+}
+```
+
+core/vm/logger_json.go
+
+```go
+// 把evm的执行步骤用json形式送入输出流
+type JSONLogger struct {
+	encoder *json.Encoder
+	cfg     *LogConfig
+}
+```
+
+
 
 
 
