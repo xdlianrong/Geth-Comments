@@ -31,6 +31,7 @@ import (
 )
 
 // ReadCanonicalHash retrieves the hash assigned to a canonical block number.
+// 根据区块高度检索区块头hash
 func ReadCanonicalHash(db ethdb.Reader, number uint64) common.Hash {
 	data, _ := db.Ancient(freezerHashTable, number)
 	if len(data) == 0 {
@@ -50,6 +51,7 @@ func ReadCanonicalHash(db ethdb.Reader, number uint64) common.Hash {
 }
 
 // WriteCanonicalHash stores the hash assigned to a canonical block number.
+// 根据区块高度写入区块头hash
 func WriteCanonicalHash(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
 	if err := db.Put(headerHashKey(number), hash.Bytes()); err != nil {
 		log.Crit("Failed to store number to hash mapping", "err", err)
@@ -57,6 +59,7 @@ func WriteCanonicalHash(db ethdb.KeyValueWriter, hash common.Hash, number uint64
 }
 
 // DeleteCanonicalHash removes the number to hash canonical mapping.
+// 根据区块高度删除区块头hash
 func DeleteCanonicalHash(db ethdb.KeyValueWriter, number uint64) {
 	if err := db.Delete(headerHashKey(number)); err != nil {
 		log.Crit("Failed to delete number to hash mapping", "err", err)
@@ -92,8 +95,8 @@ func ReadHeaderNumber(db ethdb.KeyValueReader, hash common.Hash) *uint64 {
 
 // WriteHeaderNumber stores the hash->number mapping.
 func WriteHeaderNumber(db ethdb.KeyValueWriter, hash common.Hash, number uint64) {
-	key := headerNumberKey(hash)
-	enc := encodeBlockNumber(number)
+	key := headerNumberKey(hash)     //  key="H"+hash
+	enc := encodeBlockNumber(number) // 将number转化为大端
 	if err := db.Put(key, enc); err != nil {
 		log.Crit("Failed to store hash to number mapping", "err", err)
 	}
@@ -233,11 +236,11 @@ func WriteHeader(db ethdb.KeyValueWriter, header *types.Header) {
 	WriteHeaderNumber(db, hash, number)
 
 	// Write the encoded header
-	data, err := rlp.EncodeToBytes(header)
+	data, err := rlp.EncodeToBytes(header) // 对区块头进行RLP编码
 	if err != nil {
 		log.Crit("Failed to RLP encode header", "err", err)
 	}
-	key := headerKey(number, hash)
+	key := headerKey(number, hash) // key="h"+number+hash
 	if err := db.Put(key, data); err != nil {
 		log.Crit("Failed to store header", "err", err)
 	}
@@ -294,7 +297,7 @@ func ReadBodyRLP(db ethdb.Reader, hash common.Hash, number uint64) rlp.RawValue 
 func WriteBodyRLP(db ethdb.KeyValueWriter, hash common.Hash, number uint64, rlp rlp.RawValue) {
 	if err := db.Put(blockBodyKey(number, hash), rlp); err != nil {
 		log.Crit("Failed to store block body", "err", err)
-	}
+	} // key="b"+number+hash
 }
 
 // HasBody verifies the existence of a block body corresponding to the hash.
@@ -324,11 +327,11 @@ func ReadBody(db ethdb.Reader, hash common.Hash, number uint64) *types.Body {
 
 // WriteBody stores a block body into the database.
 func WriteBody(db ethdb.KeyValueWriter, hash common.Hash, number uint64, body *types.Body) {
-	data, err := rlp.EncodeToBytes(body)
+	data, err := rlp.EncodeToBytes(body) // 对区块体进行RLP编码
 	if err != nil {
 		log.Crit("Failed to RLP encode body", "err", err)
 	}
-	WriteBodyRLP(db, hash, number, data)
+	WriteBodyRLP(db, hash, number, data) // 存储区块体
 }
 
 // DeleteBody removes all block body data associated with a hash.
