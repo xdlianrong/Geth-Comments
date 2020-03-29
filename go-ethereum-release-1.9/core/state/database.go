@@ -31,6 +31,7 @@ const (
 )
 
 // Database wraps access to tries and contract code.
+// Database代表着statedb将状态树写入内存
 type Database interface {
 	// OpenTrie opens the main account trie.
 	OpenTrie(root common.Hash) (Trie, error)
