@@ -26,7 +26,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb"
 )
-/* 基本上就是封装了一个内存的Map结构。然后使用了一把锁来对多线程进行资源保护*/
+
 var (
 	// errMemorydbClosed is returned if a memory database was already closed at the
 	// invocation of a data access operation.
@@ -40,6 +40,7 @@ var (
 // Database is an ephemeral key-value store. Apart from basic data storage
 // functionality it also supports batch writes and iterating over the keyspace in
 // binary-alphabetical order.
+/* 基本上就是封装了一个内存的Map结构。然后使用了一把锁来对多线程进行资源保护*/
 type Database struct {
 	db   map[string][]byte
 	lock sync.RWMutex
@@ -291,6 +292,7 @@ func (b *batch) Replay(w ethdb.KeyValueWriter) error {
 // iterator can walk over the (potentially partial) keyspace of a memory key
 // value store. Internally it is a deep copy of the entire iterated state,
 // sorted by keys.
+// 迭代器可以遍历内存键值存储的（可能是部分）键空间。 在内部，它是整个迭代状态的深层副本，按键排序。
 type iterator struct {
 	inited bool
 	keys   []string
