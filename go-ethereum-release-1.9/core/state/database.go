@@ -31,7 +31,7 @@ const (
 )
 
 // Database wraps access to tries and contract code.
-// Database代表着statedb将状态树写入内存
+// Database封装了与底层数据库交互的代码，以接口的形式存在
 type Database interface {
 	// OpenTrie opens the main account trie.
 	OpenTrie(root common.Hash) (Trie, error)
@@ -52,7 +52,7 @@ type Database interface {
 	TrieDB() *trie.Database
 }
 
-// Trie is a Ethereum Merkle Patricia trie.
+// Trie is a Ethereum Merkle Patricia trie.Trie代表广义的mpt树
 type Trie interface {
 	// GetKey returns the sha3 preimage of a hashed key that was previously used
 	// to store a value.
