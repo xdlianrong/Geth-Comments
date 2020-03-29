@@ -1,8 +1,8 @@
-# ethdb源码分析
+# ethdb源码分析（1）
 
 ![1584948185228](./images/ethdb目录.png)
 
-ethdb目录下，leveldb.go来封装leveldb数据库的接口，memorydb.go封装一个内存结构。batch包装关于批量操作接口，database包装各种数据库操作，iterator包装迭代器操作和错误处理。
+ethdb目录下，leveldb.go来封装leveldb数据库的接口，memorydb.go封装一个内存结构。batch包装批量操作接口，database包装各种数据库操作接口，iterator包装迭代器操作和错误处理的接口。
 
 ## leveldb.go
 
@@ -30,7 +30,7 @@ type Database struct {
 	
 	compTimeMeter      metrics.Meter // Meter for measuring the total time spent in database compaction
 	compReadMeter      metrics.Meter // Meter for measuring the data read during compaction
-``````
+	······
 
 	quitLock sync.Mutex      // Mutex protecting the quit channel access
 	quitChan chan chan error // Quit channel to stop the metrics collection before closing the database
@@ -41,12 +41,12 @@ type Database struct {
 
 随后创建了一个new函数来实例化一个database
 
-​```go
-// New返回包装的LevelDB对象。namespace是指标报告应使用的前缀，以显示内部统计信息。
+```go
+// New返回包装的LevelDB对象。namespace是metrics报告应使用的前缀，以显示内部统计信息。
 func New(file string, cache int, handles int, namespace string) (*Database, error) {
 }
 
-// 主要注意一下几个部分
+// 主要注意以下几个部分
 // 打开数据库并恢复可能存在的错误
 db, err := leveldb.OpenFile(file, &opt.Options{
 		OpenFilesCacheCapacity: handles,
@@ -93,7 +93,7 @@ NewIterator()
 NewIteratorWithStart()
 //在具有特定键前缀的数据库内容子集上创建二进制字母迭代器。
 NewIteratorWithPrefix()
-//通过一个给定的property返回数据库统计结果
+//通过一个给定的property返回数据库统计结果，包括调用了多少次，返回了多少记录，在读写数据上花了多少时间
 Stat
 //压缩了给定键范围的基础数据存储。 本质上，将删除已删除和覆盖的版本，并对数据进行重新排列以降低访问它们所需的操作成本。
 Compact()
@@ -127,7 +127,7 @@ func (b *batch) Put(key, value []byte) error {
 其他的同样只说一下功能
 
 ```go
-//从batch中删除key，这个有点没弄懂的是里面有个 b.size++ ?
+//从batch中删除key
 Delete()
 //返回batch里面已保存的大小size
 ValueSize()
@@ -140,3 +140,4 @@ Replay()
 ```
 
 后面则是定义了一下replay结构和它的两个方法Put和Delete
+

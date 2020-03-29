@@ -27,21 +27,27 @@ import (
 // The fields below define the low level database schema prefixing.
 var (
 	// databaseVerisionKey tracks the current database version.
+	// 跟踪当前数据库版本。
 	databaseVerisionKey = []byte("DatabaseVersion")
 
 	// headHeaderKey tracks the latest known header's hash.
+	// 跟踪最新的已知header的哈希值。
 	headHeaderKey = []byte("LastHeader")
 
 	// headBlockKey tracks the latest known full block's hash.
+	// 跟踪最新的已知完整区块的哈希。
 	headBlockKey = []byte("LastBlock")
 
 	// headFastBlockKey tracks the latest known incomplete block's hash during fast sync.
+	// 在快速同步期间跟踪最新的已知不完整块的哈希。
 	headFastBlockKey = []byte("LastFast")
 
 	// fastTrieProgressKey tracks the number of trie entries imported during fast sync.
+	// 跟踪快速同步期间导入的trie entries的数量
 	fastTrieProgressKey = []byte("TrieSync")
 
 	// Data item prefixes (use single byte to avoid mixing data types, avoid `i`, used for indexes).
+	// 数据项前缀（使用单字节以避免混合数据类型，避免使用“ i”作为索引）。
 	headerPrefix       = []byte("h") // headerPrefix + num (uint64 big endian) + hash -> header
 	headerTDSuffix     = []byte("t") // headerPrefix + num (uint64 big endian) + hash + headerTDSuffix -> td
 	headerHashSuffix   = []byte("n") // headerPrefix + num (uint64 big endian) + headerHashSuffix -> hash
@@ -57,6 +63,7 @@ var (
 	configPrefix   = []byte("ethereum-config-") // config prefix for the db
 
 	// Chain index prefixes (use `i` + single byte to avoid mixing data types).
+	// 链索引前缀（使用“ i” +单字节以避免混合数据类型）。
 	BloomBitsIndexPrefix = []byte("iB") // BloomBitsIndexPrefix is the data table of a chain indexer to track its progress
 
 	preimageCounter    = metrics.NewRegisteredCounter("db/preimage/total", nil)
@@ -82,6 +89,7 @@ const (
 
 // freezerNoSnappy configures whether compression is disabled for the ancient-tables.
 // Hashes and difficulties don't compress well.
+// freezerNoSnappy配置是否对远古表禁用压缩，哈希和困难不能很好地压缩。
 var freezerNoSnappy = map[string]bool{
 	freezerHeaderTable:     false,
 	freezerHashTable:       true,
@@ -92,6 +100,7 @@ var freezerNoSnappy = map[string]bool{
 
 // LegacyTxLookupEntry is the legacy TxLookupEntry definition with some unnecessary
 // fields.
+// 具有一些不必要字段的旧式TxLookupEntry定义。
 type LegacyTxLookupEntry struct {
 	BlockHash  common.Hash
 	BlockIndex uint64
