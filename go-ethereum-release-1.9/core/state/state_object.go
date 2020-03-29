@@ -62,6 +62,7 @@ func (s Storage) Copy() Storage {
 // First you need to obtain a state object.
 // Account values can be accessed and modified through the object.
 // Finally, call CommitTrie to write the modified storage trie into a database.
+// stateObject代表着正在被修改的以太坊账户
 type stateObject struct {
 	address  common.Address
 	addrHash common.Hash // hash of ethereum address of the account
@@ -79,10 +80,10 @@ type stateObject struct {
 	trie Trie // storage trie, which becomes non-nil on first access
 	code Code // contract bytecode, which gets set when code is loaded
 
-	originStorage  Storage // Storage cache of original entries to dedup rewrites, reset for every transaction
-	pendingStorage Storage // Storage entries that need to be flushed to disk, at the end of an entire block
-	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution
-	fakeStorage    Storage // Fake storage which constructed by caller for debugging purpose.
+	originStorage  Storage // Storage cache of original entries to dedup rewrites, reset for every transaction对原始项的存储缓存进行重复数据消除重写，为每个事务重置
+	pendingStorage Storage // Storage entries that need to be flushed to disk, at the end of an entire block在整个块的末尾，需要刷新到磁盘的存储项
+	dirtyStorage   Storage // Storage entries that have been modified in the current transaction execution在当前事务执行中修改的存储项
+	fakeStorage    Storage // Fake storage which constructed by caller for debugging purpose.测试用
 
 	// Cache flags.
 	// When an object is marked suicided it will be delete from the trie
