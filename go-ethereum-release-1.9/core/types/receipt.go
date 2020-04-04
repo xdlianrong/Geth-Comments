@@ -47,27 +47,28 @@ const (
 )
 
 // Receipt represents the results of a transaction.
+												// ---mzliu begin--
 type Receipt struct {
 	// Consensus fields: These fields are defined by the Yellow Paper
-	PostState         []byte `json:"root"`
-	Status            uint64 `json:"status"`
-	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required"`
-	Bloom             Bloom  `json:"logsBloom"         gencodec:"required"`
-	Logs              []*Log `json:"logs"              gencodec:"required"`
+	PostState         []byte `json:"root"`//现在是0（属于）B256,之前是交易前的状态跟
+	Status            uint64 `json:"status"`//交易的状态码
+	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required"`//包含交易数据的区块中当交易发生后的累积 gas 使用量
+	Bloom             Bloom  `json:"logsBloom"         gencodec:"required"`//由这些日志信息构成的布隆过滤器
+	Logs              []*Log `json:"logs"              gencodec:"required"`//日志集合
 
-	// Implementation fields: These fields are added by geth when processing a transaction.
+	// Implementation fields: These fields are added by geth when processing a transaction.//执行领域，在执行交易时被geth添加，存储在区块链数据库
 	// They are stored in the chain database.
 	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
 	ContractAddress common.Address `json:"contractAddress"`
 	GasUsed         uint64         `json:"gasUsed" gencodec:"required"`
 
-	// Inclusion information: These fields provide information about the inclusion of the
-	// transaction corresponding to this receipt.
+	//Inclusion information: These fields provide information about the inclusion of the
+	//transaction corresponding to this receipt.//提供与此收据有关的交易记录
 	BlockHash        common.Hash `json:"blockHash,omitempty"`
 	BlockNumber      *big.Int    `json:"blockNumber,omitempty"`
 	TransactionIndex uint        `json:"transactionIndex"`
 }
-
+                                                //--mzliu end--
 type receiptMarshaling struct {
 	PostState         hexutil.Bytes
 	Status            hexutil.Uint64
