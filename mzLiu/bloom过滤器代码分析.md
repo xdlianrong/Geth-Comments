@@ -28,7 +28,57 @@ Bloom过滤器，只有插入、查找操作，没有删除操作。
 
 ###### 以太坊中的布隆过滤器
 
-**1.两个bloom结构：**
+**1.其中的两个带有bloom的结构：**
+
+收据中的布隆过滤器是所有日志信息的布隆过滤器的并集
+
+```go
+type Receipt struct {
+	// Consensus fields: These fields are defined by the Yellow Paper
+	PostState         []byte `json:"root"`//现在是0（属于）B256,之前是交易前的状态跟
+	Status            uint64 `json:"status"`//交易的状态码
+	CumulativeGasUsed uint64 `json:"cumulativeGasUsed" gencodec:"required"`//包含交易数据的区块中当交易发生后的累积 gas 使用量
+	Bloom             Bloom  `json:"logsBloom"         gencodec:"required"`//由这些日志信息构成的布隆过滤器
+	Logs              []*Log `json:"logs"              gencodec:"required"`//日志集合
+
+	// Implementation fields: These fields are added by geth when processing a transaction.//执行领域，在执行交易时被geth添加，存储在区块链数据库
+	// They are stored in the chain database.
+	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
+	ContractAddress common.Address `json:"contractAddress"`
+	GasUsed         uint64         `json:"gasUsed" gencodec:"required"`
+
+	//Inclusion information: These fields provide information about the inclusion of the
+	//transaction corresponding to this receipt.//提供与此收据有关的交易记录
+	BlockHash        common.Hash `json:"blockHash,omitempty"`
+	BlockNumber      *big.Int    `json:"blockNumber,omitempty"`
+	TransactionIndex uint        `json:"transactionIndex"`
+}
+```
+
+区块中的布隆过滤器是所有收据中的布隆过滤器的并集
+
+```go
+// Header represents a block header in the Ethereum blockchain.
+type Header struct {
+	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"` //父区块头的kec256位哈希
+	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"` //叔块哈希
+	Coinbase    common.Address `json:"miner"            gencodec:"required"` //矿工
+	Root        common.Hash    `json:"stateRoot"        gencodec:"required"` //状态树树根
+	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"` //交易树树根
+	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"` //收据树树根
+	Bloom       Bloom          `json:"logsBloom"        gencodec:"required"` //所有交易的收据数据中可索引信息（产生日志的地址和日志主题）组成的Bloom过滤器
+	Difficulty  *big.Int       `json:"difficulty"       gencodec:"required"` //区快难度水平
+	Number      *big.Int       `json:"number"           gencodec:"required"` //祖先的数量，创世是0
+	GasLimit    uint64         `json:"gasLimit"         gencodec:"required"` //gas开支上限
+	GasUsed     uint64         `json:"gasUsed"          gencodec:"required"` //用掉的gas之和
+	Time        uint64         `json:"timestamp"        gencodec:"required"` //unix时间戳
+	Extra       []byte         `json:"extraData"        gencodec:"required"` //32字节以内的任意数据
+	MixDigest   common.Hash    `json:"mixHash"`								 //kec256哈希值与nonce一起证明当前区块承载了足够的计算量
+	Nonce       BlockNonce     `json:"nonce"`								 //64位的值，用来与mixhash一起证明当前区块承载了足够多的的计算量
+}
+```
+
+**2.布隆过滤器的构成**
 
 ![](./picture/6.png)
 
