@@ -36,7 +36,7 @@ var (
 )
 
 type Transaction struct {
-	data txdata
+	data txdata//一个不限制大小的字节数组，用来指定消息调用的输入数据
 	// caches
 	hash atomic.Value
 	size atomic.Value
@@ -44,15 +44,19 @@ type Transaction struct {
 }
 
 type txdata struct {
-	AccountNonce uint64          `json:"nonce"    gencodec:"required"`
-	Price        *big.Int        `json:"gasPrice" gencodec:"required"`
-	GasLimit     uint64          `json:"gas"      gencodec:"required"`
-	Recipient    *common.Address `json:"to"       rlp:"nil"` // nil means contract creation
-	Amount       *big.Int        `json:"value"    gencodec:"required"`
-	Payload      []byte          `json:"input"    gencodec:"required"`
-
-	// Signature values
-	V *big.Int `json:"v" gencodec:"required"`
+	AccountNonce uint64          `json:"nonce"    gencodec:"required"`//由交易发送者发出的的交易的数量，由 Tn 表示
+	Price        *big.Int        `json:"gasPrice" gencodec:"required"`//为执行这个交易所需要进行的计算步骤消 耗的每单位 gas 的价格，以 Wei 为单位，由 Tp 表 示。
+	GasLimit     uint64          `json:"gas"      gencodec:"required"`//用于执行这个交易的最大 gas 数量。这个值须在交易开始前设置，且设定后不能再增加，由Tg 表示。
+	Recipient    *common.Address `json:"to"       rlp:"nil"` // nil means contract creation 160 位的消息调用接收者地址；对与合约创建交易，用 ∅ 表示 B0 的唯一成员。此字段由 Tt 表示
+	Amount       *big.Int        `json:"value"    gencodec:"required"`//转移到接收者账户的 Wei 的数量；对于合约 创建，则代表给新建合约地址的初始捐款。由 Tv 表示。
+	Payload      []byte          `json:"input"    gencodec:"required"`//如果目标账户包含代码，该代码会执行，payload就是输入数据。
+																	  //如果目标账户是零账户（账户地址是0），交易将创建一个新合约。
+																	  //这个合约地址不是零地址，而是由合约创建者的地址和该地址发出过的交易数量（被称为nonce）计算得到。
+																	  //创建合约交易的payload被当作EVM字节码执行。执行的输出做为合约代码被永久存储。这意味着，为了创建一个合约，
+																	  //你不需要向合约发送真正的合约代码，而是发送能够返回真正代码的代码。
+	                                                                  //
+	// Signature values											      //
+	V *big.Int `json:"v" gencodec:"required"`//v, r, s: 与交易签名相符的若干数值，用于确定交易的发送者，由 Tw，Tr 和 Ts 表示。
 	R *big.Int `json:"r" gencodec:"required"`
 	S *big.Int `json:"s" gencodec:"required"`
 

@@ -68,21 +68,21 @@ func (n *BlockNonce) UnmarshalText(input []byte) error {
 
 // Header represents a block header in the Ethereum blockchain.
 type Header struct {
-	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
-	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
-	Coinbase    common.Address `json:"miner"            gencodec:"required"`
-	Root        common.Hash    `json:"stateRoot"        gencodec:"required"`
-	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"`
-	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"`
-	Bloom       Bloom          `json:"logsBloom"        gencodec:"required"`
-	Difficulty  *big.Int       `json:"difficulty"       gencodec:"required"`
-	Number      *big.Int       `json:"number"           gencodec:"required"`
-	GasLimit    uint64         `json:"gasLimit"         gencodec:"required"`
-	GasUsed     uint64         `json:"gasUsed"          gencodec:"required"`
-	Time        uint64         `json:"timestamp"        gencodec:"required"`
-	Extra       []byte         `json:"extraData"        gencodec:"required"`
-	MixDigest   common.Hash    `json:"mixHash"`
-	Nonce       BlockNonce     `json:"nonce"`
+	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"` //父区块头的kec256位哈希
+	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"` //叔块哈希
+	Coinbase    common.Address `json:"miner"            gencodec:"required"` //矿工
+	Root        common.Hash    `json:"stateRoot"        gencodec:"required"` //状态树树根
+	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"` //交易树树根
+	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"` //收据树树根
+	Bloom       Bloom          `json:"logsBloom"        gencodec:"required"` //所有交易的收据数据中可索引信息（产生日志的地址和日志主题）组成的Bloom过滤器
+	Difficulty  *big.Int       `json:"difficulty"       gencodec:"required"` //区快难度水平
+	Number      *big.Int       `json:"number"           gencodec:"required"` //祖先的数量，创世是0
+	GasLimit    uint64         `json:"gasLimit"         gencodec:"required"` //gas开支上限
+	GasUsed     uint64         `json:"gasUsed"          gencodec:"required"` //用掉的gas之和
+	Time        uint64         `json:"timestamp"        gencodec:"required"` //unix时间戳
+	Extra       []byte         `json:"extraData"        gencodec:"required"` //32字节以内的任意数据
+	MixDigest   common.Hash    `json:"mixHash"`								 //kec256哈希值与nonce一起证明当前区块承载了足够的计算量
+	Nonce       BlockNonce     `json:"nonce"`								 //64位的值，用来与mixhash一起证明当前区块承载了足够多的的计算量
 }
 
 // field type overrides for gencodec
@@ -139,8 +139,8 @@ func rlpHash(x interface{}) (h common.Hash) {
 // Body is a simple (mutable, non-safe) data container for storing and moving
 // a block's data contents (transactions and uncles) together.
 type Body struct {
-	Transactions []*Transaction
-	Uncles       []*Header
+	Transactions []*Transaction //交易列表
+	Uncles       []*Header 		//叔块的区块头列表
 }
 
 // Block represents an entire block in the Ethereum blockchain.
