@@ -95,6 +95,7 @@ func (db *nofreezedb) Sync() error {
 
 // NewDatabase creates a high level database on top of a given key-value data
 // store without a freezer moving immutable chain segments into cold storage.
+// NewDatabase在给定的键值数据存储之上创建一个高级数据库，而无需使用freezer将不可变链段移动到冷存储中。
 func NewDatabase(db ethdb.KeyValueStore) ethdb.Database {
 	return &nofreezedb{
 		KeyValueStore: db,

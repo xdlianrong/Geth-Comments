@@ -56,6 +56,7 @@ type indexEntry struct {
 const indexEntrySize = 6
 
 // unmarshallBinary deserializes binary b into the rawIndex entry.
+// 将二进制b反序列化为rawIndex条目。
 func (i *indexEntry) unmarshalBinary(b []byte) error {
 	i.filenum = uint32(binary.BigEndian.Uint16(b[:2]))
 	i.offset = binary.BigEndian.Uint32(b[2:6])
@@ -63,6 +64,7 @@ func (i *indexEntry) unmarshalBinary(b []byte) error {
 }
 
 // marshallBinary serializes the rawIndex entry into binary.
+// 将rawIndex条目序列化为二进制。
 func (i *indexEntry) marshallBinary() []byte {
 	b := make([]byte, indexEntrySize)
 	binary.BigEndian.PutUint16(b[:2], uint16(i.filenum))
@@ -77,22 +79,23 @@ type freezerTable struct {
 	// WARNING: The `items` field is accessed atomically. On 32 bit platforms, only
 	// 64-bit aligned fields can be atomic. The struct is guaranteed to be so aligned,
 	// so take advantage of that (https://golang.org/pkg/sync/atomic/#pkg-note-BUG).
+	// 表中存储的项目数（包括从尾部删除的项目）
 	items uint64 // Number of items stored in the table (including items removed from tail)
-
+	// 如果为true，则禁用快速压缩。
 	noCompression bool   // if true, disables snappy compression. Note: does not work retroactively
 	maxFileSize   uint32 // Max file size for data-files
 	name          string
 	path          string
-
+	// 表数据头的文件描述符
 	head   *os.File            // File descriptor for the data head of the table
 	files  map[uint32]*os.File // open files
-	headId uint32              // number of the currently active head file
-	tailId uint32              // number of the earliest file
-	index  *os.File            // File descriptor for the indexEntry file of the table
+	headId uint32              // number of the currently active head file 当前活动头文件的编号
+	tailId uint32              // number of the earliest file 最早的文件号
+	index  *os.File            // File descriptor for the indexEntry file of the table indexEntry文件的文件描述符
 
 	// In the case that old items are deleted (from the tail), we use itemOffset
 	// to count how many historic items have gone missing.
-	itemOffset uint32 // Offset (number of discarded items)
+	itemOffset uint32 // Offset (number of discarded items) 丢弃件数
 
 	headBytes  uint32        // Number of bytes written to the head file
 	readMeter  metrics.Meter // Meter for measuring the effective amount of data read

@@ -79,12 +79,14 @@ type freezer struct {
 // append-only flat file containers.
 func newFreezer(datadir string, namespace string) (*freezer, error) {
 	// Create the initial freezer object
+	// metrics启用统计信息
 	var (
 		readMeter  = metrics.NewRegisteredMeter(namespace+"ancient/read", nil)
 		writeMeter = metrics.NewRegisteredMeter(namespace+"ancient/write", nil)
 		sizeGauge  = metrics.NewRegisteredGauge(namespace+"ancient/size", nil)
 	)
 	// Ensure the datadir is not a symbolic link if it exists.
+	// 确保目录不是软链接
 	if info, err := os.Lstat(datadir); !os.IsNotExist(err) {
 		if info.Mode()&os.ModeSymlink != 0 {
 			log.Warn("Symbolic link ancient database is not supported", "path", datadir)
@@ -93,6 +95,7 @@ func newFreezer(datadir string, namespace string) (*freezer, error) {
 	}
 	// Leveldb uses LOCK as the filelock filename. To prevent the
 	// name collision, we use FLOCK as the lock name.
+	// 避免名字冲突，采用FLOCK作为文件锁名
 	lock, _, err := fileutil.Flock(filepath.Join(datadir, "FLOCK"))
 	if err != nil {
 		return nil, err
@@ -102,6 +105,7 @@ func newFreezer(datadir string, namespace string) (*freezer, error) {
 		tables:       make(map[string]*freezerTable),
 		instanceLock: lock,
 	}
+	// freezerNoSnappy包含 hash header body receipt difficulty五部分
 	for name, disableSnappy := range freezerNoSnappy {
 		table, err := newTable(datadir, name, readMeter, writeMeter, sizeGauge, disableSnappy)
 		if err != nil {
@@ -233,6 +237,7 @@ func (f *freezer) TruncateAncients(items uint64) error {
 }
 
 // sync flushes all data tables to disk.
+// sync将所有数据表刷新到磁盘。
 func (f *freezer) Sync() error {
 	var errs []error
 	for _, table := range f.tables {
@@ -377,6 +382,8 @@ func (f *freezer) freeze(db ethdb.KeyValueStore) {
 // repair truncates all data tables to the same length.
 func (f *freezer) repair() error {
 	min := uint64(math.MaxUint64)
+	// min是指这五个table里面items的最小值，然后下一个for循环截断大于这个min值的部分
+	// 确保不会存在比如headers里面有5个块的信息，而bodies里面有6个这种情况。
 	for _, table := range f.tables {
 		items := atomic.LoadUint64(&table.items)
 		if min > items {

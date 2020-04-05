@@ -6,21 +6,21 @@
 
 ```go
 type Header struct {
-	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`
-	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`
-	Coinbase    common.Address `json:"miner"            gencodec:"required"`
-	Root        common.Hash    `json:"stateRoot"        gencodec:"required"`
-	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"`
-	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"`
-	Bloom       Bloom          `json:"logsBloom"        gencodec:"required"`
-	Difficulty  *big.Int       `json:"difficulty"       gencodec:"required"`
-	Number      *big.Int       `json:"number"           gencodec:"required"`
-	GasLimit    uint64         `json:"gasLimit"         gencodec:"required"`
-	GasUsed     uint64         `json:"gasUsed"          gencodec:"required"`
-	Time        uint64         `json:"timestamp"        gencodec:"required"`
+	ParentHash  common.Hash    `json:"parentHash"       gencodec:"required"`//指向父区块的指针
+	UncleHash   common.Hash    `json:"sha3Uncles"       gencodec:"required"`//block中叔块数组的RLP哈希值
+	Coinbase    common.Address `json:"miner"            gencodec:"required"`//挖出该区块的人的地址
+	Root        common.Hash    `json:"stateRoot"        gencodec:"required"`//StateDB中的stat trie的根节点的RLP哈希值
+	TxHash      common.Hash    `json:"transactionsRoot" gencodec:"required"`//tx trie的根节点的哈希值
+	ReceiptHash common.Hash    `json:"receiptsRoot"     gencodec:"required"`//receipt trie的根节点的哈希值
+	Bloom       Bloom          `json:"logsBloom"        gencodec:"required"`//布隆过滤器，用来判断Log对象是否存在
+	Difficulty  *big.Int       `json:"difficulty"       gencodec:"required"`//难度系数
+	Number      *big.Int       `json:"number"           gencodec:"required"`//区块序号
+	GasLimit    uint64         `json:"gasLimit"         gencodec:"required"`//区块内所有Gas消耗的理论上限
+	GasUsed     uint64         `json:"gasUsed"          gencodec:"required"`//区块内消耗的总Gas
+	Time        uint64         `json:"timestamp"        gencodec:"required"`//区块应该被创建的时间
 	Extra       []byte         `json:"extraData"        gencodec:"required"`
 	MixDigest   common.Hash    `json:"mixHash"`
-	Nonce       BlockNonce     `json:"nonce"`
+	Nonce       BlockNonce     `json:"nonce"` 
 }
 
 type Body struct {

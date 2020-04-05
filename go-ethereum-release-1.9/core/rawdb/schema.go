@@ -89,7 +89,7 @@ const (
 
 // freezerNoSnappy configures whether compression is disabled for the ancient-tables.
 // Hashes and difficulties don't compress well.
-// freezerNoSnappy配置是否对远古表禁用压缩，哈希和困难不能很好地压缩。
+// freezerNoSnappy配置是否对旧表禁用压缩，哈希和难度不能很好地压缩。
 var freezerNoSnappy = map[string]bool{
 	freezerHeaderTable:     false,
 	freezerHashTable:       true,

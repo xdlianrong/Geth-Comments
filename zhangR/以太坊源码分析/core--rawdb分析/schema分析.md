@@ -35,7 +35,6 @@ func encodeBlockNumber(number uint64) []byte {
 }
 
 // headerKeyPrefix = headerPrefix + num (uint64 big endian)
-// 此处功能未知
 func headerKeyPrefix(number uint64) []byte {
 	return append(headerPrefix, encodeBlockNumber(number)...)
 }
