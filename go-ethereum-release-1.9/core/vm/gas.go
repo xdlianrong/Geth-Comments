@@ -20,6 +20,7 @@ import (
 	"math/big"
 )
 
+// 指令静态消耗gas对应数值
 // Gas costs
 const (
 	GasQuickStep   uint64 = 2

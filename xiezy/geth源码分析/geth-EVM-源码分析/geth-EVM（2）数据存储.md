@@ -49,7 +49,7 @@ func newstack() *Stack {
 func (st *Stack) push(d *big.Int) {
 	st.data = append(st.data, d)
 }
-// 删除栈顶元素
+// 取并删除栈顶元素
 func (st *Stack) pop() (ret *big.Int) {
 	ret = st.data[len(st.data)-1]
 	st.data = st.data[:len(st.data)-1]
@@ -59,7 +59,7 @@ func (st *Stack) pop() (ret *big.Int) {
 func (st *Stack) swap(n int) {
 	st.data[st.len()-n], st.data[st.len()-1] = st.data[st.len()-1], st.data[st.len()-n]
 }
-// 取栈顶元素
+// 取并不删除栈顶元素
 func (st *Stack) peek() *big.Int {
 	return st.data[st.len()-1]
 }

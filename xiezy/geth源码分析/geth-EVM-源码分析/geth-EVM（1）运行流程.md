@@ -5,7 +5,7 @@
 evm虚拟机用于处理和执行一笔交易，在代码中会有两种情况
 
 1. 如果交易转入方的地址为null，则调用creat（）创建智能合约
-2. 如果交易转入方的地址不为null，则调用creat（）创建智能合约
+2. 如果交易转入方的地址不为null，则调用call（）调用智能合约
 
 ##  2 操作流程
 
@@ -209,7 +209,7 @@ type EVM struct {
    // 这个是虚拟机的一些配置参数，是创建解释器的初始化参数，比如所有操作码对应的函数也是在此处配置的
    vmConfig Config
     
-   // 解释器对象 它是整个进行虚拟机代码执行的地方。
+   // 解释器对象 它是整个进行虚拟机智能和约代码执行的地方。
    interpreters []Interpreter
    interpreter  Interpreter
     
@@ -591,7 +591,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
    )
    contract.Input = input
 
-   // Reclaim the stack as an int pool when the execution stops
+   // 定义defer函数在execute停止，释放栈空间
    defer func() { in.intPool.put(stack.data...) }()
 
    if in.cfg.Debug {
@@ -619,7 +619,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
       // enough stack items available to perform the operation.
       // 根据PC计数器获取操作码
       op = contract.GetOp(pc)
-      // 根据操作码获取对应以太坊链阶段的操作函数
+      // 根据操作码，配置该操作码对应的各种参数，及方法
+      // 最重要的是获取对应以太坊链阶段的操作函数
       operation := in.cfg.JumpTable[op]
       if !operation.valid {
          return nil, fmt.Errorf("invalid opcode 0x%x", int(op))
