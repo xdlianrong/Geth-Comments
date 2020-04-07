@@ -1532,7 +1532,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 
 	// Peek the error for the first block to decide the directing import logic
 	it := newInsertIterator(chain, results, bc.validator)
-
+	//it.next()执行ValidateBody
 	block, err := it.next()
 
 	// Left-trim all the known blocks
