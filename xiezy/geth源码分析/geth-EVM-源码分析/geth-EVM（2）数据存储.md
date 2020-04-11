@@ -29,6 +29,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 
 主要功能：为了存储合约执行过程中的变量，可以当成cpu中的寄存器
 
+stack中每一个元素长度为32字节
+
 在编译过程中如果用到Stack是不消耗任何gas的
 
 ```go
@@ -67,7 +69,9 @@ func (st *Stack) peek() *big.Int {
 
 ## 3 Memory
 
-主要功能：为了存储合约执行过程中的变量，可以当成一片虚拟的内存
+主要功能：为了存储合约执行过程中的变量，可以当成一片虚拟的内存空间
+
+与stack的区别在于存储类型不一样。通常存储局部变量属于变长字节数组、字符串、结构体等的类型
 
 在编译过程中用到Memory是要消耗少量gas的
 
@@ -94,9 +98,11 @@ func (m *Memory) Resize(size uint64) {
    }
 }
 // 下面两个方法都是用于将指定数据存入指定偏移地址中
+// 下面是指定任意字节数存入memory
 func (m *Memory) Set(offset, size uint64, value []byte) {
 	......
 }
+// 下面是指定32个字节数存入memory，一般用于字符串中
 func (m *Memory) Set32(offset uint64, val *big.Int) {
 	......
 }
@@ -113,7 +119,9 @@ func (m *Memory) GetPtr(offset, size int64) []byte {
 
 ### 4.1 简介
 
-作用：存储所有账户信息，合约代码和合约数据。这是一块永久存储对象，这个对象不是 evm 模块中的对象，相当于硬盘存储。
+作用：存储所有账户信息，合约代码和合约数据。这是一块永久存储对象，一般这些变量在声明的时候是变长的，一般在solidity的具体函数的外部声明。
+
+在以太坊中，StateDB 是一个 key-value pair。每一个 key 对应一个 32 字节长的数据块。
 
 以太坊真正存储数据的地方是LevelDB数据库，StateDB提供的是缓存，StateDB是一级缓存，状态树是二级缓存。也就是说我们的应用要从数据库中增删查找数据，首先是把数据从数据库拿到状态树里，再从状态树中取出放入StateDB中，最后从StateDB中提取数据。
 

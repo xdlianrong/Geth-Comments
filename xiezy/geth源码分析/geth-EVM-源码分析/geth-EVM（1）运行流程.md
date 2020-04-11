@@ -510,7 +510,7 @@ func run(evm *EVM, contract *Contract, input []byte, readOnly bool) ([]byte, err
       if evm.chainRules.IsByzantium {
          precompiles = PrecompiledContractsByzantium
       }
-      // 下面是伊斯坦丁堡阶段的预编译以太坊集
+      // 下面是伊斯坦布尔阶段的预编译以太坊集
       if evm.chainRules.IsIstanbul {
          precompiles = PrecompiledContractsIstanbul
       }

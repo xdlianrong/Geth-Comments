@@ -1,14 +1,14 @@
-# EVM源码分析（指令集与操作流程）
+# EVM源码分析（指令集与字节码操作流程）
 
 ## 1 概述
 
 1. 编写合约
 
-2. 再生成汇编代码/十六进制字节码
+2. 再生成汇编代码/字节码
 
-   汇编代码可以通过汇编的指令集opcode生成十六进制字节码
+   汇编代码可以通过汇编的指令集opcode生成字节码
 
-   Binary为最后编译出来的十六进制字节码(部署代码+runtime代码+auxdata)
+   Binary为最后编译出来的字节码(部署代码+runtime代码+auxdata)
 
    部署代码：创建合约交易中运行的代码
 
@@ -24,7 +24,29 @@
 
 4. evm调用合约时，运行runtime字段
 
-   
+下面是一个合约的数据结构
+
+```go
+type Contract struct {
+   // CallerAddress is the result of the caller which initialised this
+   // contract. However when the "call method" is delegated this value
+   // needs to be initialised to that of the caller's caller.
+   CallerAddress common.Address
+   caller        ContractRef
+   self          ContractRef
+
+   jumpdests map[common.Hash]bitvec // Aggregated result of JUMPDEST analysis.
+   analysis  bitvec                 // Locally cached result of JUMPDEST analysis
+
+   Code     []byte			// 字节码
+   CodeHash common.Hash
+   CodeAddr *common.Address
+   Input    []byte
+
+   Gas   uint64
+   value *big.Int
+}
+```
 
 ## 2 执行流程
 
@@ -109,7 +131,7 @@
       if verifyPool {
          verifyIntegerPool(in.intPool)
       }
-      // 如果这个操作码是一个返回参数 那么就把需要的内容写入returnData
+      // 如果这个操作码是一个返回参数，那么就把需要的内容写入returnData（随着字节不断变化）
       if operation.returns {
          in.returnData = res
       }
@@ -143,7 +165,7 @@ func (c *Contract) GetOp(n uint64) OpCode {
    return OpCode(c.GetByte(n))
 }
 
-// GetByte返回合约字节数组中的第n个字节
+// GetByte返回合约字节数组中的第n个字节（8位，双字符）
 func (c *Contract) GetByte(n uint64) byte {
    if n < uint64(len(c.Code)) {
       return c.Code[n]
@@ -302,7 +324,11 @@ func newFrontierInstructionSet() JumpTable {
 
 具体执行函数在操作对象中被定义为execute字段
 
-操作对象中的执行函数在core/vm/instructions.go中被定义，execute中的两个实例如下
+操作对象中的执行函数在core/vm/instructions.go中被定义，execute中的具体实例如下
+
+### 5.1 add指令
+
+该指令比较简单，sub，mul，div指令都类似
 
 ```go
 // 先看一个只涉及stack的执行函数，实现两个数相加
@@ -312,22 +338,19 @@ func opAdd(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *
    interpreter.intPool.put(x)    // 在intpool对象中销毁big.int型整数x
    return nil, nil
 }
-// 再看一个涉及到memory的执行函数，可能是函数的跳转复原，实现地址+偏移地址操作
-func opRevert(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-	offset, size := stack.pop(), stack.pop()
-	ret := memory.GetPtr(offset.Int64(), size.Int64())
 
-	interpreter.intPool.put(offset, size)
-    // 一般涉及memory的执行函数都是要有返回值的
-	return ret, nil
-}
-// 下面是把合约中第一个变量对应的操作数加入栈中的操作，
+```
+
+### 5.2 push1，push2........push32
+
+```go
+// 下面是把合约中一个变量对应的操作数加入栈中的操作
 func opPush1(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	var (
 		codeLen = uint64(len(contract.Code))
 		integer = interpreter.intPool.get()
 	)
-    // 和前两个不一样是这里调用了pc指针，取得了Push1操作码的后一字节，也就是操作数
+    // 这里调用了pc指针，取得了Push1操作码的后一字节，也就是对应的操作数
 	*pc += 1
 	if *pc < codeLen {
 		stack.push(integer.SetUint64(uint64(contract.Code[*pc])))
@@ -338,10 +361,43 @@ func opPush1(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory
 }
 ```
 
+### 5.3 dup1，dup2..........dup16
+
+```go
+// 从栈顶开始算起，把栈上第x个元素复制一个，存入intpool的栈顶，并且把该元素也存入栈的栈顶。
+func makeDup(size int64) executionFunc {
+   return func(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+      stack.dup(interpreter.intPool, int(size))
+      return nil, nil
+   }
+}
+```
+
+### 5.4 Mload和Mstore指令
+
+```go
+func opMload(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+   // 从制定偏移地址offset开始，获取32字节内存空间的数据，把取到的内容放入栈顶
+   v := stack.peek()
+   offset := v.Int64()
+   v.SetBytes(memory.GetPtr(offset, 32))
+   return nil, nil
+}
+
+func opMstore(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+	mStart, val := stack.pop(), stack.pop()
+    // 从制定偏移地址mStart开始，开辟32字节内存空间，将big.Int类型的val填入此空间
+	memory.Set32(mStart.Uint64(), val)
+
+	interpreter.intPool.put(mStart, val)
+	return nil, nil
+}
+```
+
 附：memory中的GetPtr方法
 
 ```go
-// GetPtr returns the offset + size
+// 返回从offset开始到offset+size的内存空间的数据
 func (m *Memory) GetPtr(offset, size int64) []byte {
    if size == 0 {
       return nil
@@ -352,6 +408,28 @@ func (m *Memory) GetPtr(offset, size int64) []byte {
    }
 
    return nil
+}
+```
+
+### 5.5 SLOAD和SSTORE指令
+
+```go
+// 把location对应的key值中的数据取出来，把取到的内容放入栈顶
+func opSload(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+   loc := stack.peek()
+   val := interpreter.evm.StateDB.GetState(contract.Address(), common.BigToHash(loc))
+   loc.SetBytes(val.Bytes())
+   return nil, nil
+}
+
+// 把location对应key值的数据块中赋值val，默认从0x00开始
+func opSstore(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+   loc := common.BigToHash(stack.pop())
+   val := stack.pop()
+   interpreter.evm.StateDB.SetState(contract.Address(), loc, common.BigToHash(val))
+
+   interpreter.intPool.put(val)
+   return nil, nil
 }
 ```
 
@@ -418,13 +496,107 @@ func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) {
 }
 ```
 
+## 7 示例
+
+### 7.1 以太坊中的合约Code
+
+下面是定义的Code的数据类型（字节数组）
+
+```go
+Code     []byte
+```
+
+1. 存入合约的形式一般为下（十六进制）在存入过程中以8位（两个字符）为一个字节，利用了hex.DecodeString方法
+2. pc++其实是对Code取下一个字节，也就是取实际中的下两个字符
+
+下面是一段合约和其对应的字节码示例
+
+```solidity
+pragma solidity ^0.4.11;
+
+contract C {
+    uint256 a;
+    function C() {
+      a = 1;
+    }
+}
+```
+
+```go
+60606040523415600e57600080fd5b600160008190555060358060236000396000f3006060604052600080fd00a165627a7a72305820d315875f56b532ab371cf9aa86a62850e13eb6ab194847011dcd641b9a9d2f8d0029
+```
+
+### 7.2 合约Code的拆分
+
+下面是部署时用到的代码Binary
+
+```go
+60606040523415600e57600080fd5b600160008190555060358060236000396000f300
+
+PUSH1 0x60 PUSH1 0x40 MSTORE CALLVALUE ISZERO PUSH1 0xE JUMPI PUSH1 0x0 DUP1 REVERT JUMPDEST PUSH1 0x1 PUSH1 0x0 DUP2 SWAP1 SSTORE POP PUSH1 0x35 DUP1 PUSH1 0x23 PUSH1 0x0 CODECOPY PUSH1 0x0 RETURN STOP
+```
+
+下面是智能合约本身的代码runtime
+
+```go
+6060604052600080fd00
+PUSH1 0x60 PUSH1 0x40 MSTORE PUSH1 0x0 DUP1 REVERT STOP
+```
+
+下面是auxdata的内容，不具体运行，合约代码的校验码和solc版本的数据
+
+```go
+a165627a7a72305820d315875f56b532ab371cf9aa86a62850e13eb6ab194847011dcd641b9a9d2f8d0029
+
+LOG1 PUSH6 0x627A7A723058 KECCAK256 0xd3 ISZERO DUP8 0x5f JUMP 0xb5 ORIGIN 0xab CALLDATACOPY SHR 0xf9 0xaa DUP7 0xa6 0x28 POP 0xe1 RETURNDATACOPY 0xb6 0xab NOT 0x48 0x47 ADD SAR 0xcd PUSH5 0x1B9A9D2F8D STOP 0x29
+```
+
+### 7.3 部署代码详解
+
+#### 7.3.1 Payable检查
+
+Payable是智能合约中的一个关键字，附带该关键字的函数中会涉及以太币转账
+
+下面是Payable字段的具体解析
+
+![](./images/payable-check.png)
+
+1. 如果调用智能合约或创建智能合约并附带以太币，则终止程序，进行对合约账户的转账
+2. 如果调用智能合约或创建智能合约附带以太币，则转而执行构造函数
+
+#### 7.3.2 执行构造函数
+
+![](./images/run-constructor.png)
+
+这里主要把外部声明的变量赋值并存储到stateDB里面，最后清空栈。
+
+这里有一个细节是完成了dup2，而不是直接剪切原始数据，保证原始数据不易丢失。
+
+1. 在以太坊中，StateDB 是一个 key-value pair。每一个 key 对应一个 32 字节长的数据块（存储槽）。所以在上图所示的情况里面，0x0 这个 key 所对应的数据块里面存储了 0x1 这个数（因为这个数的数据类型是uint256，即32 字节，高位补 0）。
+2. 实际中，我们不会用到范围这么大的整数，一般一个数据槽中有很多数据
+
+如果声明两个uint128类型变量a，b。在StateDB中的存储方式如下：
+
+```c
+[         b         ][         a         ]
+[16 bytes / 128 bits][16 bytes / 128 bits]
+```
 
 
 
+#### 7.3.3 复制代码
 
+![](E:\git\Geth-Comments\xiezy\geth源码分析\geth-EVM-源码分析\images\copy-code.png)
 
+把栈中对应偏移地址为0x23，长度为0x35的数据存储到内存对应的偏移地址从0x00开始的内存空间中，最后将内存中新存储的内容返回
 
+### 7.4 runtime代码详解
 
+这里对应智能合约被调用的时候的各种方法和函数
+
+![](./images/runtime-code.png)
+
+在我们的例子中，智能合约只有一个构造函数，而没有其他方法，所以上图所示的代码并没有做什么有实际意义的操作。
 
 
 

@@ -82,7 +82,7 @@ type EVMInterpreter struct {
 	hasherBuf common.Hash // Keccak256 hasher result array shared aross opcodes
 
 	readOnly   bool   // Whether to throw on stateful modifications
-	returnData []byte // Last CALL's return data for subsequent reuse
+	returnData []byte // Last CALL's return data for subsequent reuse 合约执行回执
 }
 
 // NewEVMInterpreter returns a new instance of the Interpreter.
