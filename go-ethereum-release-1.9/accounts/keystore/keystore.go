@@ -61,24 +61,25 @@ const walletRefreshCycle = 3 * time.Second
 // KeyStore manages a key storage directory on disk.
 //KeyStore管理磁盘上的密钥存储目录
 type KeyStore struct {
-	storage  keyStore                     // Storage backend, might be cleartext or encrypted
-	 				      //存储后端，可能是明文或加密的
-	cache    *accountCache                // In-memory account cache over the filesystem storage
-					      //文件系统存储中的内存中帐户缓存
-	changes  chan struct{}                // Channel receiving change notifications from the cache
-	    				      //通道从缓存中接收更改通知
+	storage keyStore // Storage backend, might be cleartext or encrypted
+	//存储后端，可能是明文或加密的
+	cache *accountCache // In-memory account cache over the filesystem storage
+	//文件系统存储中的内存中帐户缓存
+	changes chan struct{} // Channel receiving change notifications from the cache
+	//通道从缓存中接收更改通知
 	unlocked map[common.Address]*unlocked // Currently unlocked account (decrypted private keys)
-                                              //当前解锁的帐户（解密的私钥）
-	wallets     []accounts.Wallet       // Wallet wrappers around the individual key files
-					    //各个密钥文件周围的钱包包装
-	updateFeed  event.Feed              // Event feed to notify wallet additions/removals
-					    //活动供稿，用于通知钱包添加/删除
+	//当前解锁的帐户（解密的私钥）
+	wallets []accounts.Wallet // Wallet wrappers around the individual key files
+	//各个密钥文件周围的钱包包装
+	updateFeed event.Feed // Event feed to notify wallet additions/removals
+	//活动供稿，用于通知钱包添加/删除
 	updateScope event.SubscriptionScope // Subscription scope tracking current live listeners
-	                                    //订阅范围跟踪当前的实时监听器
-	updating    bool                    // Whether the event notification loop is running
-					    //事件通知循环是否正在运行
+	//订阅范围跟踪当前的实时监听器
+	updating bool // Whether the event notification loop is running
+	//事件通知循环是否正在运行
 	mu sync.RWMutex
 }
+
 //unlocked一个结构体
 type unlocked struct {
 	*Key
@@ -104,6 +105,7 @@ func NewPlaintextKeyStore(keydir string) *KeyStore {
 	ks.init(keydir)
 	return ks
 }
+
 //初始化keystore实例
 func (ks *KeyStore) init(keydir string) {
 	// Lock the mutex since the account cache might call back with events
@@ -337,7 +339,7 @@ func (ks *KeyStore) SignTx(a accounts.Account, tx *types.Transaction, chainID *b
 // SignHashWithPassphrase signs hash if the private key matching the given address
 // can be decrypted with the given passphrase. The produced signature is in the
 // [R || S || V] format where V is 0 or 1.
-//如果可以使用给定的密码对与给定地址匹配的私钥进行解密，则SignHashWithPassphrase对哈希进行签名。 
+//如果可以使用给定的密码对与给定地址匹配的私钥进行解密，则SignHashWithPassphrase对哈希进行签名。
 //产生的签名在[R || S || V]格式，其中V为0或1。
 func (ks *KeyStore) SignHashWithPassphrase(a accounts.Account, passphrase string, hash []byte) (signature []byte, err error) {
 	_, key, err := ks.getDecryptedKey(a, passphrase)
@@ -359,6 +361,7 @@ func (ks *KeyStore) SignTxWithPassphrase(a accounts.Account, passphrase string, 
 	defer zeroKey(key.PrivateKey)
 
 	// Depending on the presence of the chain ID, sign with EIP155 or homestead
+	// EIP155规范需要chainID参数，即平时命令行使用的"--networkid"参数
 	if chainID != nil {
 		return types.SignTx(tx, types.NewEIP155Signer(chainID), key.PrivateKey)
 	}
