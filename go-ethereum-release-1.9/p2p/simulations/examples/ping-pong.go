@@ -34,12 +34,13 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+//定义一个全局变量的命令行接收参数，默认值为sim
 var adapterType = flag.String("adapter", "sim", `node adapter to use (one of "sim", "exec" or "docker")`)
 
 // main() starts a simulation network which contains nodes running a simple
 // ping-pong protocol
 func main() {
-	flag.Parse()
+	flag.Parse() //用flag.Parse()解析才能使adapterType生效
 
 	// set the log level to Trace
 	log.Root().SetHandler(log.LvlFilterHandler(log.LvlTrace, log.StreamHandler(os.Stderr, log.TerminalFormat(false))))
