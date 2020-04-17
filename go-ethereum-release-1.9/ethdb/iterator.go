@@ -37,11 +37,13 @@ type Iterator interface {
 	// Key returns the key of the current key/value pair, or nil if done. The caller
 	// should not modify the contents of the returned slice, and its contents may
 	// change on the next call to Next.
+	// Key返回当前键/值对的键，如果完成，则返回nil。 调用方不应修改返回的片的内容，并且其内容可能在下次调用Next时更改
 	Key() []byte
 
 	// Value returns the value of the current key/value pair, or nil if done. The
 	// caller should not modify the contents of the returned slice, and its contents
 	// may change on the next call to Next.
+	// Value返回当前键/值对的值，如果完成，则返回nil。
 	Value() []byte
 
 	// Release releases associated resources. Release should always succeed and can
