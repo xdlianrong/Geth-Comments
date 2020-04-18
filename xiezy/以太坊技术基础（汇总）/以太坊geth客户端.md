@@ -60,17 +60,9 @@ git checkout v1.8.17    ## （例子）切换geth版本至v1.8.17
 ```go
 {
   "config": {
-    "chainId": 666,
+    "chainId": 666, 
+    "homesteadBlock": 0
     // 链id，主网chainId为1，testnet的chainId为3
-    "homesteadBlock": 0,
-    "eip150Block": 0,
-    "eip150Hash": "0x0000000000000000000000000000000000000000000000000000000000000000",
-    "eip155Block": 0,
-    "eip158Block": 0,
-    "byzantiumBlock": 0,
-    "constantinopleBlock": 0,
-    "petersburgBlock": 0,
-    "istanbulBlock": 0,
     "ethash": {}
   },
   "nonce": "0x0",
@@ -107,7 +99,7 @@ git checkout v1.8.17    ## （例子）切换geth版本至v1.8.17
 最后启动私有链,这里的networkid要与json文件配置的chainId一样
 
 ```
-./build/bin/geth --datadir ../mychain --networkid 666
+./build/bin/geth --datadir ../mychain --networkid 666 
 ```
 
 ## 4 geth控制台
@@ -115,10 +107,45 @@ git checkout v1.8.17    ## （例子）切换geth版本至v1.8.17
 运行下条指令，与geth控制台交互，整个控制台可以认为是一个web3对象，web3里面定义了许多属性，提供各种方法
 
 ```
-./build/bin/geth --datadir ../mychain --networkid 666 console
+./build/bin/geth --datadir ../mychain --networkid 666 --rpc --nodiscover --allow-insecure-unlock console 
 ```
 
+新建账户
 
+```
+personal.newAccount()
+```
 
+查看全部账户
 
+```css
+eth.accounts
+```
+
+挖矿开始与停止
+
+```
+miner.start(1) // 启动单线程挖矿
+miner.stop()
+miner.start(1);admin.sleepBlocks(1);miner.stop(); // 挖一个块后停止挖矿
+```
+
+账户余额查询
+
+```css
+eth.getBalance(eth.accounts[0])
+```
+
+解锁账户
+
+```css
+personal.unlockAccount(eth.accounts[0])
+```
+
+交易发送
+
+```
+amount = web3.toWei(5,'ether')
+eth.sendTransaction({from:eth.accounts[0],to:eth.accounts[1],value:amount})
+```
 

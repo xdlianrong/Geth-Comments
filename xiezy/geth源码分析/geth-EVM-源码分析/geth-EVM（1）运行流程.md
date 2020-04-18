@@ -1,3 +1,7 @@
+---
+
+---
+
 # EVM源码分析（运行原理）
 
 ## 1 简介
@@ -27,7 +31,9 @@ gas avail：用来记录剩余汽油费
 
 ### 3.1 调用入口core/state_transaction.go
 
-ApplyTransaction函数先将交易信息录入数据库，再创建evm虚拟机，然后执行相关功能
+ApplyTransaction函数先将交易信息录入数据库，再创建evm虚拟机，然后执行相关功能。
+
+ApplyTransaction函数是节点检验过程中对于交易执行或矿工挖矿执行交易时候用到的函数
 
 ```go
 func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gp *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, usedGas *uint64, cfg vm.Config) (*types.Receipt, uint64, error) {
@@ -44,10 +50,34 @@ func ApplyTransaction(config *params.ChainConfig, bc ChainContext, author *commo
     // 把创建好的evm虚拟机的事务应用于和当前交易状态相关
     _, gas, failed, err := ApplyMessage(vmenv, msg, gp)
     if err != nil {
-        return nil, 0, err
-    }
+		return nil, err
+	}
+	// Update the state with pending changes
+	var root []byte
+	if config.IsByzantium(header.Number) {
+		statedb.Finalise(true)
+	} else {
+		root = statedb.IntermediateRoot(config.IsEIP158(header.Number)).Bytes()
+	}
+	*usedGas += gas
 
-    ......
+	// 创建一笔交易回执对象，把交易的hash值，和执行交易过程中用到的gas扣除
+	receipt := types.NewReceipt(root, failed, *usedGas)
+	receipt.TxHash = tx.Hash()
+	receipt.GasUsed = gas
+	// 如果创建了智能合约，把给智能合约分配的地址写入回执
+	if msg.To() == nil {
+		receipt.ContractAddress = crypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
+	}
+	// 交易过程中的日志写入回执
+	receipt.Logs = statedb.GetLogs(tx.Hash())
+    // 为整体回执创建bloom过滤器，便于检索
+	receipt.Bloom = types.CreateBloom(types.Receipts{receipt})
+	receipt.BlockHash = statedb.BlockHash()
+	receipt.BlockNumber = header.Number
+	receipt.TransactionIndex = uint(statedb.TxIndex())
+
+	return receipt, err
 }
 ```
 
@@ -325,7 +355,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
    if evm.depth > int(params.CallCreateDepth) {
       return nil, common.Address{}, gas, ErrDepth
    } 
-   // 判断合约创建方的账户地址余额是否足够支付gas费用，报错后直接return
+   // 判断合约创建方的账户地址余额是否足够支付value费用，报错后直接return
    if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
       return nil, common.Address{}, gas, ErrInsufficientBalance
    }
@@ -349,7 +379,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
    evm.Transfer(evm.StateDB, caller.Address(), address, value)
    // 初始化智能合约，创建新的智能合约对象，注入到合约地址中
    contract := NewContract(caller, AccountRef(address), value, gas)
-   // 设置合约的参数，如合约创建者、合约自身地址、合约剩余gas、合约代码和代码的jumpdests记录（jumpdests记录简单理解为合约代码中函数的跳转关系）
+   // 设置合约的参数，如合约创建者、合约自身地址、合约剩余gas、合约代码和代码的jumpdests记录（jumpdests记录简单理解为合约与合约之间的跳转关系）
    // codeAndHash是creat方法传入的相关参数信息和合约的hash值 
    contract.SetCodeOptionalHash(&address, codeAndHash)
    // 如果以太坊虚拟机被配置成不可递归创建合约，而当前创建合约的过程正是在递归过程中，则直接返回成功，但并没有返回合约代码（第一个返回参数）
@@ -482,7 +512,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
          evm.vmConfig.Tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
       }()
    }
-   // 编译合约，与creat（）不同在于input，creat方法这里是nil
+   // 编译合约，与creat（）不同在于input，creat方法这里是nil，这里面的contract.code也是节点在解码选择器和参数之后生成的code字段，不是合约原始code
    ret, err = run(evm, contract, input, false)
 
    // 报错处理，同creat（)
