@@ -57,5 +57,8 @@ const (
 	// considered immutable (i.e. soft finality). It is used by the downloader as a
 	// hard limit against deep ancestors, by the blockchain against deep reorgs, by
 	// the freezer as the cutoff treshold and by clique as the snapshot trust limit.
+	// ImmutabilityThreshold是将链段视为不可变的块数（即软性终结）。
+	// 下载程序将其用作针对深层祖先的硬性限制，
+	// 区块链针对深度重组的人，由冷冻机作为截止阈值，由团体作为快照信任限度。
 	ImmutabilityThreshold = 90000
 )

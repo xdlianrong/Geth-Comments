@@ -95,7 +95,7 @@ func (db *nofreezedb) Sync() error {
 
 // NewDatabase creates a high level database on top of a given key-value data
 // store without a freezer moving immutable chain segments into cold storage.
-// NewDatabase在给定的键值数据存储之上创建一个高级数据库，而无需使用freezer将不可变链段移动到冷存储中。
+// NewDatabase在给定的键值数据存储之上创建一个高级数据库，而无需使用freezer
 func NewDatabase(db ethdb.KeyValueStore) ethdb.Database {
 	return &nofreezedb{
 		KeyValueStore: db,
@@ -105,6 +105,7 @@ func NewDatabase(db ethdb.KeyValueStore) ethdb.Database {
 // NewDatabaseWithFreezer creates a high level database on top of a given key-
 // value data store with a freezer moving immutable chain segments into cold
 // storage.
+// 带有freezer，给定的键值数据存储之上创建一个高级数据库，包含一个正常的键值数据库和一个freezerdb
 func NewDatabaseWithFreezer(db ethdb.KeyValueStore, freezer string, namespace string) (ethdb.Database, error) {
 	// Create the idle freezer instance
 	frdb, err := newFreezer(freezer, namespace)
@@ -183,6 +184,7 @@ func NewDatabaseWithFreezer(db ethdb.KeyValueStore, freezer string, namespace st
 
 // NewMemoryDatabase creates an ephemeral in-memory key-value database without a
 // freezer moving immutable chain segments into cold storage.
+// 创建一个内存数据库
 func NewMemoryDatabase() ethdb.Database {
 	return NewDatabase(memorydb.New())
 }
@@ -196,6 +198,7 @@ func NewMemoryDatabaseWithCap(size int) ethdb.Database {
 
 // NewLevelDBDatabase creates a persistent key-value database without a freezer
 // moving immutable chain segments into cold storage.
+// 实例化一个leveldb数据库，这个方法在通过创世块创建私链的时候会使用到
 func NewLevelDBDatabase(file string, cache int, handles int, namespace string) (ethdb.Database, error) {
 	db, err := leveldb.New(file, cache, handles, namespace)
 	if err != nil {
@@ -206,6 +209,7 @@ func NewLevelDBDatabase(file string, cache int, handles int, namespace string) (
 
 // NewLevelDBDatabaseWithFreezer creates a persistent key-value database with a
 // freezer moving immutable chain segments into cold storage.
+// 在上面的NewLevelDBDatabase的基础上添加了一个freezerdb
 func NewLevelDBDatabaseWithFreezer(file string, cache int, handles int, freezer string, namespace string) (ethdb.Database, error) {
 	kvdb, err := leveldb.New(file, cache, handles, namespace)
 	if err != nil {
@@ -221,6 +225,7 @@ func NewLevelDBDatabaseWithFreezer(file string, cache int, handles int, freezer 
 
 // InspectDatabase traverses the entire database and checks the size
 // of all different categories of data.
+// InspectDatabase遍历整个数据库并检查所有不同类别数据的大小。
 func InspectDatabase(db ethdb.Database) error {
 	it := db.NewIterator()
 	defer it.Release()

@@ -22,9 +22,11 @@ import (
 
 // StorageSize is a wrapper around a float value that supports user friendly
 // formatting.
+// 对浮点值的大小计量处理
 type StorageSize float64
 
 // String implements the stringer interface.
+// String()实现对size的进制转换
 func (s StorageSize) String() string {
 	if s > 1099511627776 {
 		return fmt.Sprintf("%.2f TiB", s/1099511627776)
@@ -41,6 +43,7 @@ func (s StorageSize) String() string {
 
 // TerminalString implements log.TerminalStringer, formatting a string for console
 // output during logging.
+// 在记录期间格式化用于控制台输出的字符串。
 func (s StorageSize) TerminalString() string {
 	if s > 1099511627776 {
 		return fmt.Sprintf("%.2fTiB", s/1099511627776)

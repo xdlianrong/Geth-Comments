@@ -51,10 +51,12 @@ const (
 	// freezerRecheckInterval is the frequency to check the key-value database for
 	// chain progression that might permit new blocks to be frozen into immutable
 	// storage.
+	// freezerRecheckInterval是检查键值数据库的链进展情况的频率
 	freezerRecheckInterval = time.Minute
 
 	// freezerBatchLimit is the maximum number of blocks to freeze in one batch
 	// before doing an fsync and deleting it from the key-value store.
+	// freezerBatchLimit是在执行fsync并将其从键值存储中删除之前，要在一次批量操作中冻结的最大块数。
 	freezerBatchLimit = 30000
 )
 

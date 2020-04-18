@@ -1,6 +1,6 @@
-# accessors_chain源码分析
+# accessors源码分析
 
-这个文件下的方法都是对区块数据存储及查找等操作。
+accessors_chain，accessors_indexes，accessors_metadata三个文件都是一些区块链与数据库之间交互的方法，侧重点不一样。accessors_chain：区块头，区块体，难度，收据等；accessors_indexes：交易和bloom；accessors_metadata：版本号，config，批处理原像等等。
 
 首先看一些数据结构，位于core/types/block.go当中
 
@@ -47,6 +47,8 @@ type Block struct {
 	ReceivedFrom interface{}
 }
 ```
+
+以区块头和区块体的写入为例：
 
 **根据区块头hash将区块高度存储，再根据区块高度和区块头hash将区块头RLP编码后存储**
 

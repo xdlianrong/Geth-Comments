@@ -223,12 +223,14 @@ func initGenesis(ctx *cli.Context) error {
 	// Open an initialise both full and light databases
 	stack := makeFullNode(ctx)
 	defer stack.Close()
-
+	// 创建chaindata和lightchaindata
 	for _, name := range []string{"chaindata", "lightchaindata"} {
+		// 初始化chaindb
 		chaindb, err := stack.OpenDatabase(name, 0, 0, "")
 		if err != nil {
 			utils.Fatalf("Failed to open database: %v", err)
 		}
+		// 将创世区块的信息写入chaindb中
 		_, hash, err := core.SetupGenesisBlock(chaindb, genesis)
 		if err != nil {
 			utils.Fatalf("Failed to write genesis block: %v", err)

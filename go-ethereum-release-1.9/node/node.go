@@ -606,6 +606,8 @@ func (n *Node) EventMux() *event.TypeMux {
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
+// 当未指定存储路径，即为临时节点时，将创建一个MemoryDatabase
+// 否则将实例化一个LevelDBDatabase。
 func (n *Node) OpenDatabase(name string, cache, handles int, namespace string) (ethdb.Database, error) {
 	if n.config.DataDir == "" {
 		return rawdb.NewMemoryDatabase(), nil
