@@ -1,6 +1,6 @@
 # freezer分析
 
-freezer也是持久化的存储。目前来说，我个人的理解是，freezer是把一些已经确定好的旧区块的数据，和最近新建的区块分开来放置。可以观察一下我们搭建私链的文件目录 geth/chaindb 的内容。
+freezer也是持久化的存储。目前来说，我个人的理解是，freezer是把一些旧区块的数据，和最近新建的区块分开来放置。可以观察一下我们搭建私链的文件目录 geth/chaindb 的内容。
 
 当我们第一次初始化私链时，也就是执行 **init genesis.json**后，chaindb下是这样的：
 
@@ -131,7 +131,7 @@ func newFreezer(datadir string, namespace string) (*freezer, error) {
 }
 ```
 
-然后是对freezer这个对象的一些方法，目前来看的结果是这些方法内部再调用freezer_table的方法，而freezer_table里面的方法又是调用的table的方法，再往前则是回到了ethdb里面。
+然后是对freezer这个对象的一些方法，目前来看的结果是这些方法内部再调用freezer_table的方法，而freezer_table里面的方法又是调用的table的方法，再往前则是回到了ethdb里面的方法。
 
 ```go
 Close()
@@ -155,12 +155,18 @@ freeze(db ethdb.KeyValueStore)
 repair()
 ```
 
-这里需要单独说一下 freeze 方法
+这里需要单独说一下 freeze 方法，这个方法在节点启动后会新起一个线程来监听链的变化进展，当达到阙值时则将开始将区块冷藏化。
 
 ```go
+// freezerRecheckInterval是检查链进展情况的频率
 freezerRecheckInterval = time.Minute
+// freezerBatchLimit是在写入磁盘并将其从键值存储中删除之前，能在一次批量操作中冻结的最大块数。
 freezerBatchLimit = 30000
+// ImmutabilityThreshold是将链段视为不可变的块数（即软性终结）。
+// 在冷冻机中作为截止阈值
 ImmutabilityThreshold = 90000
+// 此时冷藏库中已冷藏的区块数，从90000往后计算
+f.frozen
 ```
 
 ```go
@@ -169,14 +175,14 @@ func (f *freezer) freeze(db ethdb.KeyValueStore) {
 
 	for {
 		// 检索冻结阈值。
-        // hash不得为空
+         // hash不得为空
 		hash := ReadHeadBlockHash(nfdb)
 		if hash == (common.Hash{}) {
 			log.Debug("Current full block hash unavailable") // new chain, empty database
 			time.Sleep(freezerRecheckInterval)
 			continue
 		}
-        // number
+        // number要大于 90000+f.frozen
 		number := ReadHeaderNumber(nfdb, hash)
 		switch {
 		case number == nil:
@@ -202,6 +208,7 @@ func (f *freezer) freeze(db ethdb.KeyValueStore) {
 			continue
 		}
 		// 已经准备好冻结数据，可以分批处理
+         // 一次最多冷藏30000个块。 
 		limit := *number - params.ImmutabilityThreshold
 		if limit-f.frozen > freezerBatchLimit {
 			limit = f.frozen + freezerBatchLimit

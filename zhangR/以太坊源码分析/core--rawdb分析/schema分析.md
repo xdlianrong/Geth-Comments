@@ -95,3 +95,18 @@ func configKey(hash common.Hash) []byte {
 }
 ```
 
+以下是底层键值数据库中，键值的对应情况，实际的value都是将其内容RLP编码后的结果
+
+|                             key                              |                  value                  |
+| :----------------------------------------------------------: | :-------------------------------------: |
+| **headerPrefix**("h") + **num** (uint64 big endian) + **hash** |               **header**                |
+| **headerPrefix**("h") + **num** (uint64 big endian) + **hash** + **headerTDSuffix**("t") |                 **td**                  |
+| **headerPrefix**("h") + **num** (uint64 big endian) + **headerHashSuffix**("n") |                **hash**                 |
+|            **headerNumberPrefix**("H") + **hash**            |       **num** (uint64 big endian)       |
+| **blockBodyPrefix**("b") + **num** (uint64 big endian) + **hash** |             **block body**              |
+| **blockReceiptsPrefix**("r") + **num** (uint64 big endian) + **hash** |           **block receipts**            |
+|              **txLookupPrefix**("l") + **hash**              | **transaction/receipt lookup metadata** |
+| **bloomBitsPrefix**("B") + **bit** (uint16 big endian) + **section** (uint64 big endian) + **hash** |             **bloom bits**              |
+|         **preimagePrefix**("secure-key-") + **hash**         |              **preimage**               |
+|       **configPrefix**("ethereum-config-") + **hash**        |               **config**                |
+
