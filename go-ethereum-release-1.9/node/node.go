@@ -160,8 +160,8 @@ func (n *Node) Register(constructor ServiceConstructor) error {
 
 // Start create a live P2P node and starts running it.
 func (n *Node) Start() error {
-	n.lock.Lock()
-	defer n.lock.Unlock()
+	n.lock.Lock()         //锁定读写
+	defer n.lock.Unlock() //方法退出是解锁读写锁定
 
 	// Short circuit if the node's already running
 	if n.server != nil {
@@ -174,18 +174,19 @@ func (n *Node) Start() error {
 	// Initialize the p2p server. This creates the node key and
 	// discovery databases.
 	n.serverConfig = n.config.P2P
-	n.serverConfig.PrivateKey = n.config.NodeKey()
+	n.serverConfig.PrivateKey = n.config.NodeKey() //每一个节点都会有一个NodeKey，此文件为{$DataDir}/geth/nodekey，没有的话会自动创建
 	n.serverConfig.Name = n.config.NodeName()
 	n.serverConfig.Logger = n.log
 	if n.serverConfig.StaticNodes == nil {
-		n.serverConfig.StaticNodes = n.config.StaticNodes()
+		n.serverConfig.StaticNodes = n.config.StaticNodes() //静态节点文件，此文件为{$DataDir}/static-nodes.json
 	}
 	if n.serverConfig.TrustedNodes == nil {
-		n.serverConfig.TrustedNodes = n.config.TrustedNodes()
+		n.serverConfig.TrustedNodes = n.config.TrustedNodes() //信任节点文件，此文件为{$DataDir}/trusted-nodes.json
 	}
 	if n.serverConfig.NodeDatabase == "" {
-		n.serverConfig.NodeDatabase = n.config.NodeDB()
+		n.serverConfig.NodeDatabase = n.config.NodeDB() //节点数据库文件目录，此目录为{$DataDir}/geth/nodes
 	}
+	//创建p2p服务器
 	running := &p2p.Server{Config: n.serverConfig}
 	n.log.Info("Starting peer-to-peer node", "instance", n.serverConfig.Name)
 
@@ -203,6 +204,7 @@ func (n *Node) Start() error {
 			ctx.services[kind] = s
 		}
 		// Construct and save the service
+		// 创建所有注册的服务
 		service, err := constructor(ctx)
 		if err != nil {
 			return err
@@ -214,9 +216,11 @@ func (n *Node) Start() error {
 		services[kind] = service
 	}
 	// Gather the protocols and start the freshly assembled P2P server
+	// 收集所有的p2p的protocols并插入p2p.Rrotocols
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
+	//启动p2p服务器
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}
@@ -224,6 +228,7 @@ func (n *Node) Start() error {
 	var started []reflect.Type
 	for kind, service := range services {
 		// Start the next service, stopping all previous upon failure
+		// 启动running中的每一个服务
 		if err := service.Start(running); err != nil {
 			for _, kind := range started {
 				services[kind].Stop()
@@ -236,6 +241,7 @@ func (n *Node) Start() error {
 		started = append(started, kind)
 	}
 	// Lastly start the configured RPC interfaces
+	// 启动RPC服务
 	if err := n.startRPC(services); err != nil {
 		for _, service := range services {
 			service.Stop()

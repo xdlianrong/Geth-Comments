@@ -823,6 +823,7 @@ func (pm *ProtocolManager) BroadcastBlock(block *types.Block, propagate bool) {
 		if parent := pm.blockchain.GetBlock(block.ParentHash(), block.NumberU64()-1); parent != nil {
 			td = new(big.Int).Add(block.Difficulty(), pm.blockchain.GetTd(block.ParentHash(), block.NumberU64()-1))
 		} else {
+			// 没有父块称为悬空块，不能广播。创世块也有父区块，其哈希默认为0000000000000000000000000000000000000000000000000000000000000000
 			log.Error("Propagating dangling block", "number", block.Number(), "hash", hash)
 			return
 		}

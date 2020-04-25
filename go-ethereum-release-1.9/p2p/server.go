@@ -435,8 +435,8 @@ func (s *sharedUDPConn) Close() error {
 // Start starts running the server.
 // Servers can not be re-used after stopping.
 func (srv *Server) Start() (err error) {
-	srv.lock.Lock()
-	defer srv.lock.Unlock()
+	srv.lock.Lock()         //锁定读写
+	defer srv.lock.Unlock() //方法退出是解锁读写锁定
 	if srv.running {
 		return errors.New("server already running")
 	}
@@ -457,32 +457,34 @@ func (srv *Server) Start() (err error) {
 		return errors.New("Server.PrivateKey must be set to a non-nil key")
 	}
 	if srv.newTransport == nil {
-		srv.newTransport = newRLPX
+		srv.newTransport = newRLPX //RLPX通信的实现
 	}
 	if srv.listenFunc == nil {
-		srv.listenFunc = net.Listen
+		srv.listenFunc = net.Listen //监听
 	}
-	srv.quit = make(chan struct{})
-	srv.delpeer = make(chan peerDrop)
-	srv.checkpointPostHandshake = make(chan *conn)
-	srv.checkpointAddPeer = make(chan *conn)
-	srv.addtrusted = make(chan *enode.Node)
-	srv.removetrusted = make(chan *enode.Node)
+	srv.quit = make(chan struct{})                 //退出通道
+	srv.delpeer = make(chan peerDrop)              //删除节点通道
+	srv.checkpointPostHandshake = make(chan *conn) //连接已通过加密握手，因此可以知道远程身份（但尚未验证）。
+	srv.checkpointAddPeer = make(chan *conn)       //连接已通过协议握手。 它的功能已知，并且远程身份已验证。
+	srv.addtrusted = make(chan *enode.Node)        //添加信任节点
+	srv.removetrusted = make(chan *enode.Node)     //移除信任节点
 	srv.peerOp = make(chan peerOpFunc)
 	srv.peerOpDone = make(chan struct{})
-
+	//初始化本地节点
 	if err := srv.setupLocalNode(); err != nil {
 		return err
 	}
+	//设置tcp监听服务
 	if srv.ListenAddr != "" {
 		if err := srv.setupListening(); err != nil {
 			return err
 		}
 	}
+	//设置udp监听服务
 	if err := srv.setupDiscovery(); err != nil {
 		return err
 	}
-	srv.setupDialScheduler()
+	srv.setupDialScheduler() //设置对外广播消息服务
 
 	srv.loopWG.Add(1)
 	go srv.run()
@@ -499,7 +501,8 @@ func (srv *Server) setupLocalNode() error {
 	sort.Sort(capsByNameAndVersion(srv.ourHandshake.Caps))
 
 	// Create the local node.
-	db, err := enode.OpenDB(srv.Config.NodeDatabase)
+	// 打开一个节点数据库，用于存储和检索有关网络中已知对等方的信息。
+	db, err := enode.OpenDB(srv.Config.NodeDatabase) //Config.NodeDatabase为节点数据库文件目录，此目录为{$DataDir}/geth/nodes
 	if err != nil {
 		return err
 	}
@@ -549,16 +552,18 @@ func (srv *Server) setupDiscovery() error {
 	if srv.NoDiscovery && !srv.DiscoveryV5 {
 		return nil
 	}
-
+	//产生udp地址
 	addr, err := net.ResolveUDPAddr("udp", srv.ListenAddr)
 	if err != nil {
 		return err
 	}
+	//获取监听udp端口的实例对象
 	conn, err := net.ListenUDP("udp", addr)
 	if err != nil {
 		return err
 	}
 	realaddr := conn.LocalAddr().(*net.UDPAddr)
+	//启动协程监听udp
 	srv.log.Debug("UDP listener up", "addr", realaddr)
 	if srv.NAT != nil {
 		if !realaddr.IP.IsLoopback() {
@@ -566,7 +571,7 @@ func (srv *Server) setupDiscovery() error {
 		}
 	}
 	srv.localnode.SetFallbackUDP(realaddr.Port)
-
+	//启动节点发现功能，版本为4
 	// Discovery V4
 	var unhandled chan discover.ReadPacket
 	var sconn *sharedUDPConn
@@ -589,7 +594,7 @@ func (srv *Server) setupDiscovery() error {
 		srv.ntab = ntab
 		srv.discmix.AddSource(ntab.RandomNodes())
 	}
-
+	//启动节点发现功能，版本为5
 	// Discovery V5
 	if srv.DiscoveryV5 {
 		var ntab *discv5.Network
@@ -653,6 +658,7 @@ func (srv *Server) maxDialedConns() (limit int) {
 
 func (srv *Server) setupListening() error {
 	// Launch the listener.
+	// 启动tcp监听
 	listener, err := srv.listenFunc("tcp", srv.ListenAddr)
 	if err != nil {
 		return err
@@ -673,6 +679,7 @@ func (srv *Server) setupListening() error {
 	}
 
 	srv.loopWG.Add(1)
+	// 使用协程持续监听消息
 	go srv.listenLoop()
 	return nil
 }
@@ -695,23 +702,24 @@ func (srv *Server) run() {
 	defer srv.dialsched.stop()
 
 	var (
-		peers        = make(map[enode.ID]*Peer)
-		inboundCount = 0
-		trusted      = make(map[enode.ID]bool, len(srv.TrustedNodes))
+		peers        = make(map[enode.ID]*Peer)                       //以节点ID-节点的K-V方式存储节点信息，包括信任节点
+		inboundCount = 0                                              //已连接节点数量
+		trusted      = make(map[enode.ID]bool, len(srv.TrustedNodes)) //信任节点的信息
 	)
 	// Put trusted nodes into a map to speed up checks.
 	// Trusted peers are loaded on startup or added via AddTrustedPeer RPC.
 	for _, n := range srv.TrustedNodes {
 		trusted[n.ID()] = true
 	}
-
+	//开启循环 接收指令信息
 running:
 	for {
 		select {
+		// 接收到退出指令，结束循环，执行循环后面的清除代码
 		case <-srv.quit:
 			// The server was stopped. Run the cleanup logic.
 			break running
-
+		// 有节点需要加入到信任节点列表中
 		case n := <-srv.addtrusted:
 			// This channel is used by AddTrustedPeer to add a node
 			// to the trusted node set.
@@ -720,7 +728,7 @@ running:
 			if p, ok := peers[n.ID()]; ok {
 				p.rw.set(trustedConn, true)
 			}
-
+		// 从信任节点列表中移除某节点
 		case n := <-srv.removetrusted:
 			// This channel is used by RemoveTrustedPeer to remove a node
 			// from the trusted node set.
@@ -729,12 +737,12 @@ running:
 			if p, ok := peers[n.ID()]; ok {
 				p.rw.set(trustedConn, false)
 			}
-
+		// 目前不清楚Op的含义
 		case op := <-srv.peerOp:
 			// This channel is used by Peers and PeerCount.
 			op(peers)
 			srv.peerOpDone <- struct{}{}
-
+		// 节点握手过程中的一个环节：已通过加密握手，远程身份是已知的，但尚未经过验证
 		case c := <-srv.checkpointPostHandshake:
 			// A connection has passed the encryption handshake so
 			// the remote identity is known (but hasn't been verified yet).
@@ -743,8 +751,9 @@ running:
 				c.flags |= trustedConn
 			}
 			// TODO: track in-progress inbound node IDs (pre-Peer) to avoid dialing them.
+			// 进行验证
 			c.cont <- srv.postHandshakeChecks(peers, inboundCount, c)
-
+		// 节点握手过程中的一个环节：已通过加密握手，已知其功能并验证了远程身份。
 		case c := <-srv.checkpointAddPeer:
 			// At this point the connection is past the protocol handshake.
 			// Its capabilities are known and the remote identity is verified.
@@ -760,7 +769,7 @@ running:
 				}
 			}
 			c.cont <- err
-
+		// 节点失联，需要删除节点
 		case pd := <-srv.delpeer:
 			// A peer disconnected.
 			d := common.PrettyDuration(mclock.Now() - pd.created)
@@ -772,17 +781,20 @@ running:
 			}
 		}
 	}
-
+	//服务退出
 	srv.log.Trace("P2P networking is spinning down")
 
 	// Terminate discovery. If there is a running lookup it will terminate soon.
+	// 关闭udp4端口
 	if srv.ntab != nil {
 		srv.ntab.Close()
 	}
+	// 关闭节点路由表
 	if srv.DiscV5 != nil {
 		srv.DiscV5.Close()
 	}
 	// Disconnect all peers.
+	// 与所有已知节点断开连接
 	for _, p := range peers {
 		p.Disconnect(DiscQuitting)
 	}

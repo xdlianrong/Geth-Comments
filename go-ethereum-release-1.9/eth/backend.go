@@ -528,12 +528,15 @@ func (s *Ethereum) Protocols() []p2p.Protocol {
 // Start implements node.Service, starting all internal goroutines needed by the
 // Ethereum protocol implementation.
 func (s *Ethereum) Start(srvr *p2p.Server) error {
+	// 启动ENR更新程序循环
 	s.startEthEntryUpdate(srvr.LocalNode())
 
 	// Start the bloom bits servicing goroutines
+	// 启动布隆过滤器
 	s.startBloomHandlers(params.BloomBitsBlocks)
 
 	// Start the RPC service
+	// 启动RPC服务
 	s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
