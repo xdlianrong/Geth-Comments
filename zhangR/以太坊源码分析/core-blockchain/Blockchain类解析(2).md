@@ -30,6 +30,12 @@ func (bc *BlockChain) GasLimit() uint64 {}
 // Genesis 取回genesis区块
 func (bc *BlockChain) Genesis() *types.Block {}
  
+// 获取给定块的第n个祖先。它假设给定的块或它的近祖先是标准的。
+// maxNonCanonical指向一个向下的计数器，它限制在到达标准链之前要单独检查的块的数量。
+// 注意:ancestor == 0返回相同的块，1返回其父块，依此类推。
+func (bc *BlockChain) GetAncestor(hash common.Hash, number, ancestor uint64, maxNonCanonical *uint64) (common.Hash, uint64) {}
+
+
 // 通过hash从数据库或缓存中取到一个区块体(transactions and uncles)或RLP数据
 func (bc *BlockChain) GetBody(hash common.Hash) *types.Body {}
 func (bc *BlockChain) GetBodyRLP(hash common.Hash) rlp.RawValue {}
@@ -40,7 +46,13 @@ func (bc *BlockChain) GetBlock(hash common.Hash, number uint64) *types.Block {}
 func (bc *BlockChain) GetBlockByHash(hash common.Hash) *types.Block {}
 // GetBlockByNumber 通过number取到区块
 func (bc *BlockChain) GetBlockByNumber(number uint64) *types.Block {}
+
+// GetBlockHashesFromHash检索从给定哈希开始的许多块哈希，并获取到genesis块。
+func (bc *BlockChain) GetBlockHashesFromHash(hash common.Hash, max uint64) []common.Hash {}
  
+// GetCanonicalHash返回给定块号的规范hash
+func (bc *BlockChain) GetCanonicalHash(number uint64) common.Hash {}
+
 // 获取给定hash的区块的总难度
 func (bc *BlockChain) GetTd(hash common.Hash, number uint64) *big.Int{}
  
@@ -64,7 +76,10 @@ func (bc *BlockChain) GetReceiptsByHash(hash common.Hash) types.Receipts {}
  
 // GetBlocksFromHash 取到特定hash的区块及其n-1个父区块
 func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*types.Block) {}
- 
+
+// GetTransactionLookup从缓存或数据库中检索与给定交易hash相关联的查找。
+func (bc *BlockChain) GetTransactionLookup(hash common.Hash) *rawdb.LegacyTxLookupEntry {}
+
 // GetUnclesInChain 取回从给定区块到向前回溯特定距离到区块上的所有叔区块
 func (bc *BlockChain) GetUnclesInChain(block *types.Block, length int) []*types.Header {}
  
