@@ -988,3 +988,7 @@ func (pm *ProtocolManager) txsyncLoop64() {
   + 如果当前没有在运行send函数，则运行send匿名函数，否则什么都不做
 + 当上述同步出错，`case err := <-done:`触发，从pending中删除相关信息，通过pick匿名函数确定下一次发送的时间。
 + 如果收到外部退出指令，`case <-pm.quitSync:`触发，直接退出此方法。
+
+## 总结
+
+本文主要讲述了P2P的上层实现，再往下层就是Kademlia协议的具体实现。

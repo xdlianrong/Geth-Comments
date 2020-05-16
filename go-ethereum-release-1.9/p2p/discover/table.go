@@ -45,9 +45,9 @@ const (
 
 	// We keep buckets for the upper 1/15 of distances because
 	// it's very unlikely we'll ever encounter a node that's closer.
-	hashBits          = len(common.Hash{}) * 8
-	nBuckets          = hashBits / 15       // Number of buckets
-	bucketMinDistance = hashBits - nBuckets // Log distance of closest bucket
+	hashBits          = len(common.Hash{}) * 8 // 32Bytes * 8 = 256bits
+	nBuckets          = hashBits / 15          // Number of buckets
+	bucketMinDistance = hashBits - nBuckets    // Log distance of closest bucket
 
 	// IP address limits.
 	bucketIPLimit, bucketSubnet = 2, 24 // at most 2 addresses from the same /24
@@ -234,32 +234,32 @@ func (tab *Table) loop() {
 loop:
 	for {
 		select {
-		case <-refresh.C:
+		case <-refresh.C: // 定时刷新k桶事件，refreshInterval=30 min
 			tab.seedRand()
 			if refreshDone == nil {
 				refreshDone = make(chan struct{})
 				go tab.doRefresh(refreshDone)
 			}
-		case req := <-tab.refreshReq:
+		case req := <-tab.refreshReq: // 刷新k桶的请求事件
 			waiting = append(waiting, req)
 			if refreshDone == nil {
 				refreshDone = make(chan struct{})
 				go tab.doRefresh(refreshDone)
 			}
-		case <-refreshDone:
+		case <-refreshDone: // 刷新k桶的完成事件
 			for _, ch := range waiting {
 				close(ch)
 			}
 			waiting, refreshDone = nil, nil
-		case <-revalidate.C:
+		case <-revalidate.C: // 验证k桶节点有效性，10 second
 			revalidateDone = make(chan struct{})
 			go tab.doRevalidate(revalidateDone)
-		case <-revalidateDone:
+		case <-revalidateDone: // 验证k桶节点有效性完成事件
 			revalidate.Reset(tab.nextRevalidateTime())
 			revalidateDone = nil
-		case <-copyNodes.C:
+		case <-copyNodes.C: // 定时（30秒）将节点存入数据库
 			go tab.copyLiveNodes()
-		case <-tab.closeReq:
+		case <-tab.closeReq: //结束事件监听事件
 			break loop
 		}
 	}
