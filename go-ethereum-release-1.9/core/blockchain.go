@@ -110,7 +110,9 @@ const (
 // CacheConfig contains the configuration values for the trie caching/pruning
 // that's resident in a blockchain.
 type CacheConfig struct {
-	TrieCleanLimit      int           // Memory allowance (MB) to use for caching trie nodes in memory
+	// 内存余量(MB)，用于在内存中缓存trie节点
+	TrieCleanLimit int // Memory allowance (MB) to use for caching trie nodes in memory
+	// 是否为后续块禁用启发式状态预取
 	TrieCleanNoPrefetch bool          // Whether to disable heuristic state prefetching for followup blocks
 	TrieDirtyLimit      int           // Memory limit (MB) at which to start flushing dirty trie nodes to disk
 	TrieDirtyDisabled   bool          // Whether to disable trie write caching and GC altogether (archive node)
@@ -119,7 +121,7 @@ type CacheConfig struct {
 
 // BlockChain represents the canonical chain given a database with a genesis
 // block. The Blockchain manages chain imports, reverts, chain reorganisations.
-//
+// BlockChain 表示了一个规范的链,这个链通过一个包含了创世区块的数据库指定. BlockChain管理了链的插入,还原,重建等操作.
 // Importing blocks in to the block chain happens according to the set of rules
 // defined by the two stage Validator. Processing of blocks is done using the
 // Processor which processes the included transaction. The validation of the state
@@ -131,6 +133,8 @@ type CacheConfig struct {
 // important to note that GetBlock can return any block and does not need to be
 // included in the canonical one where as GetBlockByNumber always represents the
 // canonical chain.
+// GetBlock可能返回任意不在当前规范区块链中的区块,
+// GetBlockByNumber 总是返回当前规范区块链中的区块.
 type BlockChain struct {
 	chainConfig *params.ChainConfig // Chain & network configuration
 	cacheConfig *CacheConfig        // Cache configuration for pruning
@@ -303,6 +307,7 @@ func (bc *BlockChain) getProcInterrupt() bool {
 }
 
 // GetVMConfig returns the block chain VM config.
+// 返回虚拟机设置
 func (bc *BlockChain) GetVMConfig() *vm.Config {
 	return &bc.vmConfig
 }
@@ -311,6 +316,7 @@ func (bc *BlockChain) GetVMConfig() *vm.Config {
 // Note, it's a special case that we connect a non-empty ancient
 // database with an empty node, so that we can plugin the ancient
 // into node seamlessly.
+// 返回该区块链是否为空
 func (bc *BlockChain) empty() bool {
 	genesis := bc.genesisBlock.Hash()
 	for _, hash := range []common.Hash{rawdb.ReadHeadBlockHash(bc.db), rawdb.ReadHeadHeaderHash(bc.db), rawdb.ReadHeadFastBlockHash(bc.db)} {
@@ -323,6 +329,7 @@ func (bc *BlockChain) empty() bool {
 
 // loadLastState loads the last known chain state from the database. This method
 // assumes that the chain manager mutex is held.
+// 加载数据库里面的最新的我们知道的区块链状态.
 func (bc *BlockChain) loadLastState() error {
 	// Restore the last known head block
 	head := rawdb.ReadHeadBlockHash(bc.db)
@@ -388,6 +395,9 @@ func (bc *BlockChain) loadLastState() error {
 // above the new head will be deleted and the new one set. In the case of blocks
 // though, the head may be further rewound if block bodies are missing (non-archive
 // nodes after a fast sync).
+// SetHead将本地链回滚到指定的头部。
+// 通常可用于处理分叉时重选主链。对于Header，新Header上方的所有内容都将被删除，新的头部将被设置。
+// 但如果块体丢失，则会进一步回退（快速同步后的非归档节点）。
 func (bc *BlockChain) SetHead(head uint64) error {
 	log.Warn("Rewinding blockchain", "target", head)
 
@@ -471,6 +481,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 
 // FastSyncCommitHead sets the current head block to the one defined by the hash
 // irrelevant what the chain contents were prior.
+// FastSyncCommitHead快速同步，将当前头块设置为特定hash的区块。
 func (bc *BlockChain) FastSyncCommitHead(hash common.Hash) error {
 	// Make sure that both the block as well at its state trie exists
 	block := bc.GetBlockByHash(hash)
@@ -491,54 +502,64 @@ func (bc *BlockChain) FastSyncCommitHead(hash common.Hash) error {
 }
 
 // GasLimit returns the gas limit of the current HEAD block.
+// GasLimit返回当前头区块的gas limit
 func (bc *BlockChain) GasLimit() uint64 {
 	return bc.CurrentBlock().GasLimit()
 }
 
 // CurrentBlock retrieves the current head block of the canonical chain. The
 // block is retrieved from the blockchain's internal cache.
+// CurrentBlock取回主链的当前头区块，这个区块是从blockchian的内部缓存中取得
 func (bc *BlockChain) CurrentBlock() *types.Block {
 	return bc.currentBlock.Load().(*types.Block)
 }
 
 // CurrentFastBlock retrieves the current fast-sync head block of the canonical
 // chain. The block is retrieved from the blockchain's internal cache.
+// CurrentFastBlock取回主链的当前fast-sync头区块，这个区块是从blockchian的内部缓存中取得
 func (bc *BlockChain) CurrentFastBlock() *types.Block {
 	return bc.currentFastBlock.Load().(*types.Block)
 }
 
 // Validator returns the current validator.
+// Validator返回当前validator.
 func (bc *BlockChain) Validator() Validator {
 	return bc.validator
 }
 
 // Processor returns the current processor.
+// Processor返回当前processor
 func (bc *BlockChain) Processor() Processor {
 	return bc.processor
 }
 
 // State returns a new mutable state based on the current HEAD block.
+// State 根据当前头区块返回一个可修改的状态
 func (bc *BlockChain) State() (*state.StateDB, error) {
 	return bc.StateAt(bc.CurrentBlock().Root())
 }
 
 // StateAt returns a new mutable state based on a particular point in time.
+// StateAt 根据特定时间点返回新的可变状态
 func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 	return state.New(root, bc.stateCache)
 }
 
 // StateCache returns the caching database underpinning the blockchain instance.
+// StateCache返回支持区块链实例的缓存数据库。
 func (bc *BlockChain) StateCache() state.Database {
 	return bc.stateCache
 }
 
 // Reset purges the entire blockchain, restoring it to its genesis state.
+//  Reset重置清除整个区块链，将其恢复到genesis state.
 func (bc *BlockChain) Reset() error {
 	return bc.ResetWithGenesisBlock(bc.genesisBlock)
 }
 
 // ResetWithGenesisBlock purges the entire blockchain, restoring it to the
 // specified genesis state.
+// ResetWithGenesisBlock 清除整个区块链, 用特定的genesis state重塑，被Reset所引用
 func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 	// Dump the entire block chain and purge the caches
 	if err := bc.SetHead(0); err != nil {
@@ -573,6 +594,9 @@ func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 //
 // This method only rolls back the current block. The current header and current
 // fast block are left intact.
+// repair尝试通过回滚当前块来修复当前的区块链，直到找到具有关联状态的块。
+// 用于修复由崩溃/断电或简单的非提交尝试导致的不完整的数据库写入。
+// 此方法仅回滚当前块。 当前标头和当前快速块保持不变。
 func (bc *BlockChain) repair(head **types.Block) error {
 	for {
 		// Abort if we've rewound to a head block that does have associated state
@@ -589,6 +613,7 @@ func (bc *BlockChain) repair(head **types.Block) error {
 	}
 }
 
+// 将活动链或其子集写入给定的编写器.
 // Export writes the active chain to the given writer.
 func (bc *BlockChain) Export(w io.Writer) error {
 	return bc.ExportN(w, uint64(0), bc.CurrentBlock().NumberU64())
@@ -627,6 +652,9 @@ func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
 // or if they are on a different side chain.
 //
 // Note, this function assumes that the `mu` mutex is held!
+// writeHeadBlock向当前块链注入一个新的头块。
+// 此方法假设该块确实是一个真头。如果它们是旧的，或者它们在不同的侧链上，
+// 它还会将head header和head fast sync块重置为相同的块。
 func (bc *BlockChain) writeHeadBlock(block *types.Block) {
 	// If the block is on a side chain or an unknown one, force other heads onto it too
 	updateHeads := rawdb.ReadCanonicalHash(bc.db, block.NumberU64()) != block.Hash()
@@ -657,10 +685,12 @@ func (bc *BlockChain) writeHeadBlock(block *types.Block) {
 }
 
 // Genesis retrieves the chain's genesis block.
+// Genesis 取回genesis区块
 func (bc *BlockChain) Genesis() *types.Block {
 	return bc.genesisBlock
 }
 
+// 通过hash从数据库或缓存中取到一个区块体(transactions and uncles)或RLP数据
 // GetBody retrieves a block body (transactions and uncles) from the database by
 // hash, caching it if found.
 func (bc *BlockChain) GetBody(hash common.Hash) *types.Body {
@@ -703,6 +733,7 @@ func (bc *BlockChain) GetBodyRLP(hash common.Hash) rlp.RawValue {
 }
 
 // HasBlock checks if a block is fully present in the database or not.
+// HasBlock检验hash对应的区块是否完全存在数据库中
 func (bc *BlockChain) HasBlock(hash common.Hash, number uint64) bool {
 	if bc.blockCache.Contains(hash) {
 		return true
@@ -711,6 +742,7 @@ func (bc *BlockChain) HasBlock(hash common.Hash, number uint64) bool {
 }
 
 // HasFastBlock checks if a fast block is fully present in the database or not.
+// HasFastBlock检查一个快速块是否完全出现在数据库中。
 func (bc *BlockChain) HasFastBlock(hash common.Hash, number uint64) bool {
 	if !bc.HasBlock(hash, number) {
 		return false
@@ -722,6 +754,7 @@ func (bc *BlockChain) HasFastBlock(hash common.Hash, number uint64) bool {
 }
 
 // HasState checks if state trie is fully present in the database or not.
+// HasState检验state trie是否完全存在数据库中
 func (bc *BlockChain) HasState(hash common.Hash) bool {
 	_, err := bc.stateCache.OpenTrie(hash)
 	return err == nil
@@ -729,6 +762,7 @@ func (bc *BlockChain) HasState(hash common.Hash) bool {
 
 // HasBlockAndState checks if a block and associated state trie is fully present
 // in the database or not, caching it if present.
+//HasBlockAndState检验hash对应的block和state trie是否完全存在数据库中
 func (bc *BlockChain) HasBlockAndState(hash common.Hash, number uint64) bool {
 	// Check first that the block itself is known
 	block := bc.GetBlock(hash, number)
@@ -740,6 +774,7 @@ func (bc *BlockChain) HasBlockAndState(hash common.Hash, number uint64) bool {
 
 // GetBlock retrieves a block from the database by hash and number,
 // caching it if found.
+// GetBlock 通过hash和number取到区块
 func (bc *BlockChain) GetBlock(hash common.Hash, number uint64) *types.Block {
 	// Short circuit if the block's already in the cache, retrieve otherwise
 	if block, ok := bc.blockCache.Get(hash); ok {
@@ -755,6 +790,7 @@ func (bc *BlockChain) GetBlock(hash common.Hash, number uint64) *types.Block {
 }
 
 // GetBlockByHash retrieves a block from the database by hash, caching it if found.
+// GetBlockByHash 通过hash取到区块
 func (bc *BlockChain) GetBlockByHash(hash common.Hash) *types.Block {
 	number := bc.hc.GetBlockNumber(hash)
 	if number == nil {
@@ -765,6 +801,7 @@ func (bc *BlockChain) GetBlockByHash(hash common.Hash) *types.Block {
 
 // GetBlockByNumber retrieves a block from the database by number, caching it
 // (associated with its hash) if found.
+// GetBlockByNumber 通过number取到区块
 func (bc *BlockChain) GetBlockByNumber(number uint64) *types.Block {
 	hash := rawdb.ReadCanonicalHash(bc.db, number)
 	if hash == (common.Hash{}) {
@@ -774,6 +811,7 @@ func (bc *BlockChain) GetBlockByNumber(number uint64) *types.Block {
 }
 
 // GetReceiptsByHash retrieves the receipts for all transactions in a given block.
+// GetReceiptsByHash 在特定的区块中取到所有交易的收据
 func (bc *BlockChain) GetReceiptsByHash(hash common.Hash) types.Receipts {
 	if receipts, ok := bc.receiptsCache.Get(hash); ok {
 		return receipts.(types.Receipts)
@@ -792,6 +830,7 @@ func (bc *BlockChain) GetReceiptsByHash(hash common.Hash) types.Receipts {
 
 // GetBlocksFromHash returns the block corresponding to hash and up to n-1 ancestors.
 // [deprecated by eth/62]
+// GetBlocksFromHash 取到特定hash的区块及其n-1个父区块
 func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*types.Block) {
 	number := bc.hc.GetBlockNumber(hash)
 	if number == nil {
@@ -811,6 +850,7 @@ func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*type
 
 // GetUnclesInChain retrieves all the uncles from a given block backwards until
 // a specific distance is reached.
+// GetUnclesInChain 取回从给定区块到向前回溯特定距离到区块上的所有叔区块
 func (bc *BlockChain) GetUnclesInChain(block *types.Block, length int) []*types.Header {
 	uncles := []*types.Header{}
 	for i := 0; block != nil && i < length; i++ {
@@ -822,12 +862,14 @@ func (bc *BlockChain) GetUnclesInChain(block *types.Block, length int) []*types.
 
 // TrieNode retrieves a blob of data associated with a trie node (or code hash)
 // either from ephemeral in-memory cache, or from persistent storage.
+// TrieNode从memory缓存或storage中检索与trie节点hash相关联的数据。
 func (bc *BlockChain) TrieNode(hash common.Hash) ([]byte, error) {
 	return bc.stateCache.TrieDB().Node(hash)
 }
 
 // Stop stops the blockchain service. If any imports are currently in progress
 // it will abort them using the procInterrupt.
+// Stop 停止区块链服务，如果有正在import的进程，它会使用procInterrupt来取消。
 func (bc *BlockChain) Stop() {
 	if !atomic.CompareAndSwapInt32(&bc.running, 0, 1) {
 		return
@@ -896,6 +938,7 @@ const (
 
 // Rollback is designed to remove a chain of links from the database that aren't
 // certain enough to be valid.
+// Rollback 旨在从数据库中删除不确定有效的链片段
 func (bc *BlockChain) Rollback(chain []common.Hash) {
 	bc.chainmu.Lock()
 	defer bc.chainmu.Unlock()
@@ -942,6 +985,8 @@ func (bc *BlockChain) Rollback(chain []common.Hash) {
 
 // truncateAncient rewinds the blockchain to the specified header and deletes all
 // data in the ancient store that exceeds the specified header.
+// truncateAncient将区块链回滚到指定的标头，并删除ancient store中超过指定标头的所有数据。
+// Purge 用于完全清除缓存
 func (bc *BlockChain) truncateAncient(head uint64) error {
 	frozen, err := bc.db.Ancients()
 	if err != nil {
@@ -980,6 +1025,7 @@ type numberHash struct {
 
 // InsertReceiptChain attempts to complete an already existing header chain with
 // transaction and receipt data.
+// InsertReceiptChain 使用交易和收据数据来完成已经存在的headerchain
 func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain []types.Receipts, ancientLimit uint64) (int, error) {
 	// We don't require the chainMu here since we want to maximize the
 	// concurrency of header insertion and receipt insertion.
@@ -1261,6 +1307,7 @@ var lastWrite uint64
 // writeBlockWithoutState writes only the block and its metadata to the database,
 // but does not write any state. This is used to construct competing side forks
 // up to the point where they exceed the canonical total difficulty.
+// WriteBlockWithoutState仅将块及其元数据写入数据库，但不写入任何状态。 这用于构建竞争方叉，直到超过规范总难度。
 func (bc *BlockChain) writeBlockWithoutState(block *types.Block, td *big.Int) (err error) {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
@@ -1276,6 +1323,7 @@ func (bc *BlockChain) writeBlockWithoutState(block *types.Block, td *big.Int) (e
 
 // writeKnownBlock updates the head block flag with a known block
 // and introduces chain reorg if necessary.
+// writeKnownBlock用一个已知的块更新头块标志，并在必要时引入chain reorg。
 func (bc *BlockChain) writeKnownBlock(block *types.Block) error {
 	bc.wg.Add(1)
 	defer bc.wg.Done()
@@ -1290,6 +1338,7 @@ func (bc *BlockChain) writeKnownBlock(block *types.Block) error {
 	return nil
 }
 
+// WriteBlockWithState将块和所有相关状态写入数据库，writeBlockWithState希望持有链互斥锁。
 // WriteBlockWithState writes the block and all associated state to the database.
 func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.Receipt, logs []*types.Log, state *state.StateDB, emitHeadEvent bool) (status WriteStatus, err error) {
 	bc.chainmu.Lock()
@@ -1442,6 +1491,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 // addFutureBlock checks if the block is within the max allowed window to get
 // accepted for future processing, and returns an error if the block is too far
 // ahead and was not added.
+// addFutureBlock检查该块是否在允许接受的最大处理窗口内，如果该块超前太远而没有被添加，则返回一个错误。
 func (bc *BlockChain) addFutureBlock(block *types.Block) error {
 	max := uint64(time.Now().Unix() + maxTimeFutureBlocks)
 	if block.Time() > max {
@@ -1457,6 +1507,8 @@ func (bc *BlockChain) addFutureBlock(block *types.Block) error {
 // wrong.
 //
 // After insertion is done, all accumulated events will be fired.
+// InsertChain尝试将给定批量的block插入到规范链中，否则，创建一个分叉。 如果返回错误，它将返回失败块的索引号以及描述错误的错误。
+// 插入完成后，将触发所有累积的事件。
 func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 	// Sanity check that we have something meaningful to import
 	if len(chain) == 0 {
@@ -1501,6 +1553,8 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 // racey behaviour. If a sidechain import is in progress, and the historic state
 // is imported, but then new canon-head is added before the actual sidechain
 // completes, then the historic state could be pruned again
+// insertChain将执行实际的链插入和事件聚合。
+// 此方法作为单独方法存在的唯一原因是使用延迟语句使锁定更清晰。
 func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, error) {
 	// If the chain is terminating, don't even bother starting up
 	if atomic.LoadInt32(&bc.procInterrupt) == 1 {
@@ -1775,6 +1829,8 @@ func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, er
 //
 // The method writes all (header-and-body-valid) blocks to disk, then tries to
 // switch over to the new chain if the TD exceeded the current chain.
+// 当导入批处理遇到修剪后的祖先错误时调用insertSideChain，当找到具有足够旧的fork块的sidechain时发生这种错误。
+// 该方法将所有(header-and-body-valid)块写到磁盘，然后如果TD超过当前链，则尝试切换到新链。
 func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (int, error) {
 	var (
 		externTd *big.Int
@@ -1895,6 +1951,7 @@ func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (i
 // reorg takes two blocks, an old chain and a new chain and will reconstruct the
 // blocks and inserts them to be part of the new canonical chain and accumulates
 // potential missing transactions and post an event about them.
+// reorgs需要两个块、一个旧链以及一个新链，并将重新构建块然后将它们插入到新的规范链中，并累积潜在的缺失交易并发布有关它们的事件
 func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	var (
 		newChain    types.Blocks
@@ -2059,6 +2116,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	return nil
 }
 
+// 处理未来区块链
 func (bc *BlockChain) update() {
 	futureTimer := time.NewTicker(5 * time.Second)
 	defer futureTimer.Stop()
@@ -2073,6 +2131,7 @@ func (bc *BlockChain) update() {
 }
 
 // BadBlocks returns a list of the last 'bad blocks' that the client has seen on the network
+// BadBlocks 处理客户端从网络上获取的最近的bad block列表
 func (bc *BlockChain) BadBlocks() []*types.Block {
 	blocks := make([]*types.Block, 0, bc.badBlocks.Len())
 	for _, hash := range bc.badBlocks.Keys() {
@@ -2085,11 +2144,13 @@ func (bc *BlockChain) BadBlocks() []*types.Block {
 }
 
 // addBadBlock adds a bad block to the bad-block LRU cache
+// addBadBlock 把bad block放入缓存
 func (bc *BlockChain) addBadBlock(block *types.Block) {
 	bc.badBlocks.Add(block.Hash(), block)
 }
 
 // reportBlock logs a bad block error.
+// reportBlock记录一个严重的块错误。
 func (bc *BlockChain) reportBlock(block *types.Block, receipts types.Receipts, err error) {
 	bc.addBadBlock(block)
 
@@ -2120,6 +2181,10 @@ Error: %v
 // should be done or not. The reason behind the optional check is because some
 // of the header retrieval mechanisms already need to verify nonces, as well as
 // because nonces can be verified sparsely, not needing to check each.
+// InsertHeaderChain尝试将给定的头链插入到本地链中，可能会创建reorg。
+// 如果返回一个错误，它将返回失败消息头的索引号以及描述出错原因的错误。
+// verify参数可用于微调是否应该进行nonce验证。
+// 可选检查背后的原因是，一些标头检索机制已经需要验证nonces，以及可以稀疏地验证nonces，而不需要逐个检查。
 func (bc *BlockChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (int, error) {
 	start := time.Now()
 	if i, err := bc.hc.ValidateHeaderChain(chain, checkFreq); err != nil {
@@ -2142,47 +2207,55 @@ func (bc *BlockChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (i
 
 // CurrentHeader retrieves the current head header of the canonical chain. The
 // header is retrieved from the HeaderChain's internal cache.
+// CurrentHeader检索规范链的当前头区块header。从HeaderChain的内部缓存中检索标头。
 func (bc *BlockChain) CurrentHeader() *types.Header {
 	return bc.hc.CurrentHeader()
 }
 
 // GetTd retrieves a block's total difficulty in the canonical chain from the
 // database by hash and number, caching it if found.
+// 获取给定hash的区块的总难度,如果找到则缓存它。
 func (bc *BlockChain) GetTd(hash common.Hash, number uint64) *big.Int {
 	return bc.hc.GetTd(hash, number)
 }
 
 // GetTdByHash retrieves a block's total difficulty in the canonical chain from the
 // database by hash, caching it if found.
+// GetTdByHash通过哈希从数据库中检索规范链中的块的总难度，如果找到则缓存它。
 func (bc *BlockChain) GetTdByHash(hash common.Hash) *big.Int {
 	return bc.hc.GetTdByHash(hash)
 }
 
 // GetHeader retrieves a block header from the database by hash and number,
 // caching it if found.
+// 获取给定hash和number区块的header
 func (bc *BlockChain) GetHeader(hash common.Hash, number uint64) *types.Header {
 	return bc.hc.GetHeader(hash, number)
 }
 
 // GetHeaderByHash retrieves a block header from the database by hash, caching it if
 // found.
+// 获取给定hash的区块header
 func (bc *BlockChain) GetHeaderByHash(hash common.Hash) *types.Header {
 	return bc.hc.GetHeaderByHash(hash)
 }
 
 // HasHeader checks if a block header is present in the database or not, caching
 // it if present.
+// 检查给定hash和number的区块的区块头是否存在数据库
 func (bc *BlockChain) HasHeader(hash common.Hash, number uint64) bool {
 	return bc.hc.HasHeader(hash, number)
 }
 
 // GetCanonicalHash returns the canonical hash for a given block number
+// GetCanonicalHash返回给定块号的规范hash
 func (bc *BlockChain) GetCanonicalHash(number uint64) common.Hash {
 	return bc.hc.GetCanonicalHash(number)
 }
 
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given
 // hash, fetching towards the genesis block.
+// GetBlockHashesFromHash检索从给定哈希开始的许多块哈希，并获取到genesis块。
 func (bc *BlockChain) GetBlockHashesFromHash(hash common.Hash, max uint64) []common.Hash {
 	return bc.hc.GetBlockHashesFromHash(hash, max)
 }
@@ -2192,18 +2265,23 @@ func (bc *BlockChain) GetBlockHashesFromHash(hash common.Hash, max uint64) []com
 // number of blocks to be individually checked before we reach the canonical chain.
 //
 // Note: ancestor == 0 returns the same block, 1 returns its parent and so on.
+// 获取给定块的第n个祖先。它假设给定的块或它的近祖先是标准的。
+// maxNonCanonical指向一个向下的计数器，它限制在到达标准链之前要单独检查的块的数量。
+// 注意:ancestor == 0返回相同的块，1返回其父块，依此类推。
 func (bc *BlockChain) GetAncestor(hash common.Hash, number, ancestor uint64, maxNonCanonical *uint64) (common.Hash, uint64) {
 	return bc.hc.GetAncestor(hash, number, ancestor, maxNonCanonical)
 }
 
 // GetHeaderByNumber retrieves a block header from the database by number,
 // caching it (associated with its hash) if found.
+// 获取给定hash的区块header
 func (bc *BlockChain) GetHeaderByNumber(number uint64) *types.Header {
 	return bc.hc.GetHeaderByNumber(number)
 }
 
 // GetTransactionLookup retrieves the lookup associate with the given transaction
 // hash from the cache or database.
+// GetTransactionLookup从缓存或数据库中检索与给定交易hash相关联的查找。
 func (bc *BlockChain) GetTransactionLookup(hash common.Hash) *rawdb.LegacyTxLookupEntry {
 	// Short circuit if the txlookup already in the cache, retrieve otherwise
 	if lookup, exist := bc.txLookupCache.Get(hash); exist {
@@ -2224,6 +2302,7 @@ func (bc *BlockChain) Config() *params.ChainConfig { return bc.chainConfig }
 // Engine retrieves the blockchain's consensus engine.
 func (bc *BlockChain) Engine() consensus.Engine { return bc.engine }
 
+// 对一些事件的注册
 // SubscribeRemovedLogsEvent registers a subscription of RemovedLogsEvent.
 func (bc *BlockChain) SubscribeRemovedLogsEvent(ch chan<- RemovedLogsEvent) event.Subscription {
 	return bc.scope.Track(bc.rmLogsFeed.Subscribe(ch))

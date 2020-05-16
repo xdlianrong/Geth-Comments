@@ -30,6 +30,7 @@ import (
 // statePrefetcher is a basic Prefetcher, which blindly executes a block on top
 // of an arbitrary state with the goal of prefetching potentially useful state
 // data from disk before the main block processor start executing.
+// 在任意状态之上执行一个块，目的是在主块处理器开始执行之前从磁盘预取可能有用的状态数据。
 type statePrefetcher struct {
 	config *params.ChainConfig // Chain configuration options
 	bc     *BlockChain         // Canonical block chain
@@ -48,6 +49,7 @@ func newStatePrefetcher(config *params.ChainConfig, bc *BlockChain, engine conse
 // Prefetch processes the state changes according to the Ethereum rules by running
 // the transaction messages using the statedb, but any changes are discarded. The
 // only goal is to pre-cache transaction signatures and state trie nodes.
+// 唯一的目标是预先缓存交易签名和状态trie节点。
 func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, cfg vm.Config, interrupt *uint32) {
 	var (
 		header  = block.Header()
@@ -70,6 +72,8 @@ func (p *statePrefetcher) Prefetch(block *types.Block, statedb *state.StateDB, c
 // precacheTransaction attempts to apply a transaction to the given state database
 // and uses the input parameters for its environment. The goal is not to execute
 // the transaction successfully, rather to warm up touched data slots.
+// precacheTransaction尝试将交易应用于给定的状态数据库，并使用其环境的输入参数。
+// 我们的目标不是成功地执行事务，而是预热已触及的数据槽。
 func precacheTransaction(config *params.ChainConfig, bc ChainContext, author *common.Address, gaspool *GasPool, statedb *state.StateDB, header *types.Header, tx *types.Transaction, cfg vm.Config) error {
 	// Convert the transaction into an executable message and pre-cache its sender
 	msg, err := tx.AsMessage(types.MakeSigner(config, header.Number))

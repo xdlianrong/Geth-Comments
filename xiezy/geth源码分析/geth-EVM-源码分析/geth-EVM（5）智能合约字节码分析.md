@@ -1,4 +1,4 @@
-# EVM源码分析（字节码分析 ）
+# EVM源码分析（合约字节码分析 ）
 
 ## 1 以太坊中的合约Code
 
@@ -305,7 +305,7 @@ tag 3
       JUMP [out]	
 ```
 
-## 2.3 waterflow-two合约
+## 4 waterflow-two合约
 
 ```solidity
 pragma solidity ^0.5.0;
@@ -329,15 +329,130 @@ contract watertap {
 1. 这里添加了构造函数。在合约部署时也会附带input字段。input字段并没有传入run（）方法；但是在合约部署，最终用go语言去解释并执行构造函数的时候调用了input。
 2. 这里的外部变量a，在构造函数实现并存储进stateDB，最终要进入合约账户地址（key）对应的存储状态，存储状态又是一个map，以这个例子为例：a是key，传入并付给a的值为value。
 
+## 5 struct_contract合约
 
+先看一下合约的具体内容
 
+```solidity
+pragma solidity ^0.5.1;
 
+contract Coin {
+    address public minter;
+    uint public a;
+    
+    constructor() public {
+        minter = msg.sender;
+    }
+    
+    function change_a(uint new_a) public{
+        a  = new_a;
+    }
+    
+    function kill() public{
+       if (minter == msg.sender) {    // 权限检查
+          selfdestruct(msg.sender);   // 销毁合约
+       }
+    }
 
-后序：
+}
+```
 
-1.selfdestruct()销毁合约增加
+### 5.1 运行结果
 
-2.合约调用增加至（4）
+（1）部署合约之后，先调用change_a方法给状态变量a赋值“233”
 
+![](./images/struct-contract-01.png)
 
+（2）更换账户地址，调用kill方法。再调用change_a方法改变a的值，发现合约依然存在，并且可以运行
+
+![](./images/struct-contract-02.png)
+
+（3）将调用账户地址换回来（即换成minter的地址），再去调用kill方法，最后进行检验。发现此时Coin合约已经被销毁，并且无法再被调用
+
+![](./images/struct-contract-03.png)
+
+### 5.2 调用销毁
+
+```
+pragma solidity ^0.5.1;
+
+contract Coin {
+    address public minter;
+    uint public a;
+    
+    constructor() public {
+        minter = msg.sender;
+    }
+    
+    function change_a(uint new_a) public{
+        a  = new_a;
+    }
+    // 注意这里没有设置调用权限
+    function kill() public{
+          selfdestruct(msg.sender); // 销毁合约
+    }
+
+}
+
+contract B_call {    
+	address public minter;   
+	uint public a;    
+	function call_call(address addr) public {        
+		addr.call(abi.encode(bytes4(keccak256("kill()"))));        
+    }
+} 
+
+contract B_delegatecall {    
+	address public minter;   
+	uint public a;     
+	function delegate_call(address addr) public {            
+		addr.delegatecall(abi.encode(bytes4(keccak256("kill()"))));       
+    }
+} 
+```
+
+（1）下面是用call方法调用销毁了Coin合约
+
+![](./images/struct-contract-call.png)
+
+（2）下面用delegatecall方法销毁了调用方合约B_delegatecall本身
+
+![](./images/struct-contract-delegate.png)
+
+### 5.3 EVM实现
+
+```assembly
+JUMPDEST 			
+CALLER 			
+PUSH FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF			
+AND 		     	; 将调用方的地址与ffffff...相与，实际就是调用方的地址
+SELFDESTRUCT 
+```
+
+下面是自毁方法对应的指令
+
+```go
+SELFDESTRUCT: {
+   execute:    opSuicide,
+   dynamicGas: gasSelfdestruct,
+   minStack:   minStack(1, 0),
+   maxStack:   maxStack(1, 0),
+   halts:      true,
+   valid:      true,
+   writes:     true,
+},
+```
+
+下面是自毁指令的具体执行函数
+
+```go
+func opSuicide(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+   balance := interpreter.evm.StateDB.GetBalance(contract.Address())
+   // 将合约账户中剩余的余额转移到，调用方地址账户中
+   interpreter.evm.StateDB.AddBalance(common.BigToAddress(stack.pop()), balance)
+   // 调用状态数据库进行销毁
+   interpreter.evm.StateDB.Suicide(contract.Address())
+   return nil, nil
+}
+```
 
