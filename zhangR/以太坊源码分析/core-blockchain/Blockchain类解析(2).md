@@ -1,4 +1,7 @@
 ```go
+// addFutureBlock检查该块是否在允许接受的最大处理窗口内，如果该块超前太远而没有被添加，则返回一个错误。
+func (bc *BlockChain) addFutureBlock(block *types.Block) error {}
+
 // BadBlocks 处理客户端从网络上获取的最近的bad block列表
 func (bc *BlockChain) BadBlocks() []*types.Block {}
  
@@ -41,6 +44,9 @@ func (bc *BlockChain) GetBlockByNumber(number uint64) *types.Block {}
 // 获取给定hash的区块的总难度
 func (bc *BlockChain) GetTd(hash common.Hash, number uint64) *big.Int{}
  
+// GetTdByHash通过哈希从数据库中检索规范链中的块的总难度，如果找到则缓存它。
+func (bc *BlockChain) GetTdByHash(hash common.Hash) *big.Int {}
+
 // 获取给定hash和number区块的header
 func (bc *BlockChain) GetHeader(hash common.Hash, number uint64) *types.Header{}
  
@@ -86,11 +92,18 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error){}
 // 此方法作为单独方法存在的唯一原因是使用延迟语句使锁定更清晰。
 func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*types.Log, error){}
  
-// InsertHeaderChain尝试将给定的headerchain插入到本地链中，可能会创建一个重组
+// InsertHeaderChain尝试将给定的头链插入到本地链中，可能会创建reorg。
+// 如果返回一个错误，它将返回失败消息头的索引号以及描述出错原因的错误。
+// verify参数可用于微调是否应该进行nonce验证。
+// 可选检查背后的原因是，一些标头检索机制已经需要验证nonces，以及可以稀疏地验证nonces，而不需要逐个检查。
 func (bc *BlockChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (int, error){}
  
 // InsertReceiptChain 使用交易和收据数据来完成已经存在的headerchain
 func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain []types.Receipts) (int, error) {}
+
+// 当导入批处理遇到修剪后的祖先错误时调用insertSideChain，当找到具有足够旧的fork块的sidechain时发生这种错误。
+// 该方法将所有(header-and-body-valid)块写到磁盘，然后如果TD超过当前链，则尝试切换到新链。
+func (bc *BlockChain) insertSideChain(block *types.Block, it *insertIterator) (int, error) {}
  
 //loadLastState从数据库加载最后一个已知的链状态。
 func (bc *BlockChain) loadLastState() error {}
@@ -106,9 +119,12 @@ func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {}
  
 // repair尝试通过回滚当前块来修复当前的区块链，直到找到具有关联状态的块。
 // 用于修复由崩溃/断电或简单的非提交尝试导致的不完整的数据库写入。
-//此方法仅回滚当前块。 当前标头和当前快速块保持不变。
+// 此方法仅回滚当前块。 当前标头和当前快速块保持不变。
 func (bc *BlockChain) repair(head **types.Block) error {}
- 
+
+// reportBlock记录一个严重的块错误。
+func (bc *BlockChain) reportBlock(block *types.Block, receipts types.Receipts, err error) {}
+
 // reorgs需要两个块、一个旧链以及一个新链，并将重新构建块然后将它们插入到新的规范链中，并累积潜在的缺失交易并发布有关它们的事件
 func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error{}
  
@@ -134,6 +150,9 @@ func (bc *BlockChain) State() (*state.StateDB, error) {}
  
 // StateAt 根据特定时间点返回新的可变状态
 func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {}
+
+// StateCache返回支持区块链实例的缓存数据库。
+func (bc *BlockChain) StateCache() state.Database {}
  
 // Stop 停止区块链服务，如果有正在import的进程，它会使用procInterrupt来取消。
 // it will abort them using the procInterrupt.
@@ -142,6 +161,10 @@ func (bc *BlockChain) Stop() {}
 // TrieNode从memory缓存或storage中检索与trie节点hash相关联的数据。
 func (bc *BlockChain) TrieNode(hash common.Hash) ([]byte, error) {}
  
+// truncateAncient将区块链回滚到指定的标头，并删除ancient store中超过指定标头的所有数据。
+// Purge 用于完全清除缓存
+func (bc *BlockChain) truncateAncient(head uint64) error {}
+
 // Validator返回当前validator.
 func (bc *BlockChain) Validator() Validator {}
  
@@ -153,7 +176,16 @@ func (bc *BlockChain) WriteBlockWithState(block *types.Block, receipts []*types.
  
 // writeHeader将标头写入本地链，因为它的父节点已知。 如果新插入的报头的总难度变得大于当前已知的TD，则重新路由规范链
 func (bc *BlockChain) writeHeader(header *types.Header) error{}
+
+// writeHeadBlock向当前块链注入一个新的头块。
+// 此方法假设该块确实是一个真头。如果它们是旧的，或者它们在不同的侧链上，
+// 它还会将head header和head fast sync块重置为相同的块。
+// 注意，这个函数假设持有' mu '互斥锁!
+func (bc *BlockChain) writeHeadBlock(block *types.Block) {}
  
+// writeKnownBlock用一个已知的块更新头块标志，并在必要时引入chain reorg。
+func (bc *BlockChain) writeKnownBlock(block *types.Block) error {}
+
 // 处理未来区块链
 func (bc *BlockChain) update() {}
 ```
