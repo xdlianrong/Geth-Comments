@@ -1,14 +1,69 @@
 # EVM源码分析（合约间调用与预编译合约）
 
-## 1 调用合约的具体流程
+## 1.调用合约实例
 
-调用合约时对应的操作码
+```solidity
+pragma solidity ^0.5.0; 
+
+contract C {    
+	address public temp1;    
+	uint256 public temp2;    
+	function test() public  {        
+		temp1 = msg.sender;        
+		temp2 = 100;    
+    }
+}
+
+contract B_call {    
+	address public temp1;   
+	uint256 public temp2;    
+	function call_call(address addr) public {        
+		addr.call(abi.encode(bytes4(keccak256("test()"))));        
+    }
+} 
+
+contract B_delegatecall {    
+	address public temp1;   
+	uint256 public temp2;    
+	function delegate_call(address addr) public {            
+		addr.delegatecall(abi.encode(bytes4(keccak256("test()"))));       
+    }
+} 
+
+contract B_high{
+    address public temp1;   
+	uint256 public temp2; 
+	function high_call(address addr) public {
+	    B(addr).test();
+	}
+}
+```
+
+
+
+## 2 调用合约指令
+
+一共有三种EVM指令（call，delegatecall，callcode）
+
+callcode已废用，在homestead阶段改为delegatecall
+
+下面：假设A调用合约B，B合约中实现delegatecall或call方法调用合约C，具体分析不同方法调用的不同点
+
+### 2.1 call方法实现
+
+是在被调用者（合约C）的上下文执行,只能修改被调用者（合约C）的storage
+
+call阻止msg.sender和msg.value的传递
+
+![](./images/contract-call .png)
+
+call方法对应的EVM-opcode如下
 
 ```go
-CALLCODE: {
-   execute:     opCallCode,
+CALL: {
+   execute:     opCall,
    constantGas: params.CallGasFrontier,
-   dynamicGas:  gasCallCode,
+   dynamicGas:  gasCall,
    minStack:    minStack(7, 1),
    maxStack:    maxStack(7, 1),
    memorySize:  memoryCall,
@@ -20,27 +75,30 @@ CALLCODE: {
 下面是该操作码对应的执行函数
 
 ```go
-func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
-   // Pop gas. The actual gas is in interpreter.evm.callGasTemp.
+func opCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+   // Pop gas. The actual gas in interpreter.evm.callGasTemp.
    interpreter.intPool.put(stack.pop())
    gas := interpreter.evm.callGasTemp
    // Pop other call parameters.
    addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
+   // 要调用的合约账户C的地址
    toAddr := common.BigToAddress(addr)
    value = math.U256(value)
-   // Get arguments from the memory.
+   // Get the arguments from the memory.
    args := memory.GetPtr(inOffset.Int64(), inSize.Int64())
 
+   // 在合约相互调用的时候如果附带ETH，是要计入gas消耗总量的
    if value.Sign() != 0 {
       gas += params.CallStipend
    }
-   ret, returnGas, err := interpreter.evm.CallCode(contract, toAddr, args, gas, value) // 向上调用evm方法CallCode，执行调用合约的函数
+   ret, returnGas, err := interpreter.evm.Call(contract, toAddr, args, gas, value)
    if err != nil {
       stack.push(interpreter.intPool.getZero())
    } else {
       stack.push(interpreter.intPool.get().SetUint64(1))
    }
    if err == nil || err == errExecutionReverted {
+      // 把执行的返回值内容放入内存，便于后面的指令使用
       memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
    }
    contract.Gas += returnGas
@@ -50,34 +108,85 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, contract *Contract, mem
 }
 ```
 
-下面是CallCode方法，该方法不像creat()和call()，该方法只能在指令中调用（向上面一样）
+### 2.2 delegatecall方法实现
+
+是在调用者（合约B）的上下文中执行, 可以修改调用者（合约B）的storage
+
+delegatecall允许msg.sender和msg.value的传递
+
+![](./images/contract-delegatecall.png)
+
+DELEGATECALL是Homestead阶段新增的EVM-opcode
 
 ```go
-func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, err error) {
+instructionSet[DELEGATECALL] = operation{
+   execute:     opDelegateCall, // 实现函数
+   dynamicGas:  gasDelegateCall,
+   constantGas: params.CallGasFrontier,
+   minStack:    minStack(6, 1),
+   maxStack:    maxStack(6, 1),
+   memorySize:  memoryDelegateCall,
+   valid:       true,
+   returns:     true,
+}
+```
+
+下面是该操作码对应的执行函数
+
+```go
+func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+   // Pop gas. The actual gas is in interpreter.evm.callGasTemp.
+   interpreter.intPool.put(stack.pop())
+   gas := interpreter.evm.callGasTemp
+   // Pop other call parameters.
+   // 这里进行栈调用的时候少了一个value值，因为delegateCall方法的value值是继承A的value
+   addr, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
+   // 要调用的合约账户地址
+   toAddr := common.BigToAddress(addr)
+   // Get arguments from the memory.
+   args := memory.GetPtr(inOffset.Int64(), inSize.Int64())
+
+   ret, returnGas, err := interpreter.evm.DelegateCall(contract, toAddr, args, gas)
+   if err != nil {
+      stack.push(interpreter.intPool.getZero())
+   } else {
+      stack.push(interpreter.intPool.get().SetUint64(1))
+   }
+   if err == nil || err == errExecutionReverted {
+      // 把执行的返回值内容放入内存，便于后面的指令使用
+      memory.Set(retOffset.Uint64(), retSize.Uint64(), ret)
+   }
+   contract.Gas += returnGas
+
+   interpreter.intPool.put(addr, inOffset, inSize, retOffset, retSize)
+   return ret, nil
+}
+```
+
+DelegateCall方法的具体实现，这个方法不像call和creat方法可以被外部账户直接调用
+
+```go
+func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, err error) {
+   // 递归调用检查和深度检验，同call方法
    if evm.vmConfig.NoRecursion && evm.depth > 0 {
       return nil, gas, nil
    }
-
-   // Fail if we're trying to execute above the call depth limit
    if evm.depth > int(params.CallCreateDepth) {
       return nil, gas, ErrDepth
-   }
-   // Fail if we're trying to transfer more than the available balance
-   if !evm.CanTransfer(evm.StateDB, caller.Address(), value) {
-      return nil, gas, ErrInsufficientBalance
    }
 
    var (
       snapshot = evm.StateDB.Snapshot()
+      // 这里对to的定义，将来执行改变的也将是caller.Address()账户地址下合约（B）的状态
+       // to       = AccountRef(addr) call()方法中指定的是c的地址
       to       = AccountRef(caller.Address())
    )
-   // Initialise a new contract and set the code that is to be used by the EVM.
-   // The contract is a scoped environment for this execution context only.
-   contract := NewContract(caller, to, value, gas)
+
+   // 这里加入AsDelegate方法进行重写
+   contract := NewContract(caller, to, nil, gas).AsDelegate()
    contract.SetCallCode(&addr, evm.StateDB.GetCodeHash(addr), evm.StateDB.GetCode(addr))
 
    ret, err = run(evm, contract, input, false)
-   // 同样这里要运行run方法，具体运行合约的具体内容，具体拿到runtime字段编译
    if err != nil {
       evm.StateDB.RevertToSnapshot(snapshot)
       if err != errExecutionReverted {
@@ -88,49 +197,85 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 }
 ```
 
+通过下面方法对NewContract方法重写，可以看出合约C执行允许msg传递
 
+```go
+func (c *Contract) AsDelegate() *Contract {
+   // NOTE: caller must, at all times be a contract. It should never happen
+   // that caller is something other than a Contract.
+   parent := c.caller.(*Contract)
+   c.CallerAddress = parent.CallerAddress
+   c.value = parent.value
 
-## 3 调用合约示例
-
-这里和文章（3）实例中的内容相似
-
-这是一个合约间调用的简单示例
-
-```java
-pragma solidity ^0.4.11;
-
-contract Foo {
-}
-
-contract FooFactory {
-  address fooInstance;
-  function makeNewFoo() {
-    fooInstance = new Foo();
-  }
+   return c
 }
 ```
 
-编译后的字节码如下：
+### 2.3 高级方法实现调用
 
+实现的机制大概就是通过实例化合约对象，完成合约的调用，参照上面的call_high方法
+
+翻译成的汇编片段如下，可以看出来调用的是evm-opcode的CALL指令，实现功能也一样
+
+```assembly
+ tag 16			
+      JUMPDEST 			
+      POP 			
+      GAS 			
+      CALL        ## there
+      ISZERO 			
+      DUP1 			
+      ISZERO 			
+      PUSH [tag] 17		
+      JUMPI 			
+      RETURNDATASIZE 			  
+      PUSH 0			
+      DUP1 			
+      RETURNDATACOPY 			
+      RETURNDATASIZE 			
+      PUSH 0			
+      REVERT 			
 ```
-FooFactoryDeployCode
-FooFactoryContractCode
-  FooDeployCode
-  FooContractCode
-  FooAUXData
-FooFactoryAUXData
-```
 
-1. 在该字节码中的binary主要先检测交易是否附带以太币，再把地址address的内容放入stateDB，再复制runtime和auxdata放入stateDB
-2. runtime的内容为makeNewFoo函数，完成创建新合约Foo
-3. autxdata不具体运行，合约代码的校验码和solc版本的数据
 
-## 2 预编译合约
+
+## 3 预编译合约
 
 1. 预编译合约是以太坊内置的一些已经写好的合约，利用native Go来实现。这些合约是用来被我们正常写的合约调用的，不能独立于我们的合约自己运行。
 2. 预编译合约是 EVM 中用于提供更复杂库函数(通常用于加密、散列等复杂操作)的一种折衷方法。因为计算量很大，所以预编译合约的内容并不是很容易用从操作码的方式实现（与evm存储空间容量的256bit，即32字节有关系）
 
+合约代码实例
 
+```solidity
+pragma solidity ^0.4.21;
+
+contract Sha256Test {
+    uint256 time = 123;
+    bytes32 input;
+
+    function calcSha256(string memory _input) public {
+    	// 这里实现了hash256算法
+        bytes32 id = sha256(_input);
+        input = id;
+    }
+
+}
+```
+
+下面是上述代码翻译出来的汇编片段，同样也是调用了EVM-opcode的CALL指令，但是这里并不涉及什么状态修改，因为precontract的内容其实并没有放到虚拟机中执行
+
+```assembly
+GAS 			
+CALL 	## there		
+ISZERO 		
+DUP1 			
+ISZERO 		
+PUSH [tag] 10		
+JUMPI 		
+RETURNDATASIZE 		
+```
+
+![](./images/precontract-sha256.png)
 
 回顾一下run函数，下面是run方法中的片段
 

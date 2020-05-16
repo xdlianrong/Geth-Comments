@@ -863,6 +863,7 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, contract *Contract, m
 	return ret, nil
 }
 
+// 从内存中拿出相应字节的值并返回
 func opReturn(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
 	offset, size := stack.pop(), stack.pop()
 	ret := memory.GetPtr(offset.Int64(), size.Int64())

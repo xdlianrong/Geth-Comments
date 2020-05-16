@@ -66,8 +66,8 @@ type Message interface {
 	//FromFrontier() (common.Address, error)
 	To() *common.Address
 
-	GasPrice() *big.Int
-	Gas() uint64
+	GasPrice() *big.Int		// Message 的 GasPrice
+	Gas() uint64			// Message 的 GasLimit
 	Value() *big.Int
 
 	Nonce() uint64

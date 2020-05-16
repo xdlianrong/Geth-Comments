@@ -103,12 +103,12 @@ func (st *StateTransition/**一笔交易中的状态信息**/) TransitionDb() (r
    istanbul := st.evm.ChainConfig().IsIstanbul(st.evm.BlockNumber)
    contractCreation := msg.To() == nil
 
-   // 从交易发送者账户中扣取规定量gas
+    // 从交易发送者账户中扣取规定量gas(g0)
    gas, err := IntrinsicGas(st.data, contractCreation, homestead, istanbul)
-   // 如果发生报错，直接导致交易失败
    if err != nil {
       return nil, 0, false, err
    }
+   // st.gas -= g0 
    if err = st.useGas(gas); err != nil {
       return nil, 0, false, err
    }
@@ -146,9 +146,126 @@ func (st *StateTransition/**一笔交易中的状态信息**/) TransitionDb() (r
    // 退还剩余gas费，将交易方账户余额增加剩余的gas费
    st.refundGas()
    // 给矿工支付费用
+   // gasUsed * gasPrice
    st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
 
    return ret, st.gasUsed(), vmerr != nil, err
+}
+```
+
+#### 3.1.1  执行前的检验和gas的预扣除
+
+检验nonce值是否正确
+
+```go
+func (st *StateTransition) preCheck() error {
+   // Make sure this transaction's nonce is correct.
+   if st.msg.CheckNonce() {
+      nonce := st.state.GetNonce(st.msg.From())
+      if nonce < st.msg.Nonce() {
+         return ErrNonceTooHigh
+      } else if nonce > st.msg.Nonce() {
+         return ErrNonceTooLow
+      }
+   }
+   // 这里直接通过返回值去调用预扣除的gas计算
+   return st.buyGas()
+}
+```
+
+buyGas()方法实现Gas的预扣费
+
+```go
+func (st *StateTransition) buyGas() error {
+   // gas * gasPrice
+   mgval := new(big.Int).Mul(new(big.Int).SetUint64(st.msg.Gas()), st.gasPrice)
+   // 账户余额不足的情况
+   if st.state.GetBalance(st.msg.From()).Cmp(mgval) < 0 {
+      return errInsufficientBalanceForGas
+   }
+   // 当前gas池中余额不足的情况
+   if err := st.gp.SubGas(st.msg.Gas()); err != nil {
+      return err
+   }
+   st.gas += st.msg.Gas()
+
+   st.initialGas = st.msg.Gas()
+   // 余额预扣除
+   st.state.SubBalance(st.msg.From(), mgval)
+   return nil
+}
+```
+
+#### 3.1.2  初始的gas值g0的计算
+
+附：gas计算的函数IntrinsicGas（）
+
+```go
+func IntrinsicGas(data []byte, contractCreation, isHomestead bool, isEIP2028 bool) (uint64, error) {
+   //  根据合约创建交易和其他交易预先扣除一定费用
+   //  TxGas                 uint64 = 21000
+   //  TxGasContractCreation uint64 = 53000
+   var gas uint64
+   if contractCreation && isHomestead {
+      gas = params.TxGasContractCreation
+   } else {
+      gas = params.TxGas
+   }
+   // Bump the required gas by the amount of transactional data
+   // 根据交易附加data[]中的零与非零bytes，计算data[]额外消耗的gas
+   if len(data) > 0 {
+      // Zero and non-zero bytes are priced differently
+      var nz uint64
+      for _, byt := range data {
+         if byt != 0 {
+            nz++
+         }
+      }
+      // Make sure we don't exceed uint64 for all data combinations
+      // TxDataNonZeroGasFrontier uint64 = 68   
+      nonZeroGas := params.TxDataNonZeroGasFrontier
+      if isEIP2028 {
+         nonZeroGas = params.TxDataNonZeroGasEIP2028
+      }
+      if (math.MaxUint64-gas)/nonZeroGas < nz {
+         return 0, vm.ErrOutOfGas
+      }
+      gas += nz * nonZeroGas
+
+      z := uint64(len(data)) - nz
+      if (math.MaxUint64-gas)/params.TxDataZeroGas < z {
+         return 0, vm.ErrOutOfGas
+      }
+      gas += z * params.TxDataZeroGas
+   }
+   return gas, nil
+}
+```
+
+#### 3.1.3 evm事务执行后的gas处理
+
+```go
+func (st *StateTransition) refundGas() {
+	// Apply refund counter, capped to half of the used gas.
+	refund := st.gasUsed() / 2
+    // GetRefund返回当前剩余的value值
+	if refund > st.state.GetRefund() {
+		refund = st.state.GetRefund()
+	}
+	st.gas += refund
+
+	// Return ETH for remaining gas, exchanged at the original rate.
+	remaining := new(big.Int).Mul(new(big.Int).SetUint64(st.gas), st.gasPrice)
+    // 计算下来最终交易发起方支付的gas为 (g0 + 合约代码运行消耗的gas)/2 
+	st.state.AddBalance(st.msg.From(), remaining)
+
+	// 把未消耗的gas重新添回给gas池中
+	st.gp.AddGas(st.gas)
+}
+
+// 通过计算这里的返回值分为两部分（g0 + 合约代码运行消耗的gas（如果有的话））
+func (st *StateTransition) gasUsed() uint64 {
+	return st.initialGas - st.gas
 }
 ```
 
