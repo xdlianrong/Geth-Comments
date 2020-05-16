@@ -27,12 +27,13 @@ import (
 
 // BlockValidator is responsible for validating block headers, uncles and
 // processed state.
-//
+// BlockValidator负责验证块头，叔块和已处理状态。
 // BlockValidator implements Validator.
 type BlockValidator struct {
 	config *params.ChainConfig // Chain configuration options
 	bc     *BlockChain         // Canonical block chain
-	engine consensus.Engine    // Consensus engine used for validating
+	// 用于验证的共识引擎
+	engine consensus.Engine // Consensus engine used for validating
 }
 
 // NewBlockValidator returns a new block validator which is safe for re-use
