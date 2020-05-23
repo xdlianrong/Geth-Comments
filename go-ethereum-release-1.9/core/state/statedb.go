@@ -688,6 +688,7 @@ func (s *StateDB) Finalise(deleteEmptyObjects bool) {
 // goes into transaction receipts.
 func (s *StateDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
 	// Finalise all the dirty storage states and write them into the tries
+	// 最后确定所有dirty存储状态，并将它们写入tries中
 	s.Finalise(deleteEmptyObjects)
 
 	for addr := range s.stateObjectsPending {
