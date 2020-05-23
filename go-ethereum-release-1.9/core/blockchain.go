@@ -406,7 +406,9 @@ func (bc *BlockChain) SetHead(head uint64) error {
 
 	updateFn := func(db ethdb.KeyValueWriter, header *types.Header) {
 		// Rewind the block chain, ensuring we don't end up with a stateless head block
+		// 回退区块链，确保我们不会以无状态的头区块结束
 		if currentBlock := bc.CurrentBlock(); currentBlock != nil && header.Number.Uint64() < currentBlock.NumberU64() {
+			// 获取我们要回退到的区块
 			newHeadBlock := bc.GetBlock(header.Hash(), header.Number.Uint64())
 			if newHeadBlock == nil {
 				newHeadBlock = bc.genesisBlock
@@ -416,6 +418,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 					newHeadBlock = bc.genesisBlock
 				}
 			}
+			// headBlockKey = []byte("LastBlock")
 			rawdb.WriteHeadBlockHash(db, newHeadBlock.Hash())
 
 			// Degrade the chain markers if they are explicitly reverted.
@@ -445,12 +448,14 @@ func (bc *BlockChain) SetHead(head uint64) error {
 	}
 
 	// Rewind the header chain, deleting all block bodies until then
+	// 回滚header链，在此之前删除所有块体
 	delFn := func(db ethdb.KeyValueWriter, hash common.Hash, num uint64) {
 		// Ignore the error here since light client won't hit this path
 		frozen, _ := bc.db.Ancients()
 		if num+1 <= frozen {
 			// Truncate all relative data(header, total difficulty, body, receipt
 			// and canonical hash) from ancient store.
+			// 截断所有相关数据(header、总难度、body、receipt和规范hash)。
 			if err := bc.db.TruncateAncients(num + 1); err != nil {
 				log.Crit("Failed to truncate ancient data", "number", num, "err", err)
 			}
@@ -461,6 +466,7 @@ func (bc *BlockChain) SetHead(head uint64) error {
 			// Remove relative body and receipts from the active store.
 			// The header, total difficulty and canonical hash will be
 			// removed in the hc.SetHead function.
+			// 从active store移除相关body和receipts。header、总难度和规范hash将在hc.SetHead()中删除
 			rawdb.DeleteBody(db, hash, num)
 			rawdb.DeleteReceipts(db, hash, num)
 		}
@@ -559,7 +565,7 @@ func (bc *BlockChain) Reset() error {
 
 // ResetWithGenesisBlock purges the entire blockchain, restoring it to the
 // specified genesis state.
-// ResetWithGenesisBlock 清除整个区块链, 用特定的genesis state重塑，被Reset所引用
+// ResetWithGenesisBlock 清除整个区块链, 用特定的genesis state重塑，被Reset所调用
 func (bc *BlockChain) ResetWithGenesisBlock(genesis *types.Block) error {
 	// Dump the entire block chain and purge the caches
 	if err := bc.SetHead(0); err != nil {
@@ -762,7 +768,7 @@ func (bc *BlockChain) HasState(hash common.Hash) bool {
 
 // HasBlockAndState checks if a block and associated state trie is fully present
 // in the database or not, caching it if present.
-//HasBlockAndState检验hash对应的block和state trie是否完全存在数据库中
+// HasBlockAndState检验hash对应的block和state trie是否完全存在数据库中
 func (bc *BlockChain) HasBlockAndState(hash common.Hash, number uint64) bool {
 	// Check first that the block itself is known
 	block := bc.GetBlock(hash, number)
@@ -2274,7 +2280,7 @@ func (bc *BlockChain) GetAncestor(hash common.Hash, number, ancestor uint64, max
 
 // GetHeaderByNumber retrieves a block header from the database by number,
 // caching it (associated with its hash) if found.
-// 获取给定hash的区块header
+// 获取给定number的区块header
 func (bc *BlockChain) GetHeaderByNumber(number uint64) *types.Header {
 	return bc.hc.GetHeaderByNumber(number)
 }
