@@ -41,8 +41,8 @@ type BlockChain struct {
 	engine     consensus.Engine // 用来验证区块的接口
 	validator  Validator  // 验证数据有效性的接口
 	prefetcher Prefetcher // 块状态预取接口
-	processor  Processor  // 块事务处理接口
-	vmConfig   vm.Config  // //虚拟机的配置
+	processor  Processor  // 块交易处理接口
+	vmConfig   vm.Config  // 虚拟机的配置
 
 	badBlocks       *lru.Cache                     // 错误区块的缓存.
 	shouldPreserve  func(*types.Block) bool        // 用于确定是否应保留给定块的函数。
@@ -77,7 +77,9 @@ type BlockChain struct {
 
 # 二、 **blockchain.go中的部分函数和方法** 
 
-**1、NewBlockChain**，使用数据库里面的可用信息构造了一个初始化好的区块链. 同时初始化了以太坊默认的 验证器和处理器，预取器等。
+## 1、NewBlockChain
+
+使用数据库里面的可用信息构造了一个初始化好的区块链. 同时初始化了以太坊默认的 验证器和处理器，预取器等。
 
 ```go
 func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
@@ -193,8 +195,112 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 }
 
 ```
+  检查本地区块链上是否有bad block，如果有调用bc.SetHead回到硬分叉之前的区块头 
 
-**2、loadLastState**, 加载数据库里面的最新的我们知道的区块链状态. 就是要找到最新的区块头，然后设置currentBlock、currentHeader和currentFastBlock 
+```go
+bc.GetHeaderByHash(hash)
+—> bc.hc.GetHeaderByHash(hash)
+—> hc.GetBlockNumber(hash)  // 通过hash来找到这个区块的number，即用‘H’+hash为key在数据库中查找
+—> hc.GetHeader(hash, *number)  // 通过hash+number来找到header
+—> hc.headerCache.Get(hash)  // 先从缓存里找，找不到再去数据库找
+—> rawdb.ReadHeader(hc.chainDb, hash, number)  // 在数据库中，通过'h'+num+hash为key来找到header的RLP编码值
+
+bc.GetHeaderByNumber(number)
+—> hc.GetHeaderByNumber(number)
+—> raw.ReadCanonicalHash(hc.chainDb, number) 
+// 在规范链上以‘h’+num+‘n’为key查找区块的hash，
+// 如果找到了，说明区块链上确实有该badblock
+// 如果找不到，则说明该bad block只存在数据库，没有上规范链
+—> hc.GetHeader(hash,number) // 如果规范链上有这个badblock，则返回该block header
+```
+
+## 2、SetHead
+
+```go
+func (bc *BlockChain) SetHead(head uint64) error {
+	log.Warn("Rewinding blockchain", "target", head)
+
+	bc.chainmu.Lock()
+	defer bc.chainmu.Unlock()
+
+	updateFn := func(db ethdb.KeyValueWriter, header *types.Header) {
+		// 回退区块链，确保我们不会以无状态的头区块结束
+		if currentBlock := bc.CurrentBlock(); currentBlock != nil && header.Number.Uint64() < currentBlock.NumberU64() {
+			// 获取我们要回退到的区块
+			newHeadBlock := bc.GetBlock(header.Hash(), header.Number.Uint64())
+			if newHeadBlock == nil {
+				newHeadBlock = bc.genesisBlock
+			} else {
+				if _, err := state.New(newHeadBlock.Root(), bc.stateCache); err != nil {
+					newHeadBlock = bc.genesisBlock
+				}
+			}
+			// headBlockKey = []byte("LastBlock")
+			rawdb.WriteHeadBlockHash(db, newHeadBlock.Hash())
+
+			bc.currentBlock.Store(newHeadBlock)
+			headBlockGauge.Update(int64(newHeadBlock.NumberU64()))
+		}
+
+		// Rewind the fast block in a simpleton way to the target head
+		if currentFastBlock := bc.CurrentFastBlock(); currentFastBlock != nil && header.Number.Uint64() < currentFastBlock.NumberU64() {
+			newHeadFastBlock := bc.GetBlock(header.Hash(), header.Number.Uint64())
+			// If either blocks reached nil, reset to the genesis state
+			if newHeadFastBlock == nil {
+				newHeadFastBlock = bc.genesisBlock
+			}
+			rawdb.WriteHeadFastBlockHash(db, newHeadFastBlock.Hash())
+
+			bc.currentFastBlock.Store(newHeadFastBlock)
+			headFastBlockGauge.Update(int64(newHeadFastBlock.NumberU64()))
+		}
+	}
+
+	// Rewind the header chain, deleting all block bodies until then
+	// 回滚header链，在此之前删除所有块体
+	delFn := func(db ethdb.KeyValueWriter, hash common.Hash, num uint64) {
+		// Ignore the error here since light client won't hit this path
+		frozen, _ := bc.db.Ancients()
+		if num+1 <= frozen {
+			// 截断所有相关数据(header、总难度、body、receipt和规范hash)。
+			if err := bc.db.TruncateAncients(num + 1); err != nil {
+				log.Crit("Failed to truncate ancient data", "number", num, "err", err)
+			}
+
+			// Remove the hash <-> number mapping from the active store.
+			rawdb.DeleteHeaderNumber(db, hash)
+		} else {
+			// 从active store移除相关body和receipts。header、总难度和规范hash将在hc.SetHead()中删除
+			rawdb.DeleteBody(db, hash, num)
+			rawdb.DeleteReceipts(db, hash, num)
+		}
+		// Todo(rjl493456442) txlookup, bloombits, etc
+	}
+	bc.hc.SetHead(head, updateFn, delFn)
+
+	//清除缓存中的内容
+	bc.bodyCache.Purge()
+	bc.bodyRLPCache.Purge()
+	bc.receiptsCache.Purge()
+	bc.blockCache.Purge()
+	bc.txLookupCache.Purge()
+	bc.futureBlocks.Purge()
+
+	return bc.loadLastState()
+}
+```
+
+1) 首先调用bc.hc.SetHead(head, updateFn, delFn)，回滚head对应的区块头。
+
+2) updateFn:  重新设置bc.currentBlock，bc.currentFastBlock 
+
+3) delFn:  清除中间区块头所有的数据和缓存 
+
+4) 调用bc.loadLastState()，重新加载本地的最新状态 
+
+## 3、loadLastState
+
+加载数据库里面的最新的我们知道的区块链状态. 就是要找到最新的区块头，然后设置currentBlock、currentHeader和currentFastBlock 
 
 1) 	获取到最新区块以及它的hash
 
@@ -266,7 +372,11 @@ func (bc *BlockChain) loadLastState() error {
 }
 ```
 
-**3、reorgs**方法是在新的链的总难度大于本地链的总难度的情况下，需要用新的区块链来替换本地的区块链为规范链。
+## 4、reorgs
+
+该方法是在新的链的总难度大于本地链的总难度的情况下，需要用新的区块链来替换本地的区块链为规范链。
+
+ 前提条件：newBlock的总难度大于oldBlock，且newBlock的父区块不是oldBlock。
 
 ```go
 // reorgs需要两个块、一个旧链以及一个新链，并将重新构建块然后将它们插入到新的规范链中，并累积潜在的缺失交易并发布有关它们的事件
@@ -282,52 +392,21 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		deletedLogs [][]*types.Log
 		rebirthLogs [][]*types.Log
 
-		// collectLogs 会收集我们已经生成的日志信息，这些日志稍后会被声明删除(实际上在数据库中并没有被删除)。
+		// collectLogs 会收集我们已经生成的日志信息
 		collectLogs = func(hash common.Hash, removed bool) {
-			number := bc.hc.GetBlockNumber(hash)
-			if number == nil {
-				return
-			}
-			receipts := rawdb.ReadReceipts(bc.db, hash, *number, bc.chainConfig)
-
-			var logs []*types.Log
-			for _, receipt := range receipts {
-				for _, log := range receipt.Logs {
-					l := *log
-					if removed {
-						l.Removed = true
-					} else {
-					}
-					logs = append(logs, &l)
-				}
-			}
-			if len(logs) > 0 {
-				if removed {
-					deletedLogs = append(deletedLogs, logs)
-				} else {
-					rebirthLogs = append(rebirthLogs, logs)
-				}
-			}
+			......
 		}
 		// mergeLogs返回具有指定排序顺序的合并日志片。
 		mergeLogs = func(logs [][]*types.Log, reverse bool) []*types.Log {
-			var ret []*types.Log
-			if reverse {
-				for i := len(logs) - 1; i >= 0; i-- {
-					ret = append(ret, logs[i]...)
-				}
-			} else {
-				for i := 0; i < len(logs); i++ {
-					ret = append(ret, logs[i]...)
-				}
-			}
-			return ret
+			......
 		}
 	)
     
+	// 第一步：找到新链和老链的共同祖先
 	// 将较长的链减少到与较短的链相同的数目
 	if oldBlock.NumberU64() > newBlock.NumberU64() {
 		// 如果老的链比新的链高。那么需要减少老的链，让它和新链一样高
+        // 并且收集老链分支上的交易和日志
 		for ; oldBlock != nil && oldBlock.NumberU64() != newBlock.NumberU64(); oldBlock = bc.GetBlock(oldBlock.ParentHash(), oldBlock.NumberU64()-1) {
 			oldChain = append(oldChain, oldBlock)
 			deletedTxs = append(deletedTxs, oldBlock.Transactions()...)
@@ -345,7 +424,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	if newBlock == nil {
 		return fmt.Errorf("invalid new chain")
 	}
-	//这个for循环里面需要找到共同的祖先。
+	//等到共同高度后，去找到共同祖先（共同回退），继续收集日志和交易
 	for {
 		// If the common ancestor was found, bail out
 		if oldBlock.Hash() == newBlock.Hash() {
@@ -369,7 +448,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 			return fmt.Errorf("invalid new chain")
 		}
 	}
-	// Ensure the user sees large reorgs
+	// 打印规则
 	if len(oldChain) > 0 && len(newChain) > 0 {
 		logFn := log.Info
 		msg := "Chain reorg detected"
@@ -384,8 +463,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	} else {
 		log.Error("Impossible reorg, please file an issue", "oldnum", oldBlock.Number(), "oldhash", oldBlock.Hash(), "newnum", newBlock.Number(), "newhash", newBlock.Hash())
 	}
-	// Insert the new chain(except the head block(reverse order)),
-	// taking care of the proper incremental order.
+	// 插入新链
 	for i := len(newChain) - 1; i >= 1; i-- {
 		// Insert the block in the canonical way, re-writing history
 		bc.writeHeadBlock(newChain[i])
@@ -396,9 +474,9 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 		// Collect the new added transactions.
 		addedTxs = append(addedTxs, newChain[i].Transactions()...)
 	}
-	// Delete useless indexes right now which includes the non-canonical
-	// transaction indexes, canonical chain indexes which above the head.
+	// 立即删除无用的索引，其中包括非规范交易索引，以及head上方的规范链索引。
 	indexesBatch := bc.db.NewBatch()
+    // TxDifference返回一个a-b的差集合
 	for _, tx := range types.TxDifference(deletedTxs, addedTxs) {
 		rawdb.DeleteTxLookupEntry(indexesBatch, tx.Hash())
 	}
@@ -418,6 +496,7 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 	// this goroutine if there are no events to fire, but realistcally that only
 	// ever happens if we're reorging empty blocks, which will only happen on idle
 	// networks where performance is not an issue either way.
+  	// 向外发送区块被reorgs的事件，以及日志删除事件
 	if len(deletedLogs) > 0 {
 		bc.rmLogsFeed.Send(RemovedLogsEvent{mergeLogs(deletedLogs, true)})
 	}
@@ -433,3 +512,10 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 }
 ```
 
+1)  找到新链和老链的共同祖先
+
+2)  将新链插入到规范链中，同时收集插入到规范链中的所有交易 
+
+3)  删除无用的索引，其中包括非规范交易索引（deletedTxs - addedTxs），以及head上方的规范链索引。
+
+4）向外发送区块被reorgs的事件，以及日志删除事件
