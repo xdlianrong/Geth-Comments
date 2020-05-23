@@ -156,18 +156,23 @@ func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig
 }
 
 func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, overrideIstanbul, overrideMuirGlacier *big.Int) (*params.ChainConfig, common.Hash, error) {
+	// 检查 genesis 指针不空的情况下，是否有配置，如果没有，报错退出
 	if genesis != nil && genesis.Config == nil {
 		return params.AllEthashProtocolChanges, common.Hash{}, errGenesisNoConfig
 	}
 	// Just commit the new block if there is no stored genesis block.
+	// 从数据库中获取创世块的区块哈希 stored
 	stored := rawdb.ReadCanonicalHash(db, 0)
+	// 哈希为空，即数据库不存在创世块
 	if (stored == common.Hash{}) {
+		// 如果输入参数genesis为空，那么使用默认的创世块配置
 		if genesis == nil {
 			log.Info("Writing default main-net genesis block")
 			genesis = DefaultGenesisBlock()
 		} else {
 			log.Info("Writing custom genesis block")
 		}
+		//调用 genesis.Commit() 函数提交 genesis 信息到数据库。返回提交结果。
 		block, err := genesis.Commit(db)
 		if err != nil {
 			return genesis.Config, common.Hash{}, err
@@ -177,6 +182,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, override
 
 	// We have the genesis block in database(perhaps in ancient database)
 	// but the corresponding state is missing.
+	// 我们在数据库中有genesis块(可能在古代数据库中)，但是相应的状态丢失了。
 	header := rawdb.ReadHeader(db, stored, 0)
 	if _, err := state.New(header.Root, state.NewDatabaseWithCache(db, 0)); err != nil {
 		if genesis == nil {
@@ -184,6 +190,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, override
 		}
 		// Ensure the stored genesis matches with the given one.
 		hash := genesis.ToBlock(nil).Hash()
+		// 检查输入参数genesis的hash与数据库中的创世区块hash是否相同，如果不相同，则报错
 		if hash != stored {
 			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
 		}
@@ -197,6 +204,7 @@ func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, override
 	// Check whether the genesis block is already written.
 	if genesis != nil {
 		hash := genesis.ToBlock(nil).Hash()
+		// 检查输入参数genesis的hash与数据库中的创世区块hash是否相同，如果不相同，则报错
 		if hash != stored {
 			return genesis.Config, hash, &GenesisMismatchError{stored, hash}
 		}
