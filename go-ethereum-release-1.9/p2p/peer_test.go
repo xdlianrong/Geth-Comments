@@ -105,6 +105,7 @@ func testPeer(protos []Protocol) (func(), *conn, *Peer, <-chan error) {
 	return closer, c2, peer, errc
 }
 
+//接收*testing.T为参的函数为测试函数
 func TestPeerProtoReadMsg(t *testing.T) {
 	proto := Protocol{
 		Name:   "a",
@@ -122,7 +123,7 @@ func TestPeerProtoReadMsg(t *testing.T) {
 			return nil
 		},
 	}
-
+	//[]Protocol{proto}传入了一个类型为Protocol的数组，数组只有一个元素proto
 	closer, rw, _, errc := testPeer([]Protocol{proto})
 	defer closer()
 

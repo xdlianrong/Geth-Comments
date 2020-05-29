@@ -854,9 +854,11 @@ func (pm *ProtocolManager) BroadcastTransactions(txs types.Transactions, propaga
 	// Broadcast transactions to a batch of peers not knowing about it
 	if propagate {
 		for _, tx := range txs {
+			// 获取自己已知节点中未拥有这些交易的节点peers[]
 			peers := pm.peers.PeersWithoutTx(tx.Hash())
 
 			// Send the block to a subset of our peers
+			// 拿到peers[]的一个子集transfer[]
 			transfer := peers[:int(math.Sqrt(float64(len(peers))))]
 			for _, peer := range transfer {
 				txset[peer] = append(txset[peer], tx.Hash())

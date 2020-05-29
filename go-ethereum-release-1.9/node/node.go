@@ -216,11 +216,11 @@ func (n *Node) Start() error {
 		services[kind] = service
 	}
 	// Gather the protocols and start the freshly assembled P2P server
-	// 收集所有的p2p的protocols并插入p2p.Rrotocols
+	// 收集所有的p2p的protocols并插入p2p.Rrotocols service.Protocols()就已经开启协程监听广播事件
 	for _, service := range services {
 		running.Protocols = append(running.Protocols, service.Protocols()...)
 	}
-	//启动p2p服务器
+	//启动p2p服务器,做了节点发现启动工作
 	if err := running.Start(); err != nil {
 		return convertFileLockError(err)
 	}

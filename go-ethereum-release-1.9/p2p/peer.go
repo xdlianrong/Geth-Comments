@@ -120,8 +120,9 @@ type Peer struct {
 
 // NewPeer returns a peer for testing purposes.
 func NewPeer(id enode.ID, name string, caps []Cap) *Peer {
+	//caps是此节点支持的子协议
 	pipe, _ := net.Pipe()
-	node := enode.SignNull(new(enr.Record), id)
+	node := enode.SignNull(new(enr.Record), id) //一个peer同时也是一个节点
 	conn := &conn{fd: pipe, transport: nil, node: node, caps: caps, name: name}
 	peer := newPeer(log.Root(), conn, nil)
 	close(peer.closed) // ensures Disconnect doesn't block
