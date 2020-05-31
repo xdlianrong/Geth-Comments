@@ -126,6 +126,8 @@ func (it *insertIterator) next() (*types.Block, error) {
 //
 // Both header and body validation errors (nil too) is cached into the iterator
 // to avoid duplicating work on the following next() call.
+// peek返回迭代器中的下一个块，以及该块的任何可能的验证错误，但是并不推进迭代器。
+// header和body验证错误(nil也是)都缓存在迭代器中，以避免在接下来的next()调用中重复工作。
 func (it *insertIterator) peek() (*types.Block, error) {
 	// If we reached the end of the chain, abort
 	if it.index+1 >= len(it.chain) {
@@ -143,6 +145,7 @@ func (it *insertIterator) peek() (*types.Block, error) {
 }
 
 // previous returns the previous header that was being processed, or nil.
+// previous返回正在处理的前一个标头，或nil。
 func (it *insertIterator) previous() *types.Header {
 	if it.index < 1 {
 		return nil
@@ -156,11 +159,13 @@ func (it *insertIterator) first() *types.Block {
 }
 
 // remaining returns the number of remaining blocks.
+// 返回剩余块的数量。
 func (it *insertIterator) remaining() int {
 	return len(it.chain) - it.index
 }
 
 // processed returns the number of processed blocks.
+// 返回处理过的块的数量。
 func (it *insertIterator) processed() int {
 	return it.index + 1
 }
