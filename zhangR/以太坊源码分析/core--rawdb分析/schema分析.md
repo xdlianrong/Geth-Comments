@@ -3,6 +3,26 @@
 这里面的代码主要是给添加到数据库的key加上前缀后缀等。
 
 ```go
+	// databaseVerisionKey tracks the current database version.
+	// 跟踪当前数据库版本。
+	databaseVerisionKey = []byte("DatabaseVersion")
+
+	// headHeaderKey tracks the latest known header's hash.
+	// 跟踪最新的已知header的哈希值。
+	headHeaderKey = []byte("LastHeader")
+
+	// headBlockKey tracks the latest known full block's hash.
+	// 跟踪最新的已知完整区块的哈希。
+	headBlockKey = []byte("LastBlock")
+
+	// headFastBlockKey tracks the latest known incomplete block's hash during fast sync.
+	// 在快速同步期间跟踪最新的已知不完整块的哈希。
+	headFastBlockKey = []byte("LastFast")
+
+	// fastTrieProgressKey tracks the number of trie entries imported during fast sync.
+	// 跟踪快速同步期间导入的trie entries的数量
+	fastTrieProgressKey = []byte("TrieSync")
+
 	// Data item prefixes (use single byte to avoid mixing data types, avoid `i`, used for indexes).
 	// 数据项前缀（使用单字节以避免混合数据类型，避免使用“ i”作为索引）。
 	headerPrefix       = []byte("h") // headerPrefix + num (uint64 big endian) + hash -> header

@@ -113,10 +113,11 @@ type CacheConfig struct {
 	// 内存余量(MB)，用于在内存中缓存trie节点
 	TrieCleanLimit int // Memory allowance (MB) to use for caching trie nodes in memory
 	// 是否为后续块禁用启发式状态预取
-	TrieCleanNoPrefetch bool          // Whether to disable heuristic state prefetching for followup blocks
-	TrieDirtyLimit      int           // Memory limit (MB) at which to start flushing dirty trie nodes to disk
-	TrieDirtyDisabled   bool          // Whether to disable trie write caching and GC altogether (archive node)
-	TrieTimeLimit       time.Duration // Time limit after which to flush the current in-memory trie to disk
+	TrieCleanNoPrefetch bool // Whether to disable heuristic state prefetching for followup blocks
+	// 启动将dirty trie节点刷新到磁盘的内存限制(MB)
+	TrieDirtyLimit    int           // Memory limit (MB) at which to start flushing dirty trie nodes to disk
+	TrieDirtyDisabled bool          // Whether to disable trie write caching and GC altogether (archive node)
+	TrieTimeLimit     time.Duration // Time limit after which to flush the current in-memory trie to disk
 }
 
 // BlockChain represents the canonical chain given a database with a genesis
@@ -1513,7 +1514,7 @@ func (bc *BlockChain) addFutureBlock(block *types.Block) error {
 // wrong.
 //
 // After insertion is done, all accumulated events will be fired.
-// InsertChain尝试将给定批量的block插入到规范链中，否则，创建一个分叉。 如果返回错误，它将返回失败块的索引号以及描述错误的错误。
+// InsertChain尝试将给定批量的block插入到规范链中，否则，创建一个分叉。 如果返回错误，它将返回失败块的索引号以及描述错误的err。
 // 插入完成后，将触发所有累积的事件。
 func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 	// Sanity check that we have something meaningful to import
@@ -1560,7 +1561,6 @@ func (bc *BlockChain) InsertChain(chain types.Blocks) (int, error) {
 // is imported, but then new canon-head is added before the actual sidechain
 // completes, then the historic state could be pruned again
 // insertChain将执行实际的链插入和事件聚合。
-// 此方法作为单独方法存在的唯一原因是使用延迟语句使锁定更清晰。
 func (bc *BlockChain) insertChain(chain types.Blocks, verifySeals bool) (int, error) {
 	// If the chain is terminating, don't even bother starting up
 	if atomic.LoadInt32(&bc.procInterrupt) == 1 {

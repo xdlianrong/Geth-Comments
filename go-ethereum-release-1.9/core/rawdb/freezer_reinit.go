@@ -34,7 +34,7 @@ import (
 // injects into the database the block hash->number mappings and the transaction
 // lookup entries.
 // InitDatabaseFromFreezer从上一批冻结的旧块中重新初始化一个空数据库。
-// 该方法遍历所有冻结的块，并将 块hash -> number的映射和事务查找条目注入数据库中。
+// 该方法遍历所有冻结的块，并将 块hash -> number的映射和交易查找索引注入数据库中。
 func InitDatabaseFromFreezer(db ethdb.Database) error {
 	// If we can't access the freezer or it's empty, abort
 	frozen, err := db.Ancients()
