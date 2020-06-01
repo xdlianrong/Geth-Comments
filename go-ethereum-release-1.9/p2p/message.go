@@ -183,6 +183,9 @@ func (p *MsgPipeRW) WriteMsg(msg Msg) error {
 		case p.w <- msg:
 			if msg.Size > 0 {
 				// wait for payload read or discard
+				// 如果没有default，select会一直等待直到一个case执行成功。
+				// 消息要么被接受（consumed），要么就没被接受，符合尽力但不保证原则
+				// 如果对方离线或者是发送超时，p.closing会触发，因为以太坊服务一直在维持与远程节点的心跳（就是Kad协议的一部分）
 				select {
 				case <-consumed:
 				case <-p.closing:

@@ -51,7 +51,7 @@ const (
 const (
 	// devp2p message codes
 	handshakeMsg = 0x00
-	discMsg      = 0x01
+	discMsg      = 0x01 //全称是discard
 	pingMsg      = 0x02
 	pongMsg      = 0x03
 )
@@ -269,11 +269,13 @@ func (p *Peer) pingLoop() {
 func (p *Peer) readLoop(errc chan<- error) {
 	defer p.wg.Done()
 	for {
+		// ReadMsg()只有在有消息的时候才会return 否则就一直阻塞等待
 		msg, err := p.rw.ReadMsg()
 		if err != nil {
 			errc <- err
 			return
 		}
+		//加上时间戳
 		msg.ReceivedAt = time.Now()
 		if err = p.handle(msg); err != nil {
 			errc <- err
@@ -284,6 +286,7 @@ func (p *Peer) readLoop(errc chan<- error) {
 
 func (p *Peer) handle(msg Msg) error {
 	switch {
+	// 接收到的ping 发回去一个pong
 	case msg.Code == pingMsg:
 		msg.Discard()
 		go SendItems(p.rw, pongMsg)
