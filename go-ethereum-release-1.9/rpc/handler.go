@@ -136,6 +136,7 @@ func (h *handler) handleMsg(msg *jsonrpcMessage) {
 		return
 	}
 	h.startCallProc(func(cp *callProc) {
+		// 这一步拿到结果answer
 		answer := h.handleCallMsg(cp, msg)
 		h.addSubscriptions(cp.notifiers)
 		if answer != nil {
@@ -289,6 +290,7 @@ func (h *handler) handleResponse(msg *jsonrpcMessage) {
 // handleCallMsg executes a call message and returns the answer.
 func (h *handler) handleCallMsg(ctx *callProc, msg *jsonrpcMessage) *jsonrpcMessage {
 	start := time.Now()
+	// handleCall函数执行下一步
 	switch {
 	case msg.isNotification():
 		h.handleCall(ctx, msg)
@@ -318,6 +320,7 @@ func (h *handler) handleCall(cp *callProc, msg *jsonrpcMessage) *jsonrpcMessage 
 	if msg.isUnsubscribe() {
 		callb = h.unsubscribeCb
 	} else {
+		// h.reg.callback(msg.Method)执行方法
 		callb = h.reg.callback(msg.Method)
 	}
 	if callb == nil {

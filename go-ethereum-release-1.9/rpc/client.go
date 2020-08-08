@@ -467,6 +467,7 @@ func (c *Client) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMes
 // if sending fails, op is deregistered.
 func (c *Client) send(ctx context.Context, op *requestOp, msg interface{}) error {
 	select {
+	// 重要，调用RPC时,把op送入c.reqInit，在本文件中函数dispatch()会监听c.reqInit，即case op := <-reqInitLock:
 	case c.reqInit <- op:
 		err := c.write(ctx, msg, false)
 		c.reqSent <- err
@@ -550,6 +551,7 @@ func (c *Client) dispatch(codec ServerCodec) {
 			return
 
 		// Read path:
+		// 在这里会处理命令
 		case op := <-c.readOp:
 			if op.batch {
 				conn.handler.handleBatch(op.msgs)

@@ -199,6 +199,7 @@ loop:
 					break loop
 				}
 			}
+			// 接收到要执行的指令
 		case req := <-re.evalQueue:
 			// run the code, send the result back
 			req.fn(re.vm)
@@ -223,6 +224,7 @@ loop:
 func (re *JSRE) Do(fn func(*goja.Runtime)) {
 	done := make(chan bool)
 	req := &evalReq{fn, done}
+	//将要执行的指令函数fn加上done作为req写入re.evalQueue,re.evalQueue被本文件中的函数runEventLoop()所监听
 	re.evalQueue <- req
 	<-done
 }
@@ -271,11 +273,13 @@ func MakeCallback(vm *goja.Runtime, fn func(Call) (goja.Value, error)) goja.Valu
 
 // Evaluate executes code and pretty prints the result to the specified output stream.
 func (re *JSRE) Evaluate(code string, w io.Writer) {
+	//执行re.Do(func(){}) fun为回调函数
 	re.Do(func(vm *goja.Runtime) {
 		val, err := vm.RunString(code) /* FuM:在虚拟机中运行控制台的指令 */
 		if err != nil {
 			prettyError(vm, err, w)
 		} else {
+			// 在控制台输出结果
 			prettyPrint(vm, val, w)
 		}
 		fmt.Fprintln(w)

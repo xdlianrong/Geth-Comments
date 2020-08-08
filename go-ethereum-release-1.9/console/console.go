@@ -346,6 +346,7 @@ func (c *Console) Interactive() {
 		scheduler = make(chan string) // Channel to send the next prompt on and receive the input
 	)
 	// Start a goroutine to listen for prompt requests and send back inputs
+	// 接收用户输入
 	go func() {
 		for {
 			// Read the next user input
@@ -361,6 +362,7 @@ func (c *Console) Interactive() {
 				return
 			}
 			// User input retrieved, send for interpretation and loop
+			// 把命令送入scheduler通道
 			scheduler <- line
 		}
 	}()
@@ -371,6 +373,7 @@ func (c *Console) Interactive() {
 	// Start sending prompts to the user and reading back inputs
 	for {
 		// Send the next prompt, triggering an input read and process the result
+		// 从scheduler通道取出命令
 		scheduler <- prompt
 		select {
 		case <-abort:
