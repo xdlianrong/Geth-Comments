@@ -75,3 +75,59 @@ func (s *PublicBlockChainAPI) GetBalance(ctx context.Context, address common.Add
 
 可以看到返回的余额已经是原来的两倍。
 
+## console
+
+如何实现在console和postman都可以调用的API接口呢，下面是一个例子：
+
+在./internal/ethapi/api.go中加入以下代码
+
+```go
+// 付铭自己加的
+func (s *PublicBlockChainAPI) GetNonce(ctx context.Context, address common.Address, blockNr rpc.BlockNumber) (uint64, error) {
+	state, _, err := s.b.StateAndHeaderByNumber(ctx, blockNr)
+	if state == nil || err != nil {
+		return 0, err
+	}
+	b := state.GetNonce(address)
+	return b, state.Error()
+}
+```
+
+然后在./internal/jsre/deps/web3.js中的`var getBalance = new Method({`下方加入以下代码
+
+```go
+var getNonce = new Method({
+                name: 'getNonce',
+                call: 'eth_getNonce',
+                params: 2,
+                inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter],
+                outputFormatter: formatters.outputBigNumberFormatter
+            });
+```
+
+然后在下方return处加上`getNonce`。
+
+注意这个时候编译运行之后console那里是不生效的，因为以太坊编译运行时用的不是web3.js这个文件，而是把web3.js和其他文件编译之后得到的bindata.go这个文件，所以在编译以太坊之前，需要对修改过的web3.js进行编译。
+
+##### 编译web3.js
+
+在web3.js的同级目录下有个名为deps.go的文件，里面有两个go命令，如下：
+
+```go
+package deps
+
+//go:generate go-bindata -nometadata -pkg deps -o bindata.go bignumber.js web3.js
+//go:generate gofmt -w -s bindata.go
+```
+
+运行此命令需要电脑上装有go-bindata，安装方法自行Google，安装完依次运行，成功之后就可以编译以太坊了。
+
+##### 运行结果
+
+在以太坊console输入`eth.getNonce(eth.accounts[0])`，可以看到已经得到结果。
+
+![console-test](./images/console-test.png)
+
+在postman发送get请求也可以看到相同结果
+
+![postman-test5](./images/postman-test5.png)
