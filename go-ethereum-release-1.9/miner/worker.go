@@ -388,7 +388,9 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 	// clearPending cleans the stale pending tasks.
 	clearPending := func(number uint64) {
 		w.pendingMu.Lock()
+		// w.pendingTasks是一个map[task的hash,task]
 		for h, t := range w.pendingTasks {
+			//如果此任务区块数<=目前网络总区块数（本地已经存储的区块总数）-7（因为只有当第n个区块产生时，第n-7个区块才被承认），此任务就不再有效了
 			if t.block.NumberU64()+staleThreshold <= number {
 				delete(w.pendingTasks, h)
 			}
@@ -576,26 +578,27 @@ func (w *worker) taskLoop() {
 	for {
 		select {
 		case task := <-w.taskCh:
-			//Hook函数好像是代码测试用的，待探究
+			//Hook函数是代码测试用的，待探究
 			if w.newTaskHook != nil {
 				w.newTaskHook(task)
 			}
 			// Reject duplicate sealing work due to resubmitting.
-			sealHash := w.engine.SealHash(task.block.Header()) //获取区块在被签名之前的哈希值
+			sealHash := w.engine.SealHash(task.block.Header()) //获取区块头哈希值，防止同一区块被两次提交
 			if sealHash == prev {
 				continue
 			}
 			// Interrupt previous sealing operation
 			interrupt()
 			stopCh, prev = make(chan struct{}), sealHash
-
+			//Hook是代码测试
 			if w.skipSealHook != nil && w.skipSealHook(task) {
 				continue
 			}
 			w.pendingMu.Lock()                                            //读写🔒
-			w.pendingTasks[w.engine.SealHash(task.block.Header())] = task //构造map
+			w.pendingTasks[w.engine.SealHash(task.block.Header())] = task //构造map[task的头哈希,task]
 			w.pendingMu.Unlock()
-			//调用的共识引擎的块封装函数Seal来执行具体的挖矿操作。
+			// 调用的共识引擎的块封装函数Seal来执行具体的挖矿操作，也就是耗费巨大资源来证明劳动量的那一步。
+			// 找到正确的nonce值后，已经证明过正确的区块被传递到通道w.resultCh中，w.resultCh在resultLoop()中被监听
 			if err := w.engine.Seal(w.chain, task.block, w.resultCh, stopCh); err != nil {
 				log.Warn("Block sealing failed", "err", err)
 			}
@@ -612,21 +615,23 @@ func (w *worker) taskLoop() {
 func (w *worker) resultLoop() {
 	for {
 		select {
+		// 拿到已经通过工作量证明的区块
 		case block := <-w.resultCh:
 			// Short circuit when receiving empty result.
 			if block == nil {
 				continue
 			}
 			// Short circuit when receiving duplicate result caused by resubmitting.
+			// 如果链中已经有此区块，放弃
 			if w.chain.HasBlock(block.Hash(), block.NumberU64()) {
 				continue
 			}
 			var (
-				sealhash = w.engine.SealHash(block.Header())
-				hash     = block.Hash()
+				sealhash = w.engine.SealHash(block.Header()) // 区块头hash 不包含工作量证明的那部分的hash（即使区块头中包含工作量证明内容也是如此）
+				hash     = block.Hash()                      // 区块hash
 			)
 			w.pendingMu.RLock()
-			task, exist := w.pendingTasks[sealhash]
+			task, exist := w.pendingTasks[sealhash] // 在劳动量证明开始之前记录了每个挖矿的任务，不出意外task可以拿到，exist为true
 			w.pendingMu.RUnlock()
 			if !exist {
 				log.Error("Block found but no relative pending task", "number", block.Number(), "sealhash", sealhash, "hash", hash)
@@ -637,7 +642,7 @@ func (w *worker) resultLoop() {
 				receipts = make([]*types.Receipt, len(task.receipts))
 				logs     []*types.Log
 			)
-			// 处理交易生成收据
+			// 处理交易生成收据，区块中不存收据，收据和区块分开存
 			for i, receipt := range task.receipts {
 				// add block location fields
 				receipt.BlockHash = hash
@@ -651,10 +656,11 @@ func (w *worker) resultLoop() {
 				for _, log := range receipt.Logs {
 					log.BlockHash = hash
 				}
+				// 可以看到logs就是receipt.Logs
 				logs = append(logs, receipt.Logs...)
 			}
 			// Commit block and state to database.
-			/* FuM:将区块写入到区块链中 */
+			/* FuM:将区块写入到区块链中，这就和数据库有很强的相关性了 */
 			_, err := w.chain.WriteBlockWithState(block, receipts, logs, task.state, true)
 			if err != nil {
 				log.Error("Failed writing block to chain", "err", err)
@@ -668,6 +674,7 @@ func (w *worker) resultLoop() {
 			w.mux.Post(core.NewMinedBlockEvent{Block: block})
 
 			// Insert the block into the set of pending ones to resultLoop for confirmations
+			// 因为是刚挖出来的，还不被广泛确认，故加入到unconfirmed里面，在resultLoop中会被用到
 			w.unconfirmed.Insert(block.NumberU64(), block.Hash())
 
 		case <-w.exitCh:
@@ -956,7 +963,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		misc.ApplyDAOHardFork(env.state)
 	}
 	// Accumulate the uncles for the current block
-	uncles := make([]*types.Header, 0, 2)
+	uncles := make([]*types.Header, 0, 2) //长度为0，预留总长度为2
 	commitUncles := func(blocks map[common.Hash]*types.Block) {
 		// Clean up stale uncle blocks first
 		/* FuM: 删除旧块*/
@@ -1001,14 +1008,16 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		return
 	}
 	// Split the pending transactions into locals and remotes
+	// 先把交易池中pending的交易都认为是remoteTxs
 	localTxs, remoteTxs := make(map[common.Address]types.Transactions), pending
+	// 如果remoteTxs中有本地账户发出的交易，就把此交易从remoteTxs移到localTxs中
 	for _, account := range w.eth.TxPool().Locals() {
 		if txs := remoteTxs[account]; len(txs) > 0 {
 			delete(remoteTxs, account)
 			localTxs[account] = txs
 		}
 	}
-	//对取出的交易集进行了一下整理，并没有执行
+	//执行localTxs和remoteTxs，优先执行localTxs，注意commitTransactions这个函数是有误时返回true，所以假定无误，不会return
 	if len(localTxs) > 0 {
 		txs := types.NewTransactionsByPriceAndNonce(w.current.signer, localTxs)
 		if w.commitTransactions(txs, w.coinbase, interrupt) {
@@ -1021,7 +1030,7 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 			return
 		}
 	}
-	w.commit(uncles, w.fullTaskHook, true, tstart) //开始出块
+	w.commit(uncles, w.fullTaskHook, true, tstart) //开始出块,交易执行结果都在w.current里面
 }
 
 /* FuM:运行任何交易的后续状态修改，组装最终区块，并在共识引擎运行时提交新工作。*/
@@ -1044,6 +1053,7 @@ func (w *worker) commit(uncles []*types.Header, interval func(), update bool, st
 			interval()
 		}
 		select {
+		// 此case一定执行
 		case w.taskCh <- &task{receipts: receipts, state: s, block: block, createdAt: time.Now()}:
 			w.unconfirmed.Shift(block.NumberU64() - 1) //删除待确认区块列表中的过期区块
 

@@ -97,12 +97,12 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 		ethash.remote.workCh <- &sealTask{block: block, results: results}
 	}
 	var (
-		pend   sync.WaitGroup // 创建一个倒计时锁对象
-		locals = make(chan *types.Block)
+		pend   sync.WaitGroup            // 创建一个倒计时锁对象
+		locals = make(chan *types.Block) // 用来接收区块头中带有正确nonce值的区块
 	)
 	for i := 0; i < threads; i++ {
 		pend.Add(1)
-		go func(id int, nonce uint64) { // 核心代码通过闭包多线程技术来执行。
+		go func(id int, nonce uint64) { // 核心代码通过闭包多线程技术来执行，启动threads个线程同时挖矿。
 			defer pend.Done()
 			ethash.mine(block, id, nonce, abort, locals) // Seal核心工作
 		}(i, uint64(ethash.rand.Int63())) //闭包第二个参数表达式uint64(ethash.rand.Int63())通过上面准备好的rand函数随机数结果作为nonce实参传入方法体
@@ -118,8 +118,9 @@ func (ethash *Ethash) Seal(chain consensus.ChainReader, block *types.Block, resu
 			close(abort)
 		case result = <-locals:
 			// One of the threads found a block, abort all others
-			// 其中一个线程挖到正确块，中止其他所有线程
+			// 其中一个线程挖到正确块，中止其他所有线程，正确的块存入result中
 			select {
+			// 将result存入results中，results是此函数的父函数传过来的通道参数
 			case results <- result:
 			default:
 				ethash.config.Log.Warn("Sealing result is not read by miner", "mode", "local", "sealhash", ethash.SealHash(block.Header()))
@@ -193,6 +194,7 @@ search:
 				// Seal and return a block (if still needed)
 				// 封装返回一个区块
 				select {
+				// WithSeal就是把block的header换成参数里面的header，于是含有正确nonce值的区块被放入通道found中
 				case found <- block.WithSeal(header):
 					logger.Trace("Ethash nonce found and reported", "attempts", nonce-seed, "nonce", nonce)
 				case <-abort:
