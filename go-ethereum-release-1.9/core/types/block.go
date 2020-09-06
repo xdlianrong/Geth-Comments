@@ -80,9 +80,9 @@ type Header struct {
 	GasLimit    uint64         `json:"gasLimit"         gencodec:"required"` //gas开支上限
 	GasUsed     uint64         `json:"gasUsed"          gencodec:"required"` //用掉的gas之和
 	Time        uint64         `json:"timestamp"        gencodec:"required"` //unix时间戳
-	Extra       []byte         `json:"extraData"        gencodec:"required"` //32字节以内的任意数据
-	MixDigest   common.Hash    `json:"mixHash"`								 //kec256哈希值与nonce一起证明当前区块承载了足够的计算量
-	Nonce       BlockNonce     `json:"nonce"`								 //64位的值，用来与mixhash一起证明当前区块承载了足够多的的计算量
+	Extra       []byte         `json:"extraData"        gencodec:"required"` //32字节以内的任意数据，如果支持DAO分叉，需要在里面写数据
+	MixDigest   common.Hash    `json:"mixHash"`                              //kec256哈希值与nonce一起证明当前区块承载了足够的计算量
+	Nonce       BlockNonce     `json:"nonce"`                                //64位的值，用来与mixhash一起证明当前区块承载了足够多的的计算量
 }
 
 // field type overrides for gencodec
@@ -140,7 +140,7 @@ func rlpHash(x interface{}) (h common.Hash) {
 // a block's data contents (transactions and uncles) together.
 type Body struct {
 	Transactions []*Transaction //交易列表
-	Uncles       []*Header 		//叔块的区块头列表
+	Uncles       []*Header      //叔块的区块头列表
 }
 
 // Block represents an entire block in the Ethereum blockchain.

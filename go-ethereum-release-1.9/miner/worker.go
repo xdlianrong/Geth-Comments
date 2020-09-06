@@ -938,7 +938,10 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) 
 		return
 	}
 	// If we are care about TheDAO hard-fork check whether to override the extra-data or not
-	/* FuM: 是否支持DAO事件硬分叉*/
+	/* FuM: 此区块是否位于DAO事件硬分叉影响范围内
+	DAO硬分叉分出了ETC和ETH，ETC为不支持硬分叉的一方
+	所以如果在硬分叉影响范围内，需要根据矿工是否支持硬分叉来决定是否在区块头的Extra位置写入特定数据
+	*/
 	if daoBlock := w.chainConfig.DAOForkBlock; daoBlock != nil {
 		// Check whether the block is among the fork extra-override range
 		limit := new(big.Int).Add(daoBlock, params.DAOForkExtraRange)

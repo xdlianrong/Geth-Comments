@@ -333,24 +333,27 @@ func generateDataset(dest []uint32, epoch uint64, cache []uint32) {
 // value for a particular header hash and nonce.
 func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32) []uint32) ([]byte, []byte) {
 	// Calculate the number of theoretical rows (we use one buffer nonetheless)
-	rows := uint32(size / mixBytes)
+	rows := uint32(size / mixBytes) // mixBytes常数 =128
 
 	// Combine header+nonce into a 64 byte seed
 	seed := make([]byte, 40)
 	copy(seed, hash)
 	binary.LittleEndian.PutUint64(seed[32:], nonce)
 
-	seed = crypto.Keccak512(seed)
-	seedHead := binary.LittleEndian.Uint32(seed)
+	seed = crypto.Keccak512(seed)                // 将40byte的seed做SHA-512哈希得到其64字节哈希值并重新赋给seed
+	seedHead := binary.LittleEndian.Uint32(seed) //取seed的前32位作为seedHead
 
 	// Start the mix with replicated seed
-	mix := make([]uint32, mixBytes/4)
+	mix := make([]uint32, mixBytes/4) //mix是一个可以存32个uint32数的数组
+	// seed是64字节，一个uint32是4字节，故一个seed只需要16个uint32就能存储，所以下面的mix的前16个uint32和后16个uint32是相等的
 	for i := 0; i < len(mix); i++ {
-		mix[i] = binary.LittleEndian.Uint32(seed[i%16*4:])
+		//mix[i]=seed[i%16*4+3],seed[i%16*4+2],seed[i%16*4+1],seed[i%16*4]的8位二进制数按此顺序直接以字符串形式连接后得到的32位二进制数的十进制
+		mix[i] = binary.LittleEndian.Uint32(seed[i%16*4:]) //Uint32()这个函数写的很巧妙，考虑到了CPU对于移位和按位与效率更高的问题
 	}
 	// Mix in random dataset nodes
-	temp := make([]uint32, len(mix))
-
+	temp := make([]uint32, len(mix)) //temp容量32
+	// 64次循环，不断调用lookup()从外部数据集中取出uint32元素类型数组，向mix[]数组中混入未知的数据
+	// 参数j使每次取出的数组都不相同。这里混入数据的方式是一种异或的操作，来自于FNV算法
 	for i := 0; i < loopAccesses; i++ {
 		parent := fnv(uint32(i)^seedHead, mix[i%len(mix)]) % rows
 		for j := uint32(0); j < mixBytes/hashBytes; j++ {
@@ -359,15 +362,18 @@ func hashimoto(hash []byte, nonce uint64, size uint64, lookup func(index uint32)
 		fnvHash(mix, temp)
 	}
 	// Compress mix
+	// 这个for还是在混淆mix
 	for i := 0; i < len(mix); i += 4 {
 		mix[i/4] = fnv(fnv(fnv(mix[i], mix[i+1]), mix[i+2]), mix[i+3])
 	}
+	// 将其折叠(压缩)成一个长度缩小成原长1/4的uint32数组
 	mix = mix[:len(mix)/4]
-
+	//将折叠后的mix[]由长度为8的uint32型数组直接转化成一个长度32的byte数组，作为返回值digest
 	digest := make([]byte, common.HashLength)
 	for i, val := range mix {
 		binary.LittleEndian.PutUint32(digest[i*4:], val)
 	}
+	// 同时将之前的seed[]数组与digest合并再取一次SHA-256哈希值，得到的长度32的byte数组，作为返回值result
 	return digest, crypto.Keccak256(append(seed, digest...))
 }
 
