@@ -70,6 +70,7 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 // signing method. The cache is invalidated if the cached signer does
 // not match the signer used in the current call.
 func Sender(signer Signer, tx *Transaction) (common.Address, error) {
+	// 如果交易中有签名缓存，就对比签名缓存中的签名方是否位于此区块链网络
 	if sc := tx.from.Load(); sc != nil {
 		sigCache := sc.(sigCache)
 		// If the signer used to derive from in a previous
@@ -79,11 +80,12 @@ func Sender(signer Signer, tx *Transaction) (common.Address, error) {
 			return sigCache.from, nil
 		}
 	}
-
+	// 交易中没有签名缓存或签名缓存的签名方不来自于此区块链网络，就从交易的签名字符串(signature)中恢复出公钥，并转化为tx的(转帐)转出方地址
 	addr, err := signer.Sender(tx)
 	if err != nil {
 		return common.Address{}, err
 	}
+	// 将本区块链网络的签名方和本交易的转出方地址存入签名缓存中
 	tx.from.Store(sigCache{signer: signer, from: addr})
 	return addr, nil
 }

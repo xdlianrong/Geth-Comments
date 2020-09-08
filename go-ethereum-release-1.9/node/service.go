@@ -54,10 +54,15 @@ func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int, nam
 // database to immutable append-only files. If the node is an ephemeral one, a
 // memory database is returned.
 func (ctx *ServiceContext) OpenDatabaseWithFreezer(name string, cache int, handles int, freezer string, namespace string) (ethdb.Database, error) {
+	// ctx.Config.DataDir是在命令行中启动时声明的--datadir {{datadir}}
+	// 如果在命令行中没有声明datadir，他也不会为空，在我的macOS上会设置为/Users/fuming/Library/Ethereum
+	// 所以只有当datadir为空时，才认为是临时节点，并在内存中创建临时数据库
 	if ctx.Config.DataDir == "" {
 		return rawdb.NewMemoryDatabase(), nil
 	}
+	//这个name是'chaindata',代码里写死的
 	root := ctx.Config.ResolvePath(name)
+	//root就是{{datadir}}/geth/{{name}}
 
 	switch {
 	case freezer == "":
