@@ -54,6 +54,26 @@ type TransactOpts struct {
 	GasLimit uint64   // Gas limit to set for the transaction execution (0 = estimate)
 
 	Context context.Context // Network context to support cancellation and timeouts (nil = no timeout)
+
+	//新增交易字段
+	SnO   uint64 //代币序列号
+	rR1   uint64 //随机数，交易时对交易金额v_r进行加密
+	CmSpk uint64 //发送方公钥的承诺
+	CmRpk uint64 //接收方公钥的承诺
+	CmO   uint64 //原始金额承诺
+	CmS   uint64 //消费金额承诺
+	CmR   uint64 //找零金额承诺
+	EvR   uint64 //E(v_r) = (v_r * G1_R + r_r2 * H_R, r_r2 * G2_R)
+	EvR0  uint64 //EvR 的后64位
+	EvR_  uint64 //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
+	EvR_0 uint64 //EvR_ 的后64位
+	pi    uint64 //零知识证明Π
+
+	//新增购币字段
+	ID   uint64 //购币标识
+	Sig  uint64 //发行者签名
+	CmV  uint64 //购币承诺
+	EpkV uint64 //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
 }
 
 // FilterOpts is the collection of options to fine tune filtering for events
@@ -227,9 +247,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	// Create the transaction, sign it and schedule it for execution
 	var rawTx *types.Transaction
 	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input)
+		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.pi, opts.ID, opts.Sig, opts.CmV, opts.EpkV)
 	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input)
+		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.pi, opts.ID, opts.Sig, opts.CmV, opts.EpkV)
 	}
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")

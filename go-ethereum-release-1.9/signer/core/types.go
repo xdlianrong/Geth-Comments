@@ -74,8 +74,24 @@ type SendTxArgs struct {
 	Value    hexutil.Big              `json:"value"`
 	Nonce    hexutil.Uint64           `json:"nonce"`
 	// We accept "data" and "input" for backwards-compatibility reasons.
-	Data  *hexutil.Bytes `json:"data"`
-	Input *hexutil.Bytes `json:"input,omitempty"`
+	Data  *hexutil.Bytes  `json:"data"`
+	Input *hexutil.Bytes  `json:"input,omitempty"`
+	SnO   *hexutil.Uint64 `json:"SnO"`
+	rR1   *hexutil.Uint64 `json:"rR1"`
+	CmSpk *hexutil.Uint64 `json:"CmSpk"`
+	CmRpk *hexutil.Uint64 `json:"CmRpk"`
+	CmO   *hexutil.Uint64 `json:"CmO"`
+	CmS   *hexutil.Uint64 `json:"CmS"`
+	CmR   *hexutil.Uint64 `json:"CmR"`
+	EvR   *hexutil.Uint64 `json:"EvR"`
+	EvR0  *hexutil.Uint64 `json:"EvR0"`
+	EvR_  *hexutil.Uint64 `json:"EvR_"`
+	EvR_0 *hexutil.Uint64 `json:"EvR_0"`
+	pi    *hexutil.Uint64 `json:"pi"`
+	ID    *hexutil.Uint64 `json:"ID"`
+	Sig   *hexutil.Uint64 `json:"Sig"`
+	CmV   *hexutil.Uint64 `json:"CmV"`
+	EpkV  *hexutil.Uint64 `json:"EpkV"`
 }
 
 func (args SendTxArgs) String() string {
@@ -94,7 +110,7 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Input
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input)
+		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.pi), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
 	}
-	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input)
+	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.pi), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
 }
