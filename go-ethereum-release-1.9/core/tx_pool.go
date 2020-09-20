@@ -17,7 +17,9 @@
 package core
 
 import (
+	"encoding/binary"
 	"errors"
+	"github.com/ethereum/go-ethereum/crypto"
 	"math"
 	"math/big"
 	"sort"
@@ -91,6 +93,11 @@ var (
 	// than some meaningful limit a user might use. This is not a consensus error
 	// making the transaction invalid, rather a DOS protection.
 	ErrOversizedData = errors.New("oversized data")
+
+	// @author mzliu 20200918
+	// ErrVerifySignatureFailed is returned if CMV and ID of a transaction
+	//cannot be verified using the given signature
+	ErrVerifySignatureFailed = errors.New("verify signature failed")
 )
 
 var (
@@ -569,6 +576,30 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	return nil
 }
 
+// author mzliu 20200918
+// validate Sign using tx : sig and CMV+ID
+func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error{
+	i := tx.CmV()+tx.ID()
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, i)
+	msg := crypto.Keccak256(b)
+	// sig to []bytes
+	i2 := tx.Sig()
+	sig := make([]byte, 8)
+	binary.BigEndian.PutUint64(sig, i2)
+	// recover pubKey
+	recoveredPub, err := crypto.Ecrecover(msg, sig)
+	if err != nil {
+		log.Trace("ECRecover error: %s", err)
+	}
+	// verify
+	bool1 := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
+	if bool1 != true{
+		return ErrVerifySignatureFailed
+	}
+	return nil
+}
+
 // add validates a transaction and inserts it into the non-executable queue for later
 // pending promotion and execution. If the transaction is a replacement for an already
 // pending or queued one, it overwrites the previous transaction if its price is higher.
@@ -576,6 +607,8 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // If a newly added transaction is marked as local, its sending account will be
 // whitelisted, preventing any associated transaction from being dropped out of the pool
 // due to pricing constraints.
+// @author mzliu 20200918
+// add validate Sign
 func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err error) {
 	// If the transaction is already known, discard it
 	// 若交易已在交易池，丢弃
@@ -590,6 +623,13 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 	if err := pool.validateTx(tx, local); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
 		invalidTxMeter.Mark(1)
+		return false, err
+	}
+
+	// @autohr mzliu 20200918
+	// validate Sig, you know
+	if err := pool.validateSign(tx, local);err != nil{
+		log.Trace("Sig verify failed", "hash", hash)
 		return false, err
 	}
 	// If the transaction pool is full, discard underpriced transactions

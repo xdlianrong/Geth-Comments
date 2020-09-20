@@ -18,6 +18,7 @@ package types
 
 import (
 	"crypto/ecdsa"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"math/big"
@@ -53,12 +54,25 @@ func MakeSigner(config *params.ChainConfig, blockNumber *big.Int) Signer {
 }
 
 // SignTx signs the transaction using the given signer and private key
+// @author mzliu 20200918
+// modify SignTx and add generate Sig of currency
 func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, error) {
 	h := s.Hash(tx)
 	sig, err := crypto.Sign(h[:], prv)
 	if err != nil {
 		return nil, err
 	}
+	//@author mzliu 20200918
+	//sign CM_v and ID and assign Sig
+		//first add cmv and id
+	i := tx.CmV()+tx.ID()
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, i)
+		//next transfer msg into []byte
+	msg := crypto.Keccak256(b)
+		//then sign msg
+	Sig, err := crypto.Sign(msg, prv)
+	tx.data.Sig = binary.BigEndian.Uint64(Sig)
 	return tx.WithSignature(s, sig)
 }
 
