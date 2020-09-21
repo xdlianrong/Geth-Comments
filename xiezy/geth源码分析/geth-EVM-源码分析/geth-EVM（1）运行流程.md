@@ -247,8 +247,8 @@ func IntrinsicGas(data []byte, contractCreation, isHomestead bool, isEIP2028 boo
 ```go
 func (st *StateTransition) refundGas() {
 	// Apply refund counter, capped to half of the used gas.
+    // 最终返还给账户的gas不能超过gasUsed/2
 	refund := st.gasUsed() / 2
-    // GetRefund返回当前剩余的value值
 	if refund > st.state.GetRefund() {
 		refund = st.state.GetRefund()
 	}
@@ -277,19 +277,19 @@ core/vm包的目录如下
 
 ```
 .
-├── analysis.go            // 跳转目标判定
-├── common.go
-├── contract.go            // 合约的数据结构
-├── contracts.go           // 预编译好的合约
+├── analysis.go            // 跳转目标判定,在指令中会被间接调用
+├── common.go			
+├── contract.go            // 合约的数据结构，为evm提供一些方法
+├── contracts.go           // 预编译合约
 ├── errors.go
-├── evm.go                 // 对外提供的接口   
+├── evm.go                 // 对外提供的接口（call，create，delegatecall....）   
 ├── gas.go                 // 用来计算指令耗费的 gas
 ├── gas_table.go           // 指令耗费计算函数表
 ├── gen_structlog.go       
-├── instructions.go        // 指令操作
+├── instructions.go        // 指令操作函数
 ├── interface.go           // 定义 StateDB 的接口
-├── interpreter.go         // 解释器
-├── intpool.go             // 存放大整数
+├── interpreter.go         // 解释器，与run函数（）
+├── intpool.go             // 处理bigInt型整数的pool
 ├── int_pool_verifier_empty.go
 ├── int_pool_verifier.go
 ├── jump_table.go           // 指令和指令操作（操作，花费，验证）对应表
@@ -297,7 +297,7 @@ core/vm包的目录如下
 ├── memory.go               // EVM 内存
 ├── memory_table.go         // EVM 内存操作表，用来衡量操作所需内存大小
 ├── noop.go
-├── opcodes.go              // 指令以及一些对应关系     
+├── opcodes.go              // 字节码相对应的指令     
 ├── runtime
 │   ├── env.go              // 执行环境 
 │   ├── fuzz.go

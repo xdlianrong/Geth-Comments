@@ -212,6 +212,7 @@ type StateDB interface {
 	AddBalance(common.Address, *big.Int)
 	// 获取一个账户的余额
 	GetBalance(common.Address) *big.Int
+    
     // 获取账户的nonce 因为以太坊要根据nonce在决定交易的执行顺序和合约地址的生成
 	GetNonce(common.Address) uint64
 	// 更新合约的nonce
@@ -225,19 +226,21 @@ type StateDB interface {
 	SetCode(common.Address, []byte)
 	// 获取合约代码的大小
 	GetCodeSize(common.Address) int
-  // 获取和添加偿还金额
+    
+    // 获取和添加偿还gas
 	AddRefund(uint64)
 	GetRefund() uint64
-  // 注意这两个函数很重要 其实质就是相当于数据库的select和update 
-  // 一个智能合约的全局静态数据的读取和写入就是通过这两个函数
+    
+    // 注意这两个函数很重要 其实质就是相当于数据库的select和update 
+    // 一个智能合约的全局静态数据的读取和写入就是通过这两个函数
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash)
 
-  // 合约账户自杀 或者是否已经自杀 主要是以太坊的一个机制 自杀的合约会给与退费
+    // 合约账户自杀 或者是否已经自杀 主要是以太坊的一个机制 自杀的合约会给与退费
 	Suicide(common.Address) bool
 	HasSuicided(common.Address) bool
 
-  // 判断一个合约是否存在
+    // 判断一个合约是否存在
 	Exist(common.Address) bool
 	// 判断合约是否为空
 	// is defined according to EIP161 (balance = nonce = code = 0).
@@ -246,14 +249,120 @@ type StateDB interface {
 	RevertToSnapshot(int)
 	Snapshot() int
 
-  // 此函数就是在我们在智能合约中执行emit命令时调用的
+     // 此函数就是在我们在智能合约中执行emit命令时调用的
 	AddLog(*types.Log)
 	AddPreimage(common.Hash, []byte)
 
-  // 这个接口在evm中没有使用到 我们可以写一个空函数
+    // 这个接口在evm中没有使用到 我们可以写一个空函数
 	ForEachStorage(common.Address, func(common.Hash, common.Hash) bool)
 }
 ```
+
+### 4.3 具体方法实现
+
+#### 4.3.1 建立账户
+
+evm中仅为建立合约账户
+
+方法调用：外部账户创建合约，或者合约执行到CREAT指令
+
+```go
+func (s *StateDB) CreateAccount(addr common.Address) {
+	newObj, prev := s.createObject(addr)
+	if prev != nil {
+		newObj.setBalance(prev.data.Balance)
+	}
+}
+
+// 寻找对应地址的账户
+// 如果已经存在账户，则建立新账户
+// 如果不存在账户，则建立新账户
+func (s *StateDB) createObject(addr common.Address) (newobj, prev *stateObject) {
+	prev = s.getDeletedStateObject(addr) // Note, prev might have been deleted, we need that!
+
+	newobj = newObject(s, addr, Account{})
+	newobj.setNonce(0) // sets the object to dirty
+	if prev == nil {
+		s.journal.append(createObjectChange{account: &addr})
+	} else {
+		s.journal.append(resetObjectChange{prev: prev})
+	}
+	s.setStateObject(newobj)
+	return newobj, prev
+}
+
+
+
+// 下面两个方法实现journalEntry接口 
+
+
+```
+
+
+
+```go
+func (s *StateDB) getDeletedStateObject(addr common.Address) *stateObject {
+	// Prefer live objects if any is available
+    // 这里和getStateObject方法不同的地方是，允许了已经自毁的账户的存在
+	if obj := s.stateObjects[addr]; obj != nil {
+		return obj
+	}
+	// Track the amount of time wasted on loading the object from the database
+	if metrics.EnabledExpensive {
+		defer func(start time.Time) { s.AccountReads += time.Since(start) }(time.Now())
+	}
+	// Load the object from the database
+	enc, err := s.trie.TryGet(addr[:])
+	if len(enc) == 0 {
+		s.setError(err)
+		return nil
+	}
+	var data Account
+	if err := rlp.DecodeBytes(enc, &data); err != nil {
+		log.Error("Failed to decode state object", "addr", addr, "err", err)
+		return nil
+	}
+	// Insert into the live set
+	obj := newObject(s, addr, data)
+	s.setStateObject(obj)
+	return obj
+}
+
+func newObject(db *StateDB, address common.Address, data Account) *stateObject {
+	if data.Balance == nil {
+		data.Balance = new(big.Int)
+	}
+	if data.CodeHash == nil {
+		data.CodeHash = emptyCodeHash
+	}
+	if data.Root == (common.Hash{}) {
+		data.Root = emptyRoot
+	}
+	return &stateObject{
+		db:             db,
+		address:        address,
+		addrHash:       crypto.Keccak256Hash(address[:]),
+		data:           data,
+		originStorage:  make(Storage),
+		pendingStorage: make(Storage),
+		dirtyStorage:   make(Storage),
+	}
+}
+```
+
+
+
+
+
+4.3.2 CreateAccount
+
+4.3.1 CreateAccount
+
+4.3.1 CreateAccount
+
+4.3.1 CreateAccount
+
+4.3.1 CreateAccount
 
 
 

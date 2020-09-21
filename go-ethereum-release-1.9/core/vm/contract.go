@@ -127,6 +127,7 @@ func (c *Contract) AsDelegate() *Contract {
 	return c
 }
 
+// 下面两个函数实现获取对应字节码
 // GetOp returns the n'th element in the contract's byte array
 func (c *Contract) GetOp(n uint64) OpCode {
 	return OpCode(c.GetByte(n))

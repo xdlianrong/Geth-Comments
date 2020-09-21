@@ -80,9 +80,13 @@ func (v *BlockValidator) ValidateBody(block *types.Block) error {
 // otherwise nil and an error is returned.
 func (v *BlockValidator) ValidateState(block *types.Block, statedb *state.StateDB, receipts types.Receipts, usedGas uint64) error {
 	header := block.Header()
-	if block.GasUsed() != usedGas {
-		return fmt.Errorf("invalid gas used (remote: %d local: %d)", block.GasUsed(), usedGas)
-	}
+
+	// @xiezy 2020/9/13
+	// gas总量执行结果限制的去除
+	//if block.GasUsed() != usedGas {
+	//	return fmt.Errorf("invalid gas used (remote: %d local: %d)", block.GasUsed(), usedGas)
+	//}
+
 	// Validate the received block's bloom with the one derived from the generated receipts.
 	// For valid blocks this should always validate to true.
 	rbloom := types.CreateBloom(receipts)

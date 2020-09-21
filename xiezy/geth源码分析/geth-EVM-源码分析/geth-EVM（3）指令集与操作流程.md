@@ -496,8 +496,6 @@ func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) {
 }
 ```
 
-## 7 示例
-
 
 
 

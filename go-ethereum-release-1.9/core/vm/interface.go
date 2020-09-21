@@ -25,23 +25,29 @@ import (
 
 // StateDB is an EVM database for full state querying.
 type StateDB interface {
+	// 合约账户的创建
 	CreateAccount(common.Address)
 
+	// 账户余额的操作
 	SubBalance(common.Address, *big.Int)
 	AddBalance(common.Address, *big.Int)
 	GetBalance(common.Address) *big.Int
 
+	// 账户nonce值的操作
 	GetNonce(common.Address) uint64
 	SetNonce(common.Address, uint64)
 
+	// 对合约代码的操作
 	GetCodeHash(common.Address) common.Hash
 	GetCode(common.Address) []byte
 	SetCode(common.Address, []byte)
 	GetCodeSize(common.Address) int
 
+	// 对于gas返还值的操作
 	AddRefund(uint64)
 	SubRefund(uint64)
 	GetRefund() uint64
+
 
 	GetCommittedState(common.Address, common.Hash) common.Hash
 	GetState(common.Address, common.Hash) common.Hash
@@ -57,6 +63,7 @@ type StateDB interface {
 	// is defined according to EIP161 (balance = nonce = code = 0).
 	Empty(common.Address) bool
 
+	// 快照操作
 	RevertToSnapshot(int)
 	Snapshot() int
 

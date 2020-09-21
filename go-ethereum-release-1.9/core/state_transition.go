@@ -98,15 +98,17 @@ func IntrinsicGas(data []byte, contractCreation, isHomestead bool, isEIP2028 boo
 		if isEIP2028 {
 			nonZeroGas = params.TxDataNonZeroGasEIP2028
 		}
-		if (math.MaxUint64-gas)/nonZeroGas < nz {
-			return 0, vm.ErrOutOfGas
-		}
+		// @xiezy 2020.9.21 data字段gas限制的删除
+		//if (math.MaxUint64-gas)/nonZeroGas < nz {
+		//	return 0, vm.ErrOutOfGas
+		//}
 		gas += nz * nonZeroGas
 
 		z := uint64(len(data)) - nz
-		if (math.MaxUint64-gas)/params.TxDataZeroGas < z {
-			return 0, vm.ErrOutOfGas
-		}
+		// @xiezy 2020.9.21 data字段gas限制的删除
+		//if (math.MaxUint64-gas)/params.TxDataZeroGas < z {
+		//	return 0, vm.ErrOutOfGas
+		//}
 		gas += z * params.TxDataZeroGas
 	}
 	return gas, nil
@@ -145,9 +147,10 @@ func (st *StateTransition) to() common.Address {
 }
 
 func (st *StateTransition) useGas(amount uint64) error {
-	if st.gas < amount {
-		return vm.ErrOutOfGas
-	}
+	// @xiezy 2020.9.21 使得请求的gas不再受g0的控制
+	//if st.gas < amount {
+	//	return vm.ErrOutOfGas
+	//}
 	st.gas -= amount
 
 	return nil

@@ -329,7 +329,7 @@ contract watertap {
 1. 这里添加了构造函数。在合约部署时也会附带input字段。input字段并没有传入run（）方法；但是在合约部署，最终用go语言去解释并执行构造函数的时候调用了input。
 2. 这里的外部变量a，在构造函数实现并存储进stateDB，最终要进入合约账户地址（key）对应的存储状态，存储状态又是一个map，以这个例子为例：a是key，传入并付给a的值为value。
 
-## 5 struct_contract合约
+## 5 合约自毁
 
 先看一下合约的具体内容
 
@@ -419,7 +419,7 @@ contract B_delegatecall {
 
 ![](./images/struct-contract-delegate.png)
 
-### 5.3 EVM实现
+### 5.3 EVM指令实现
 
 ```assembly
 JUMPDEST 			
@@ -453,6 +453,100 @@ func opSuicide(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memo
    // 调用状态数据库进行销毁
    interpreter.evm.StateDB.Suicide(contract.Address())
    return nil, nil
+}
+```
+
+## 6 合约events与logs
+
+### 6.1 实例
+
+事件是使用EVM日志内置功能的方便工具，在DAPP的接口中，它可以反过来调用Javascript的监听事件的回调。
+
+```solidity
+pragma solidity ^0.5.1;
+
+contract ClientReceipt {
+    event Deposit(
+        address indexed _from,
+        uint256 indexed _id,
+        uint _value
+    );
+
+    function deposit(uint256 _id)payable public {
+        emit Deposit(msg.sender, _id, msg.value);
+    }
+}
+```
+
+下面是一次事件被调用的实例，在外部，我们同样可以调用并且获取到返回日志的内容，这里返回的json内容，方便与外部交互。
+
+![](./images/contract-logs.png)
+
+```json
+{
+		"from": "0x5e72914535f202659083db3a02c984188fa26e9f",
+		"topic": "0x90890809c654f11d6e72a28fa60149770a0d11ec6c92319d6ceb2bb0a4ea1a15",
+		"event": "Deposit",
+		"args": {
+			"0": "0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c",
+			"1": "123",
+			"2": "3",
+			"_from": "0xCA35b7d915458EF540aDe6068dFe2F44E8fa733c",
+			"_id": "123",
+			"_value": "3",
+			"length": 3
+		}
+}
+```
+
+### 6.1 EVM指令实现
+
+对应一共5个指令，这里topics的内容一个是指定了被调用的相关函数，还制定了所有的索引值
+
+```assembly
+LOG0 LOG1 LOG2 LOG3 LOG4
+```
+
+![](./images/contract-logs-2.png)
+
+LOG3对应跳转表如下
+
+```go
+LOG3: {
+   execute:    makeLog(3),
+   dynamicGas: makeGasLog(3),
+   minStack:   minStack(5, 0),
+   maxStack:   maxStack(5, 0),
+   memorySize: memoryLog,
+   valid:      true,
+   writes:     true,
+},
+```
+
+EVM中定义的执行函数
+
+```go
+func makeLog(size int) executionFunc {
+   return func(pc *uint64, interpreter *EVMInterpreter, contract *Contract, memory *Memory, stack *Stack) ([]byte, error) {
+      topics := make([]common.Hash, size)
+      mStart, mSize := stack.pop(), stack.pop()
+      for i := 0; i < size; i++ {
+         topics[i] = common.BigToHash(stack.pop())
+      }
+
+      d := memory.GetCopy(mStart.Int64(), mSize.Int64())
+      interpreter.evm.StateDB.AddLog(&types.Log{
+         Address: contract.Address(),
+         Topics:  topics,
+         Data:    d,
+         // This is a non-consensus field, but assigned here because
+         // core/state doesn't know the current block number.
+         BlockNumber: interpreter.evm.BlockNumber.Uint64(),
+      })
+
+      interpreter.intPool.put(mStart, mSize)
+      return nil, nil
+   }
 }
 ```
 

@@ -351,7 +351,3 @@ func (c *sha256hash) Run(input []byte) ([]byte, error) {
    return h[:], nil
 }
 ```
-
-
-
-## 
