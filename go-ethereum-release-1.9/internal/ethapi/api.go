@@ -1110,6 +1110,22 @@ type RPCTransaction struct {
 	V                *hexutil.Big    `json:"v"`
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
+	SnO              hexutil.Uint64  `json:"SnO"`
+	Rr1              hexutil.Uint64  `json:"Rr1"`
+	CmSpk            hexutil.Uint64  `json:"CmSpk"`
+	CmRpk            hexutil.Uint64  `json:"CmRpk"`
+	CmO              hexutil.Uint64  `json:"CmO"`
+	CmS              hexutil.Uint64  `json:"CmS"`
+	CmR              hexutil.Uint64  `json:"CmR"`
+	EvR              hexutil.Uint64  `json:"EvR"`
+	EvR0             hexutil.Uint64  `json:"EvR0"`
+	EvR_             hexutil.Uint64  `json:"EvR_"`
+	EvR_0            hexutil.Uint64  `json:"EvR_0"`
+	PI               hexutil.Uint64  `json:"PI"`
+	ID               hexutil.Uint64  `json:"ID"`
+	Sig              hexutil.Uint64  `json:"Sig"`
+	CmV              hexutil.Uint64  `json:"CmV"`
+	EpkV             hexutil.Uint64  `json:"EpkV"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -1134,6 +1150,22 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		V:        (*hexutil.Big)(v),
 		R:        (*hexutil.Big)(r),
 		S:        (*hexutil.Big)(s),
+		SnO:      hexutil.Uint64(tx.SnO()),
+		Rr1:      hexutil.Uint64(tx.Rr1()),
+		CmSpk:    hexutil.Uint64(tx.CmSpk()),
+		CmRpk:    hexutil.Uint64(tx.CmRpk()),
+		CmO:      hexutil.Uint64(tx.CmO()),
+		CmS:      hexutil.Uint64(tx.CmS()),
+		CmR:      hexutil.Uint64(tx.CmR()),
+		EvR:      hexutil.Uint64(tx.EvR()),
+		EvR0:     hexutil.Uint64(tx.EvR0()),
+		EvR_:     hexutil.Uint64(tx.EvR_()),
+		EvR_0:    hexutil.Uint64(tx.EvR_0()),
+		PI:       hexutil.Uint64(tx.PI()),
+		ID:       hexutil.Uint64(tx.ID()),
+		Sig:      hexutil.Uint64(tx.Sig()),
+		CmV:      hexutil.Uint64(tx.CmV()),
+		EpkV:     hexutil.Uint64(tx.EpkV()),
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
@@ -1259,6 +1291,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionCount(ctx context.Context, addr
 
 // GetTransactionByHash returns the transaction for the given hash
 func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, hash common.Hash) (*RPCTransaction, error) {
+	// 先从区块中找交易
 	// Try to return an already finalized transaction
 	tx, blockHash, blockNumber, index, err := s.b.GetTransaction(ctx, hash)
 	if err != nil {
@@ -1267,6 +1300,7 @@ func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, has
 	if tx != nil {
 		return newRPCTransaction(tx, blockHash, blockNumber, index), nil
 	}
+	// 区块中没找到交易，去交易池里找
 	// No finalized transaction, try to retrieve it from the pool
 	if tx := s.b.GetPoolTransaction(hash); tx != nil {
 		return newRPCPendingTransaction(tx), nil
@@ -1370,7 +1404,7 @@ type SendTxArgs struct {
 	Data  *hexutil.Bytes  `json:"data"`
 	Input *hexutil.Bytes  `json:"input"`
 	SnO   *hexutil.Uint64 `json:"SnO"`
-	rR1   *hexutil.Uint64 `json:"rR1"`
+	Rr1   *hexutil.Uint64 `json:"Rr1"`
 	CmSpk *hexutil.Uint64 `json:"CmSpk"`
 	CmRpk *hexutil.Uint64 `json:"CmRpk"`
 	CmO   *hexutil.Uint64 `json:"CmO"`
@@ -1380,7 +1414,7 @@ type SendTxArgs struct {
 	EvR0  *hexutil.Uint64 `json:"EvR0"`
 	EvR_  *hexutil.Uint64 `json:"EvR_"`
 	EvR_0 *hexutil.Uint64 `json:"EvR_0"`
-	pi    *hexutil.Uint64 `json:"pi"`
+	PI    *hexutil.Uint64 `json:"PI"`
 	ID    *hexutil.Uint64 `json:"ID"`
 	Sig   *hexutil.Uint64 `json:"Sig"`
 	CmV   *hexutil.Uint64 `json:"CmV"`
@@ -1455,9 +1489,9 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Data
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.pi), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.pi), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
 }
 
 // SubmitTransaction is a helper function that submits tx to txPool and logs a message.

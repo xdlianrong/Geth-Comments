@@ -49,31 +49,23 @@ type txdata struct {
 	GasLimit     uint64          `json:"gas"      gencodec:"required"` //用于执行这个交易的最大 gas 数量。这个值须在交易开始前设置，且设定后不能再增加，由Tg 表示。
 	Recipient    *common.Address `json:"to"       rlp:"nil"`           // nil means contract creation 160 位的消息调用接收者地址；对与合约创建交易，用 ∅ 表示 B0 的唯一成员。此字段由 Tt 表示
 	Amount       *big.Int        `json:"value"    gencodec:"required"` //转移到接收者账户的 Wei 的数量；对于合约 创建，则代表给新建合约地址的初始捐款。由 Tv 表示。
-	Payload      []byte          `json:"input"    gencodec:"required"` //如果目标账户包含代码，该代码会执行，payload就是输入数据。
-	//如果目标账户是零账户（账户地址是0），交易将创建一个新合约。
-	//这个合约地址不是零地址，而是由合约创建者的地址和该地址发出过的交易数量（被称为nonce）计算得到。
-	//创建合约交易的payload被当作EVM字节码执行。执行的输出做为合约代码被永久存储。这意味着，为了创建一个合约，
-	//你不需要向合约发送真正的合约代码，而是发送能够返回真正代码的代码。
-
-	//新增交易字段
-	SnO   uint64 //代币序列号
-	rR1   uint64 //随机数，交易时对交易金额v_r进行加密
-	CmSpk uint64 //发送方公钥的承诺
-	CmRpk uint64 //接收方公钥的承诺
-	CmO   uint64 //原始金额承诺
-	CmS   uint64 //消费金额承诺
-	CmR   uint64 //找零金额承诺
-	EvR   uint64 //E(v_r) = (v_r * G1_R + r_r2 * H_R, r_r2 * G2_R)
-	EvR0  uint64 //EvR 的后64位
-	EvR_  uint64 //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
-	EvR_0 uint64 //EvR_ 的后64位
-	pi    uint64 //零知识证明Π
-
-	//新增购币字段
-	ID   uint64 //购币标识
-	Sig  uint64 //发行者签名
-	CmV  uint64 //购币承诺
-	EpkV uint64 //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
+	Payload      []byte          `json:"input"    gencodec:"required"` //如果目标账户包含代码，该代码会执行，payload就是输入数据。如果目标账户是零账户（账户地址是0），交易将创建一个新合约。这个合约地址不是零地址，而是由合约创建者的地址和该地址发出过的交易数量（被称为nonce）计算得到。创建合约交易的payload被当作EVM字节码执行。执行的输出做为合约代码被永久存储。这意味着，为了创建一个合约，你不需要向合约发送真正的合约代码，而是发送能够返回真正代码的代码。
+	SnO          uint64          `json:"SnO"      gencodec:"required"` //代币序列号
+	Rr1          uint64          `json:"Rr1"      gencodec:"required"` //随机数，交易时对交易金额v_r进行加密
+	CmSpk        uint64          `json:"CmSpk"    gencodec:"required"` //发送方公钥的承诺
+	CmRpk        uint64          `json:"CmRpk"    gencodec:"required"` //接收方公钥的承诺
+	CmO          uint64          `json:"CmO"      gencodec:"required"` //原始金额承诺
+	CmS          uint64          `json:"CmS"      gencodec:"required"` //消费金额承诺
+	CmR          uint64          `json:"CmR"      gencodec:"required"` //找零金额承诺
+	EvR          uint64          `json:"EvR"      gencodec:"required"` //E(v_r) = (v_r * G1_R + r_r2 * H_R, r_r2 * G2_R)
+	EvR0         uint64          `json:"EvR0"     gencodec:"required"` //EvR 的后64位
+	EvR_         uint64          `json:"EvR_"     gencodec:"required"` //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
+	EvR_0        uint64          `json:"EvR_0"    gencodec:"required"` //EvR_ 的后64位
+	PI           uint64          `json:"PI"       gencodec:"required"` //零知识证明Π
+	ID           uint64          `json:"ID"       gencodec:"required"` //购币标识
+	Sig          uint64          `json:"Sig"      gencodec:"required"` //发行者签名
+	CmV          uint64          `json:"CmV"      gencodec:"required"` //购币承诺
+	EpkV         uint64          `json:"EpkV"     gencodec:"required"` //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"` //v, r, s: 与交易签名相符的若干数值，用于确定交易的发送者，由 Tw，Tr 和 Ts 表示。
 	R *big.Int `json:"r" gencodec:"required"`
@@ -95,17 +87,17 @@ type txdataMarshaling struct {
 }
 
 func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, pi uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
-	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, pi, ID, Sig, CmV, EpkV)
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
+	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, PI, ID, Sig, CmV, EpkV)
 }
 
 func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, pi uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
-	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, pi, ID, Sig, CmV, EpkV)
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
+	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, PI, ID, Sig, CmV, EpkV)
 }
 
 func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, pi uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -120,7 +112,7 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		R:            new(big.Int),
 		S:            new(big.Int),
 		SnO:          SnO,
-		rR1:          rR1,
+		Rr1:          rR1,
 		CmSpk:        CmSpk,
 		CmRpk:        CmRpk,
 		CmO:          CmO,
@@ -130,7 +122,7 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		EvR0:         EvR0,
 		EvR_:         EvR_,
 		EvR_0:        EvR_0,
-		pi:           pi,
+		PI:           PI,
 		ID:           ID,
 		Sig:          Sig,
 		CmV:          CmV,
@@ -218,13 +210,15 @@ func (tx *Transaction) Gas() uint64        { return tx.data.GasLimit }
 func (tx *Transaction) SnO() uint64        { return tx.data.SnO }
 func (tx *Transaction) CmSpk() uint64      { return tx.data.CmSpk }
 func (tx *Transaction) CmRpk() uint64      { return tx.data.CmRpk }
+func (tx *Transaction) Rr1() uint64        { return tx.data.Rr1 }
+func (tx *Transaction) CmO() uint64        { return tx.data.CmO }
 func (tx *Transaction) CmS() uint64        { return tx.data.CmS }
 func (tx *Transaction) CmR() uint64        { return tx.data.CmR }
 func (tx *Transaction) EvR() uint64        { return tx.data.EvR }
 func (tx *Transaction) EvR0() uint64       { return tx.data.EvR0 }
 func (tx *Transaction) EvR_() uint64       { return tx.data.EvR_ }
 func (tx *Transaction) EvR_0() uint64      { return tx.data.EvR_0 }
-func (tx *Transaction) pi() uint64         { return tx.data.pi }
+func (tx *Transaction) PI() uint64         { return tx.data.PI }
 func (tx *Transaction) ID() uint64         { return tx.data.ID }
 func (tx *Transaction) Sig() uint64        { return tx.data.Sig }
 func (tx *Transaction) CmV() uint64        { return tx.data.CmV }

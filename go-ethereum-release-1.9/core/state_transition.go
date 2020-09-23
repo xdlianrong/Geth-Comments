@@ -18,7 +18,7 @@ package core
 
 import (
 	"errors"
-	"math"
+	_ "math"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -66,8 +66,8 @@ type Message interface {
 	//FromFrontier() (common.Address, error)
 	To() *common.Address
 
-	GasPrice() *big.Int		// Message 的 GasPrice
-	Gas() uint64			// Message 的 GasLimit
+	GasPrice() *big.Int // Message 的 GasPrice
+	Gas() uint64        // Message 的 GasLimit
 	Value() *big.Int
 
 	Nonce() uint64

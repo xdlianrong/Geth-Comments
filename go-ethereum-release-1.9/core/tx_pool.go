@@ -578,8 +578,8 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 
 // author mzliu 20200918
 // validate Sign using tx : sig and CMV+ID
-func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error{
-	i := tx.CmV()+tx.ID()
+func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
+	i := tx.CmV() + tx.ID()
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, i)
 	msg := crypto.Keccak256(b)
@@ -593,8 +593,8 @@ func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error{
 		log.Trace("ECRecover error: %s", err)
 	}
 	// verify
-	bool1 := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
-	if bool1 != true{
+	verified := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
+	if !verified {
 		return ErrVerifySignatureFailed
 	}
 	return nil
@@ -628,7 +628,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 
 	// @autohr mzliu 20200918
 	// validate Sig, you know
-	if err := pool.validateSign(tx, local);err != nil{
+	if err := pool.validateSign(tx, local); err != nil {
 		log.Trace("Sig verify failed", "hash", hash)
 		return false, err
 	}
