@@ -71,7 +71,7 @@ type TransactOpts struct {
 
 	//新增购币字段
 	ID   uint64 //购币标识
-	Sig  uint64 //发行者签名
+	Sig  string //发行者签名
 	CmV  uint64 //购币承诺
 	EpkV uint64 //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
 }

@@ -18,7 +18,10 @@ package light
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"sync"
 	"time"
@@ -341,6 +344,31 @@ func (pool *TxPool) Stats() (pending int) {
 	return
 }
 
+
+// author mzliu 20200925
+// validate Sign using tx : sig and CMV+ID
+func (pool *TxPool) validateSign(tx *types.Transaction) error {
+	i := tx.CmV() + tx.ID()
+	msg := make([]byte, 32)
+	binary.BigEndian.PutUint64(msg, i)
+	// sig to []bytes
+	sig := hexutil.MustDecode(tx.Sig())
+
+	// recover pubKey
+	recoveredPub, err := crypto.Ecrecover(msg, sig)
+
+	if err != nil {
+		log.Trace("ECRecover error: %s", err)
+	}
+	// verify
+	verified := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
+
+	if !verified {
+		return core.ErrVerifySignatureFailed
+	}
+	return nil
+}
+
 // validateTx checks whether a transaction is valid according to the consensus rules.
 func (pool *TxPool) validateTx(ctx context.Context, tx *types.Transaction) error {
 	// Validate sender
@@ -359,7 +387,11 @@ func (pool *TxPool) validateTx(ctx context.Context, tx *types.Transaction) error
 	if n := currentState.GetNonce(from); n > tx.Nonce() {
 		return core.ErrNonceTooLow
 	}
-
+	// @autohr mzliu 20200925
+	// validate Sig, you know
+	if err := pool.validateSign(tx); err != nil {
+		return err
+	}
 	// Check the transaction doesn't exceed the current
 	// block limit gas.
 	header := pool.chain.GetHeaderByHash(pool.head)

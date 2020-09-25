@@ -1123,7 +1123,7 @@ type RPCTransaction struct {
 	EvR_0            hexutil.Uint64  `json:"EvR_0"`
 	PI               hexutil.Uint64  `json:"PI"`
 	ID               hexutil.Uint64  `json:"ID"`
-	Sig              hexutil.Uint64  `json:"Sig"`
+	Sig              string  `json:"Sig"`
 	CmV              hexutil.Uint64  `json:"CmV"`
 	EpkV             hexutil.Uint64  `json:"EpkV"`
 }
@@ -1163,7 +1163,7 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		EvR_0:    hexutil.Uint64(tx.EvR_0()),
 		PI:       hexutil.Uint64(tx.PI()),
 		ID:       hexutil.Uint64(tx.ID()),
-		Sig:      hexutil.Uint64(tx.Sig()),
+		Sig:      tx.Sig(),
 		CmV:      hexutil.Uint64(tx.CmV()),
 		EpkV:     hexutil.Uint64(tx.EpkV()),
 	}
@@ -1416,7 +1416,7 @@ type SendTxArgs struct {
 	EvR_0 *hexutil.Uint64 `json:"EvR_0"`
 	PI    *hexutil.Uint64 `json:"PI"`
 	ID    *hexutil.Uint64 `json:"ID"`
-	Sig   *hexutil.Uint64 `json:"Sig"`
+	Sig   *string `json:"Sig"`
 	CmV   *hexutil.Uint64 `json:"CmV"`
 	EpkV  *hexutil.Uint64 `json:"EpkV"`
 }
@@ -1489,9 +1489,9 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Data
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV))
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), uint64(*args.Sig), uint64(*args.CmV), uint64(*args.EpkV))
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV))
 }
 
 // SubmitTransaction is a helper function that submits tx to txPool and logs a message.

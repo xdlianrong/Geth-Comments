@@ -19,6 +19,8 @@ package core
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 	"math"
 	"math/big"
@@ -580,20 +582,20 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // validate Sign using tx : sig and CMV+ID
 func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
 	i := tx.CmV() + tx.ID()
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, i)
-	msg := crypto.Keccak256(b)
+	msg := make([]byte, 32)
+	binary.BigEndian.PutUint64(msg, i)
 	// sig to []bytes
-	i2 := tx.Sig()
-	sig := make([]byte, 8)
-	binary.BigEndian.PutUint64(sig, i2)
+	sig := hexutil.MustDecode(tx.Sig())
+	fmt.Println("verify Sig: ",sig,"len: ",len(sig))
 	// recover pubKey
 	recoveredPub, err := crypto.Ecrecover(msg, sig)
+	fmt.Println("verify Pub: ",recoveredPub)
 	if err != nil {
 		log.Trace("ECRecover error: %s", err)
 	}
 	// verify
 	verified := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
+	fmt.Println("verified: ",verified)
 	if !verified {
 		return ErrVerifySignatureFailed
 	}
