@@ -116,3 +116,23 @@ func DeleteCM(db ethdb.KeyValueWriter, hash common.Hash) {}
 
 
 
+`2020.9.21 ` 测试写入与读取成功
+
+```go
+//chaincmd.go 230行 写入与读取测试成功
+	cm1 := types.CM{
+		Cm  : 0x1,
+		Spent : true,
+	}
+rawdb.WriteCM(CMdb,common.HexToHash("d3d6bb893a6e274cab241245d5df1274c58d664fbb1bfd6e59141c2e0bc5304a"),cm1)
+x :=new(types.CM)
+x=rawdb.ReadCM(CMdb,common.HexToHash("d3d6bb893a6e274cab241245d5df1274c58d664fbb1bfd6e59141c2e0bc5304a"))
+log.Info("Successfully wrote x", "x", x)
+```
+
+数据库中如下
+> [63d3d6bb893a6e274cab241245d5df1274c58d664fbb1bfd6e59141c2e0bc5304a]:c20101
+
+输出如下
+
+> INFO [09-25|23:24:46.380] Successfully wrote x                     x="&{Cm:1 Spent:true}"
