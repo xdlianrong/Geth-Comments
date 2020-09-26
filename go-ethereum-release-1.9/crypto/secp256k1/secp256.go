@@ -26,6 +26,7 @@ import "C"
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"unsafe"
 )
@@ -95,6 +96,7 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 		return nil, ErrInvalidMsgLen
 	}
 	if err := checkSignature(sig); err != nil {
+		fmt.Println("Recovering Pub... checkSignature err: ",err)
 		return nil, err
 	}
 

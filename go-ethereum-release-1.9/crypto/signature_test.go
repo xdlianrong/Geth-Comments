@@ -45,7 +45,13 @@ func TestEcrecover(t *testing.T) {
 }
 
 func TestVerifySignature(t *testing.T) {
+
 	sig := testsig[:len(testsig)-1] // remove recovery id
+
+
+	if !VerifySignature(testpubkey, testmsg, sig) {
+		t.Errorf("can't ")
+	}
 	if !VerifySignature(testpubkey, testmsg, sig) {
 		t.Errorf("can't verify signature with uncompressed key")
 	}

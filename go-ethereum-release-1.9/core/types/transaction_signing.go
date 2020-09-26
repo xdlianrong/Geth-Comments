@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -66,13 +67,17 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	//sign CM_v and ID and assign Sig
 		//first add cmv and id
 	i := tx.CmV()+tx.ID()
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, i)
-		//next transfer msg into []byte
-	msg := crypto.Keccak256(b)
+	//next transfer msg into []byte
+	msg := make([]byte, 32)
+	binary.BigEndian.PutUint64(msg, i)
+	fmt.Println("msg: ", msg,"len: ",len(msg))
 		//then sign msg
 	Sig, err := crypto.Sign(msg, prv)
-	tx.data.Sig = binary.BigEndian.Uint64(Sig)
+	fmt.Println("i: ",i)
+	fmt.Println("Pub: ",prv)
+	tx.data.Sig = hexutil.Encode(Sig)
+	fmt.Println("sig []byte to uint: ",)
+	fmt.Println("sig : ",Sig,"len: ",len(Sig))
 	return tx.WithSignature(s, sig)
 }
 

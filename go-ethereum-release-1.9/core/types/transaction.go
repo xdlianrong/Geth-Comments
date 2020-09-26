@@ -70,7 +70,7 @@ type txdata struct {
 	EvR_0        uint64          `json:"EvR_0"    gencodec:"required"` //EvR_ 的后64位
 	PI           uint64          `json:"PI"       gencodec:"required"` //零知识证明Π
 	ID           uint64          `json:"ID"       gencodec:"required"` //购币标识
-	Sig          uint64          `json:"Sig"      gencodec:"required"` //发行者签名
+	Sig          string          `json:"Sig"      gencodec:"required"` //发行者签名
 	CmV          uint64          `json:"CmV"      gencodec:"required"` //购币承诺
 	EpkV         uint64          `json:"EpkV"     gencodec:"required"` //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
 	// Signature values
@@ -94,17 +94,17 @@ type txdataMarshaling struct {
 }
 
 func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig string, CmV uint64, EpkV uint64) *Transaction {
 	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, PI, ID, Sig, CmV, EpkV)
 }
 
 func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig string, CmV uint64, EpkV uint64) *Transaction {
 	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, PI, ID, Sig, CmV, EpkV)
 }
 
 func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig uint64, CmV uint64, EpkV uint64) *Transaction {
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig string, CmV uint64, EpkV uint64) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -227,7 +227,7 @@ func (tx *Transaction) EvR_() uint64       { return tx.data.EvR_ }
 func (tx *Transaction) EvR_0() uint64      { return tx.data.EvR_0 }
 func (tx *Transaction) PI() uint64         { return tx.data.PI }
 func (tx *Transaction) ID() uint64         { return tx.data.ID }
-func (tx *Transaction) Sig() uint64        { return tx.data.Sig }
+func (tx *Transaction) Sig() string        { return tx.data.Sig }
 func (tx *Transaction) CmV() uint64        { return tx.data.CmV }
 func (tx *Transaction) EpkV() uint64       { return tx.data.EpkV }
 func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
