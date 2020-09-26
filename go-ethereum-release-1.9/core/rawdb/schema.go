@@ -53,6 +53,10 @@ var (
 	headerHashSuffix   = []byte("n") // headerPrefix + num (uint64 big endian) + headerHashSuffix -> hash
 	headerNumberPrefix = []byte("H") // headerNumberPrefix + hash -> num (uint64 big endian)
 
+	// author : zr
+	// CMHashPrefix + hash -> CM
+	CMHashPrefix = []byte("c")
+
 	blockBodyPrefix     = []byte("b") // blockBodyPrefix + num (uint64 big endian) + hash -> block body
 	blockReceiptsPrefix = []byte("r") // blockReceiptsPrefix + num (uint64 big endian) + hash -> block receipts
 
@@ -172,4 +176,10 @@ func preimageKey(hash common.Hash) []byte {
 // configKey = configPrefix + hash
 func configKey(hash common.Hash) []byte {
 	return append(configPrefix, hash.Bytes()...)
+}
+
+// author : zr
+// CMKey = CMHashPrefix + hash
+func CMKey(hash common.Hash) []byte {
+	return append(CMHashPrefix, hash.Bytes()...)
 }

@@ -77,8 +77,11 @@ type Ethereum struct {
 	lesServer       LesServer
 	dialCandiates   enode.Iterator
 
+	// author : zr
+	// 新增字段CMdb
 	// DB interfaces
 	chainDb ethdb.Database // Block chain database
+	CMdb    ethdb.Database
 
 	eventMux       *event.TypeMux
 	engine         consensus.Engine
@@ -135,7 +138,9 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		config.TrieDirtyCache = 0
 	}
 	log.Info("Allocated trie memory caches", "clean", common.StorageSize(config.TrieCleanCache)*1024*1024, "dirty", common.StorageSize(config.TrieDirtyCache)*1024*1024)
-
+	// author : zr
+	// CM数据库的打开
+	CMdb, err := ctx.OpenDatabase("CMdata", config.DatabaseCache, config.DatabaseHandles, "eth/db/CMdata/")
 	// Assemble the Ethereum object
 	// 打开数据库 包括 KeyValueStore和AncientStore 两部分
 	chainDb, err := ctx.OpenDatabaseWithFreezer("chaindata", config.DatabaseCache, config.DatabaseHandles, config.DatabaseFreezer, "eth/db/chaindata/")
@@ -157,9 +162,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	// engine创建共识引擎。
 	// etherbase 配置此Etherum的主账号地址。
 	// 初始化bloomRequests 通道和bloom过滤器。
+	// author : zr
+	// 新增字段CMdb
 	eth := &Ethereum{
 		config:         config,
 		chainDb:        chainDb,
+		CMdb:           CMdb,
 		eventMux:       ctx.EventMux,
 		accountManager: ctx.AccountManager,
 		engine:         CreateConsensusEngine(ctx, chainConfig, &config.Ethash, config.Miner.Notify, config.Miner.Noverify, chainDb),
@@ -591,7 +599,10 @@ func (s *Ethereum) Stop() error {
 	s.miner.Stop()
 	s.eventMux.Stop()
 
+	// author : zr
+	// CMdb关闭
 	s.chainDb.Close()
+	s.CMdb.Close()
 	close(s.shutdownChan)
 	return nil
 }

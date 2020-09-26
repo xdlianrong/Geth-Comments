@@ -223,6 +223,13 @@ func initGenesis(ctx *cli.Context) error {
 	// Open an initialise both full and light databases
 	stack := makeFullNode(ctx)
 	defer stack.Close()
+	// author : zr
+	// CM数据库的创建
+	CMdb, err := stack.OpenDatabase("CMdata", 0, 0, "")
+	if err != nil {
+		utils.Fatalf("Failed to open database: %v", err)
+	}
+	CMdb.Close()
 	// 创建chaindata和lightchaindata
 	for _, name := range []string{"chaindata", "lightchaindata"} {
 		// 初始化chaindb

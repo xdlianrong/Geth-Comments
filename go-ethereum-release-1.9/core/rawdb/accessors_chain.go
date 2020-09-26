@@ -616,3 +616,46 @@ func FindCommonAncestor(db ethdb.Reader, a, b *types.Header) *types.Header {
 	}
 	return a
 }
+
+// author : zr
+// 对承诺的读，写，查，删操作 ，可通过`rawdb.xxxx()`进行调用。
+// 2020.9.18  首次添加，暂未尝试调用
+func HasCM(db ethdb.Reader, hash common.Hash) bool {
+	if has, err := db.Has(CMKey(hash)); !has || err != nil {
+		return false
+	}
+	return true
+}
+func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM types.CM) {
+	data, err := rlp.EncodeToBytes(CM) // 对区块进行RLP编码
+	if err != nil {
+		log.Crit("Failed to RLP encode CM", "err", err)
+	}
+	if err := db.Put(CMKey(hash), data); err != nil {
+		log.Crit("Failed to store CM", "err", err)
+	}
+}
+func ReadCMRLP(db ethdb.Reader, hash common.Hash) rlp.RawValue {
+	data, _ := db.Get(CMKey(hash))
+	if len(data) > 0 {
+		return data
+	}
+	return nil
+}
+func ReadCM(db ethdb.Reader, hash common.Hash) *types.CM {
+	data := ReadCMRLP(db, hash)
+	if len(data) == 0 {
+		return nil
+	}
+	CM := new(types.CM)
+	if err := rlp.Decode(bytes.NewReader(data), CM); err != nil {
+		log.Error("Invalid CM RLP", "hash", hash, "err", err)
+		return nil
+	}
+	return CM
+}
+func DeleteCM(db ethdb.KeyValueWriter, hash common.Hash) {
+	if err := db.Delete(CMKey(hash)); err != nil {
+		log.Crit("Failed to delete CM", "err", err)
+	}
+}
