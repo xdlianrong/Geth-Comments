@@ -1,0 +1,1 @@
+--identity "666" --rpc --rpcport "8545" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir ./privchain --port "3303" --nodiscover --allow-insecure-unlock console  
