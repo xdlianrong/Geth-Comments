@@ -70,14 +70,9 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	//next transfer msg into []byte
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
-	fmt.Println("msg: ", msg,"len: ",len(msg))
 		//then sign msg
 	Sig, err := crypto.Sign(msg, prv)
-	fmt.Println("i: ",i)
-	fmt.Println("Pub: ",prv)
 	tx.data.Sig = hexutil.Encode(Sig)
-	fmt.Println("sig []byte to uint: ",)
-	fmt.Println("sig : ",Sig,"len: ",len(Sig))
 	return tx.WithSignature(s, sig)
 }
 
