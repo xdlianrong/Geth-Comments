@@ -626,8 +626,9 @@ func HasCM(db ethdb.Reader, hash common.Hash) bool {
 	}
 	return true
 }
-func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM types.CM) {
-	data, err := rlp.EncodeToBytes(CM) // 对区块进行RLP编码
+
+func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM *types.CM) {
+	data, err := rlp.EncodeToBytes(CM) // 对CM进行RLP编码
 	if err != nil {
 		log.Crit("Failed to RLP encode CM", "err", err)
 	}
@@ -635,6 +636,7 @@ func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM types.CM) {
 		log.Crit("Failed to store CM", "err", err)
 	}
 }
+
 func ReadCMRLP(db ethdb.Reader, hash common.Hash) rlp.RawValue {
 	data, _ := db.Get(CMKey(hash))
 	if len(data) > 0 {
@@ -642,6 +644,7 @@ func ReadCMRLP(db ethdb.Reader, hash common.Hash) rlp.RawValue {
 	}
 	return nil
 }
+
 func ReadCM(db ethdb.Reader, hash common.Hash) *types.CM {
 	data := ReadCMRLP(db, hash)
 	if len(data) == 0 {
@@ -654,8 +657,21 @@ func ReadCM(db ethdb.Reader, hash common.Hash) *types.CM {
 	}
 	return CM
 }
+
 func DeleteCM(db ethdb.KeyValueWriter, hash common.Hash) {
 	if err := db.Delete(CMKey(hash)); err != nil {
 		log.Crit("Failed to delete CM", "err", err)
+	}
+}
+
+func WriteAllCM(db ethdb.KeyValueWriter, block *types.Block) {
+	for _, tx := range block.Transactions() {
+		var CMV *types.CM
+		CMV = types.NewCM(tx.CmV(), true)
+		hash := CMV.Hash()
+		WriteCM(db, hash, CMV)
+		// author : zr
+		// for test
+		log.Info("向CMdb中存入CM成功", "CMV,hash", CMV, hash)
 	}
 }

@@ -41,7 +41,7 @@ type CM struct {
 CMdb, err := ctx.OpenDatabase("CMdata", config.DatabaseCache, config.DatabaseHandles, "eth/db/CMdata/")
 ```
 
-3、ethereum新增字段
+3、ethereum和blockchain新增字段
 
 ```go
 // eth/backend.go 67行
@@ -62,6 +62,12 @@ eth := &Ethereum{
 	}
 // eth/backend.go 605行
 s.CMdb.Close()
+// core/blockchain.go  139行
+type Blockchain struct {
+    ......
+    Cmdb	ethdb.Database
+    ......
+}
 ```
 
 ### CM数据库的调用
@@ -88,7 +94,17 @@ func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM types.CM) {}
 
 输出：无
 
-3、根据给定hash从数据库中取出承诺CM
+3、从打包好的区块中取出所有交易，将交易中的承诺进行存储（v1.0 暂仅测试CMV）
+
+```go
+func WriteAllCM(db ethdb.KeyValueWriter, block *types.Block) {}
+```
+
+输入1：数据库db，区块
+
+输出：无
+
+4、根据给定hash从数据库中取出承诺CM
 
 ```go
 func ReadCMRLP(db ethdb.Reader, hash common.Hash) rlp.RawValue {}
@@ -104,7 +120,7 @@ func ReadCM(db ethdb.Reader,hash common.Hash) *types.CM  {}
 
 函数2内部调用函数1
 
-4、根据给定hash从数据库中删除承诺CM
+5、根据给定hash从数据库中删除承诺CM
 
 ```go
 func DeleteCM(db ethdb.KeyValueWriter, hash common.Hash) {}

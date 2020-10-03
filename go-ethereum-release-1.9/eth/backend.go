@@ -141,6 +141,11 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	// author : zr
 	// CM数据库的打开
 	CMdb, err := ctx.OpenDatabase("CMdata", config.DatabaseCache, config.DatabaseHandles, "eth/db/CMdata/")
+	// @zr
+	// for test
+	cm := new(types.CM)
+	cm = rawdb.ReadCM(CMdb, common.HexToHash("698b0c299d3182774bd859102bea2f205f0a1b3674c8d1d7aee6b17122a2f73a"))
+	log.Info("Successfully read cm", "cm", cm)
 	// Assemble the Ethereum object
 	// 打开数据库 包括 KeyValueStore和AncientStore 两部分
 	chainDb, err := ctx.OpenDatabaseWithFreezer("chaindata", config.DatabaseCache, config.DatabaseHandles, config.DatabaseFreezer, "eth/db/chaindata/")
@@ -210,7 +215,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		}
 	)
 	// 初始化eth的区块链
-	eth.blockchain, err = core.NewBlockChain(chainDb, cacheConfig, chainConfig, eth.engine, vmConfig, eth.shouldPreserve)
+	eth.blockchain, err = core.NewBlockChain(chainDb, CMdb, cacheConfig, chainConfig, eth.engine, vmConfig, eth.shouldPreserve)
 	if err != nil {
 		return nil, err
 	}

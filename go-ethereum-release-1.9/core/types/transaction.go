@@ -42,6 +42,17 @@ type CM struct {
 	Spent bool
 }
 
+func NewCM(cm uint64, spent bool) *CM {
+	return &CM{
+		Cm:    cm,
+		Spent: spent,
+	}
+}
+
+func (cm *CM) Hash() common.Hash {
+	return rlpHash(cm)
+}
+
 type Transaction struct {
 	data txdata //一个不限制大小的字节数组，用来指定消息调用的输入数据
 	// caches

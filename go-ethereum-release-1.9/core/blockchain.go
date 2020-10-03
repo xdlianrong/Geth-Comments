@@ -141,8 +141,9 @@ type BlockChain struct {
 	cacheConfig *CacheConfig        // Cache configuration for pruning
 
 	db     ethdb.Database // Low level persistent database to store final content in
-	triegc *prque.Prque   // Priority queue mapping block numbers to tries to gc
-	gcproc time.Duration  // Accumulates canonical block processing for trie dumping
+	CMdb   ethdb.Database
+	triegc *prque.Prque  // Priority queue mapping block numbers to tries to gc
+	gcproc time.Duration // Accumulates canonical block processing for trie dumping
 
 	hc            *HeaderChain
 	rmLogsFeed    event.Feed
@@ -187,7 +188,7 @@ type BlockChain struct {
 // NewBlockChain returns a fully initialised block chain using information
 // available in the database. It initialises the default Ethereum Validator and
 // Processor.
-func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
+func NewBlockChain(db ethdb.Database, CMdb ethdb.Database, cacheConfig *CacheConfig, chainConfig *params.ChainConfig, engine consensus.Engine, vmConfig vm.Config, shouldPreserve func(block *types.Block) bool) (*BlockChain, error) {
 	if cacheConfig == nil {
 		cacheConfig = &CacheConfig{
 			TrieCleanLimit: 256,
@@ -207,6 +208,7 @@ func NewBlockChain(db ethdb.Database, cacheConfig *CacheConfig, chainConfig *par
 		chainConfig:    chainConfig,
 		cacheConfig:    cacheConfig,
 		db:             db,
+		CMdb:           CMdb,
 		triegc:         prque.New(nil),
 		stateCache:     state.NewDatabaseWithCache(db, cacheConfig.TrieCleanLimit),
 		quit:           make(chan struct{}),
@@ -1379,6 +1381,8 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 	rawdb.WriteBlock(blockBatch, block)
 	rawdb.WriteReceipts(blockBatch, block.Hash(), block.NumberU64(), receipts)
 	rawdb.WritePreimages(blockBatch, state.Preimages())
+	rawdb.WriteAllCM(bc.CMdb, block)
+
 	if err := blockBatch.Write(); err != nil {
 		log.Crit("Failed to write block into disk", "err", err)
 	}
