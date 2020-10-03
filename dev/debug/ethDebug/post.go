@@ -3,16 +3,18 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 const url = "http://localhost:8545"
 
 
 func postData() bool {
-	data,_ := ioutil.ReadFile("unlockaccount.json")
-	fmt.Println(string(data))
+	path := "eth_getBlockByHash.json"
+	data,_ := ioutil.ReadFile(path)
 	resp, err := http.Post(url,
 		"application/json",
 		bytes.NewBuffer(data))
@@ -22,6 +24,15 @@ func postData() bool {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(body))
+
+	if path == "getTransactionCount.json"{
+		json := string(body)
+		value := gjson.Get(json,"result")
+		int64, _ := strconv.ParseInt(value.Value().(string), 10, 64)
+		fmt.Println("total txs: ",int64)
+	}
+
+
 	return true
 }
 
