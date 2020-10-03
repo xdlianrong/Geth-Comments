@@ -397,8 +397,8 @@ func (api *RetestethAPI) SetChainParams(ctx context.Context, chainParams ChainPa
 		return false, fmt.Errorf("unrecognised seal engine: %s", chainParams.SealEngine)
 	}
 	engine := &NoRewardEngine{inner: inner, rewardsOn: chainParams.SealEngine != "NoReward"}
-
-	blockchain, err := core.NewBlockChain(ethDb, nil, chainConfig, engine, vm.Config{}, nil)
+	// 暂时将CMdb设置为nil
+	blockchain, err := core.NewBlockChain(ethDb, nil, nil, chainConfig, engine, vm.Config{}, nil)
 	if err != nil {
 		return false, err
 	}
