@@ -9,7 +9,7 @@
 0xfec0b0311e40713f2d9f35a9c4d9f6f538be6a91
 ```
 
-私链启动参数： --identity "666" --rpc --rpcport "8545" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir ./privchain --port "3303" --nodiscover --allow-insecure-unlock console  
+私链启动参数： --identity "666" --rpc  --rpccorsdomain '*' --rpcport "8545" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir ./privchain --port "3303" --nodiscover --allow-insecure-unlock console   
 
 其具体意义请查阅：
 
