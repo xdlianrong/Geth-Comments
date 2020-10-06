@@ -399,3 +399,30 @@
 15:39:00.558824 table@remove removed @83
 15:39:00.558841 table@remove removed @80
 15:39:00.558856 table@remove removed @79
+=============== Oct 5, 2020 (CST) ===============
+15:54:23.454488 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+15:54:23.454970 version@stat F·[0 1] S·176B[0B 176B] Sc·[0.00 0.00]
+15:54:23.455015 db@open opening
+15:54:23.455182 journal@recovery F·2
+15:54:23.455812 journal@recovery recovering @90
+15:54:23.455933 journal@recovery recovering @107
+15:54:23.461092 memdb@flush created L0@108 N·1 S·159B "loc..seq,v58":"loc..seq,v58"
+15:54:23.461139 version@stat F·[1 1] S·335B[159B 176B] Sc·[0.25 0.00]
+15:54:23.475553 memdb@flush created L0@110 N·1 S·159B "loc..seq,v68":"loc..seq,v68"
+15:54:23.475951 version@stat F·[2 1] S·494B[318B 176B] Sc·[0.50 0.00]
+15:54:23.479521 db@janitor F·9 G·4
+15:54:23.479533 db@janitor removing table-106
+15:54:23.479565 db@janitor removing table-105
+15:54:23.479590 db@janitor removing manifest-108
+15:54:23.479613 db@janitor removing table-89
+15:54:23.479652 db@open done T·24.624959ms
+=============== Oct 6, 2020 (CST) ===============
+17:23:02.082292 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+17:23:02.082674 version@stat F·[2 1] S·494B[318B 176B] Sc·[0.50 0.00]
+17:23:02.082709 db@open opening
+17:23:02.082772 journal@recovery F·1
+17:23:02.083095 journal@recovery recovering @111
+17:23:02.087830 memdb@flush created L0@112 N·1 S·159B "loc..seq,v70":"loc..seq,v70"
+17:23:02.088331 version@stat F·[3 1] S·653B[477B 176B] Sc·[0.75 0.00]
+17:23:02.099803 db@janitor F·6 G·0
+17:23:02.099862 db@open done T·17.143119ms

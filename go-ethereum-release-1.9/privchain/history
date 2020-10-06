@@ -1,8 +1,0 @@
-
-personcal.newAccount()
-1
-personcal.unlockAccount("0xfec0b0311e40713f2d9f35a9c4d9f6f538be6a91")
-miner()
-miner.setEtherbase("0x75e36ea49f49d6f6619eb23904e8a8cab3a3dda2")
-miner.start()
-miner.stop()

@@ -47,3 +47,22 @@
 17:21:23.745884 version@stat F·[] S·0B[] Sc·[]
 17:21:23.758441 db@janitor F·2 G·0
 17:21:23.758467 db@open done T·25.552489ms
+=============== Oct 5, 2020 (CST) ===============
+15:54:23.309109 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+15:54:23.309267 version@stat F·[] S·0B[] Sc·[]
+15:54:23.309287 db@open opening
+15:54:23.309341 journal@recovery F·1
+15:54:23.316569 journal@recovery recovering @8
+15:54:23.323926 version@stat F·[] S·0B[] Sc·[]
+15:54:23.337527 db@janitor F·2 G·0
+15:54:23.337568 db@open done T·28.250924ms
+=============== Oct 6, 2020 (CST) ===============
+17:23:01.949643 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+17:23:01.950101 version@stat F·[] S·0B[] Sc·[]
+17:23:01.950121 db@open opening
+17:23:01.950172 journal@recovery F·1
+17:23:01.955726 journal@recovery recovering @10
+17:23:01.960872 memdb@flush created L0@12 N·9 S·260B "c\xc7p..\a\x1b^,v9":"c\xc7p..\a\x1b^,v1"
+17:23:01.966683 version@stat F·[1] S·260B[260B] Sc·[0.25]
+17:23:01.977277 db@janitor F·3 G·0
+17:23:01.977295 db@open done T·27.16679ms
