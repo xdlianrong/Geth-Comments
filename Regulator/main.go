@@ -1,10 +1,8 @@
 package main
 
 import (
-	"crypto/sha256"
 	"echo/regdb"
 	"echo/utils"
-	"encoding/hex"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
@@ -17,6 +15,7 @@ import (
 const (
 	clientIdentifier = "regulator" // Client identifier to advertise over the network
 	clientVersion    = "1.0.0"
+	clientUsage      = "Regulatory side server for ethereumZKP"
 )
 
 var (
@@ -34,7 +33,8 @@ func init() {
 	app.Action = regulator
 	app.Name = clientIdentifier
 	app.Version = clientVersion
-	app.Commands = []cli.Command{utils.InitCommand}
+	app.Usage = clientUsage
+	app.Commands = []cli.Command{regdb.InitCommand}
 	app.Flags = append(app.Flags, baseFlags...)
 }
 func main() {
@@ -51,18 +51,12 @@ func regulator(ctx *cli.Context) error {
 	return nil
 }
 
-// Handler
-func hello(c echo.Context) error {
-	return c.String(http.StatusOK, "Hello, World!")
-}
 func prepare(ctx *cli.Context) error {
 	//连接并初始化Redis, 接收数据库端口，密码，数据库号三个参数
-	Db, err := regdb.Setup(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
-	if err != nil {
-		utils.Fatalf("Failed to connect to redis: %v", err)
+	regDb = regdb.ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
+	if !regdb.Exists(regDb, "chainConfig") {
+		utils.Fatalf("Failed to start server,please initialise first")
 	}
-	regDb = Db
-
 	startNetwork(ctx.String("port"))
 	return nil
 }
@@ -76,7 +70,6 @@ func startNetwork(port string) {
 	e.Use(middleware.Recover())
 
 	// Routes
-	e.GET("/", hello)
 	e.POST("/register", register)
 	e.POST("/verify", verify)
 
@@ -89,10 +82,11 @@ func register(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-	fmt.Println(u.Hashky)
-	hash := hash(u.Hashky)
+	//fmt.Println(u.Hashky)
+	hash := utils.Hash(u.Hashky)
 	if err := regdb.Set(regDb, hash, u); err != nil {
 		utils.Fatalf("Failed to set : %v", err)
+		return c.String(http.StatusOK, "Fail!")
 	}
 	return c.String(http.StatusOK, "Successful!")
 	//return c.JSON(http.StatusCreated, u)
@@ -100,20 +94,8 @@ func register(c echo.Context) error {
 
 func verify(c echo.Context) error {
 	publicKey := c.FormValue("publicKey")
-	if !regdb.Exists(regDb, hash(publicKey)) {
-		return c.String(http.StatusOK, "false")
+	if !regdb.Exists(regDb, utils.Hash(publicKey)) {
+		return c.String(http.StatusOK, "False")
 	}
-	return c.String(http.StatusOK, "true")
-}
-
-func hash(str string) string {
-	//使用sha256哈希函数
-	h := sha256.New()
-	h.Write([]byte(str))
-	sum := h.Sum(nil)
-
-	//由于是十六进制表示，因此需要转换
-	s := hex.EncodeToString(sum)
-	fmt.Println(s)
-	return s
+	return c.String(http.StatusOK, "True")
 }

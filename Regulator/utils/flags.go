@@ -1,15 +1,14 @@
 package utils
 
 import (
-	"echo/config"
 	"github.com/urfave/cli"
 )
 
 var (
-	DataDirFlag = DirectoryFlag{
-		Name:  "datadir",
-		Usage: "Data directory for the databases and keystore",
-		Value: DirectoryString(config.DefaultDataDir()),
+	ChainIDFlag = cli.IntFlag{
+		Name:  "chainID",
+		Usage: "chainID to be stored in Redis",
+		Value: 1,
 	}
 	DataportFlag = cli.IntFlag{
 		Name:  "dataport, dp",
@@ -24,7 +23,7 @@ var (
 	ListenPortFlag = cli.IntFlag{
 		Name:  "port, p",
 		Usage: "Network listening port",
-		Value: 1323,
+		Value: 1423,
 	}
 	DbPasswdPortFlag = cli.StringFlag{
 		Name:  "passwd, pw",

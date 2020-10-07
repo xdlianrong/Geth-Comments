@@ -1,95 +1,82 @@
-## 监管者模块
+# 监管者模块
 
 监管者作为整个链的监管者，同时作为一个节点和服务器存在，作为节点从区块链上同步最新的区块和交易信息，根据需要进行解密，获得区块链上的匿名解密数据。同时，提供一个服务器，供用户进行身份注册、发币者在用户需要购币时查询用户是否已进行身份登记。
 
-#### 开发工作：
+## 项目架构
 
-**1.0:服务器**
+![项目架构](./img/项目架构.png)
 
-第一版先实现服务器相关的工作，包括用户身份注册、发币者请求验证两个主要功能
+## 开发工作
 
-###### 功能流程：
+### V1.0 服务器端
 
-![](./img/1.png)
+实现服务器相关的工作，即用户注册、发币者验证请求两个主要功能和数据库存储等。
 
-###### 功能说明：
+#### 逻辑流程
 
-1初始化：
+![逻辑流程](./img/逻辑流程.png)
 
-服务器开始运行时判断是否本地已经有公钥哈希池数据库存在，如果本地没有则重新创建
+#### 功能说明
 
-2注册：
+1.初始化：
 
-收到用户发来的姓名、身份证号、elgamal公钥信息，将elgamal公钥取哈希，连着其他两个信息存放在公钥哈希池里
+​	服务器开始运行时判断是否本地已经有公钥哈希池数据库存在，如果本地没有则重新创建。
+
+2.注册：
+
+​	收到用户发来的姓名、身份证号、elgamal公钥信息，将elgamal公钥取哈希，连着其他两个信息存放在公钥哈希池里。
 
 3.验证：
 
-收到发币者的验证身份请求。收到公钥后，取哈希，在数据库中的哈希字段查询，看是否有匹配的，如果有，则返回验证通过，否则验证失败
+​	收到发币者的验证身份请求。收到公钥后，取哈希，在数据库中的哈希字段查询，看是否有匹配的，如果有，则返回验证通过，否则验证失败。
 
-###### 项目架构：
+#### 接口暴露
 
-![](./img/2.png)
++ 服务器默认端口：1423
 
-###### 接口说明：
++ 服务器暴露HTTP接口
 
-##### 后端结构体：
+  + /register [POST]
 
-```go
-type Identity struct{
-	Name string
-    ID string
-    ExtInfo string //新增个备注信息
-}
-```
+    接收JSON参数：{"Name": "12","ID": "123","Hashky": "1234","ExtInfo": "12345"}
 
-##### Redis存储结构：
+    返回值："Fail!"或"Successful!"
 
-选用Redis hash结构
+  + /verify [POST]
 
-**Key**：从1开始自增序列
+    接收JSON参数{"publicKey": "1234"}
 
-**Value**(field ,  value ):
+    返回值："True"或"False"
 
-Name :  ...
+#### 启动命令
 
-Number : ...
+**regulator [Arguments...]**
 
-ExtInfo : ...
+Arguments可选项如下
 
-##### **启动命令**：根据命令行加载端口号和数据库目录
+GLOBAL OPTIONS:
+   --database value, --db value  Number of database for Redis (default: 0)
+   --dataport value, --dp value  Data port for Redis (default: 6379)
+   --port value, -p value        Network listening port (default: 1423)
+   --passwd value, --pw value    Redis password
+   --help, -h                    show help
+   --version, -v                 print the version
 
-regulator -- datadir "" --port ""
+**regulator init [Arguments...]**
 
-简化：regulator -d "" -p ""
+Arguments可选项如下
 
-##### 前后端接口：
+GLOBAL OPTIONS:
+   --database value, --db value  Number of database for Redis (default: 0)
+   --dataport value, --dp value  Data port for Redis (default: 6379)
+   --passwd value, --pw value    Redis password
+   --help, -h                    show help
+   --version, -v                 print the version
 
-/register: ( post https)
+#### 启动流程
 
-输入：
+![启动流程图](./img/启动流程图.png)
 
-```json
-Name string
-Number string
-HashKey string
-ExtInfo string
-```
-返回：
+### V2.0 前端展示
 
-true/false bool
-
-------
-
-/verify:( post https)
-
-输入：
-
-HashKey string
-
-输出：
-
-true/false bool
-
-##### 2.0：同步交易数据、解密与展示
-
-预期用Vue框架写个前端，边同步交易信息边解密，展示出来就完事了
+预期用Vue框架写个前端，边同步交易信息边解密，展示出来。
