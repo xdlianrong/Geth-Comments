@@ -42,6 +42,10 @@ func Get(regDb *redis.Client, key string) string {
 		log.Fatal(err)
 	}
 	fmt.Println(result)
+	// raw 为反序列化后的Identity结构体
+	//raw := new(Identity)
+	//err = json.Unmarshal([]byte(result),&raw)
+	//fmt.Println(raw)
 	return result
 }
 
