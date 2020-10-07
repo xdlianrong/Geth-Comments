@@ -32,6 +32,7 @@ func init() {
 	app.Action = regulator
 	app.Name = clientIdentifier
 	app.Version = clientVersion
+	app.Commands = []cli.Command{utils.InitCommand}
 	app.Flags = append(app.Flags, baseFlags...)
 }
 func main() {
@@ -59,6 +60,7 @@ func prepare(ctx *cli.Context) error {
 		utils.Fatalf("Failed to connect to redis: %v", err)
 	}
 	regDb = Db
+
 	startNetwork(ctx.String("port"))
 	return nil
 }
