@@ -269,7 +269,7 @@ func (a *App) Run(arguments []string) (err error) {
 
 ```go
 // /go-ethereum/cmd/geth/consolecmd.go
-/ localConsole starts a new geth node, attaching a JavaScript console to it at the
+// localConsole starts a new geth node, attaching a JavaScript console to it at the
 // same time.
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags

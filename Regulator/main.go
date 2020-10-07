@@ -1,6 +1,7 @@
 package main
 
 import (
+	"echo/utils"
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -14,48 +15,45 @@ const (
 	clientVersion    = "1.0.0"
 )
 
+var (
+	app       = cli.NewApp()
+	baseFlags = []cli.Flag{
+		utils.DatabaseFlag,
+		utils.DataportFlag,
+		utils.ListenPortFlag,
+	}
+)
+
 func init() {
-	//TODO:初始化
-	app := cli.NewApp()
+	app.Action = regulator
 	app.Name = clientIdentifier
 	app.Version = clientVersion
-	app.Commands = []cli.Command{
-		{
-			// 命令的名字
-			Name: "",
-			// 命令的缩写，就是不输入language只输入lang也可以调用命令
-			Aliases: []string{""},
-			// 命令的用法注释，这里会在输入 程序名 -help的时候显示命令的使用方法
-			Usage: "",
-			// 命令的处理函数
-			Action: func(c *cli.Context) error {
-				fmt.Println(c.Args().First())
-				return nil
-			},
-		},
-	}
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:  "datadir, d",
-			Usage: "Data directory for the databases",
-		},
-		cli.IntFlag{
-			Name:  "port, p",
-			Usage: "Network listening port",
-			Value: 1323,
-		},
-	}
-	app.Run(os.Args)
+	app.Flags = append(app.Flags, baseFlags...)
 }
 func main() {
-	startNetwork(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+func regulator(ctx *cli.Context) error {
+	if args := ctx.Args(); len(args) > 0 {
+		return fmt.Errorf("invalid command: %q", args[0])
+	}
+	prepare(ctx)
+	return nil
 }
 
 // Handler
 func hello(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, World!")
 }
-func startNetwork(arguments []string) {
+func prepare(ctx *cli.Context) error {
+	//TODO:连接并初始化Redis, --dataport是ctx.String("dataport"), --database是ctx.String("database")
+	startNetwork(ctx.String("port"))
+	return nil
+}
+func startNetwork(port string) {
 
 	// Echo instance
 	e := echo.New()
@@ -68,5 +66,5 @@ func startNetwork(arguments []string) {
 	e.GET("/", hello)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":" + port))
 }
