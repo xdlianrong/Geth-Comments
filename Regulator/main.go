@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/sha256"
 	"echo/regdb"
 	"echo/utils"
+	"encoding/hex"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
@@ -75,7 +77,43 @@ func startNetwork(port string) {
 
 	// Routes
 	e.GET("/", hello)
+	e.POST("/register", register)
+	e.POST("/verify", verify)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":" + port))
+}
+
+func register(c echo.Context) error {
+	u := new(regdb.Identity)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	fmt.Println(u.Hashky)
+	hash := hash(u.Hashky)
+	if err := regdb.Set(regDb, hash, u); err != nil {
+		utils.Fatalf("Failed to set : %v", err)
+	}
+	return c.String(http.StatusOK, "Successful!")
+	//return c.JSON(http.StatusCreated, u)
+}
+
+func verify(c echo.Context) error {
+	publicKey := c.FormValue("publicKey")
+	if !regdb.Exists(regDb, hash(publicKey)) {
+		return c.String(http.StatusOK, "false")
+	}
+	return c.String(http.StatusOK, "true")
+}
+
+func hash(str string) string {
+	//使用sha256哈希函数
+	h := sha256.New()
+	h.Write([]byte(str))
+	sum := h.Sum(nil)
+
+	//由于是十六进制表示，因此需要转换
+	s := hex.EncodeToString(sum)
+	fmt.Println(s)
+	return s
 }

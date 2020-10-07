@@ -10,6 +10,7 @@ import (
 type Identity struct {
 	Name    string
 	ID      string
+	Hashky  string
 	ExtInfo string //新增个备注信息
 }
 
@@ -23,16 +24,17 @@ func Setup(dataport string, passwd string, database int) (*redis.Client, error) 
 	return client, err
 }
 
-func Set(regDb *redis.Client, key string, value *Identity) {
+func Set(regDb *redis.Client, key string, value *Identity) error {
 	//有效期为0表示不设置有效期，非0表示经过该时间后键值对失效
 	var valueM []byte
 	valueM, _ = json.Marshal(value)
 	result, err := regDb.Set(key, valueM, 0).Result()
-
+	fmt.Println(result)
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
-	fmt.Println(result)
+	return err
 }
 
 func Get(regDb *redis.Client, key string) string {
@@ -56,7 +58,7 @@ func Exists(regDb *redis.Client, key string) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(isExists)
+	//fmt.Println(isExists)
 
 	if isExists == 1 {
 		return true
