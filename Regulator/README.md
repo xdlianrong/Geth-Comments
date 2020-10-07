@@ -37,8 +37,7 @@
 ```go
 type Identity struct{
 	Name string
-    Number string
-    HashKey string
+    ID string
     ExtInfo string //新增个备注信息
 }
 ```
@@ -54,8 +53,6 @@ type Identity struct{
 Name :  ...
 
 Number : ...
-
-HashKey : ...
 
 ExtInfo : ...
 
