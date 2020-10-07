@@ -1,8 +1,10 @@
 package main
 
 import (
+	"echo/regdb"
 	"echo/utils"
 	"fmt"
+	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/urfave/cli"
@@ -21,7 +23,9 @@ var (
 		utils.DatabaseFlag,
 		utils.DataportFlag,
 		utils.ListenPortFlag,
+		utils.DbPasswdPortFlag,
 	}
+	regDb *redis.Client
 )
 
 func init() {
@@ -49,7 +53,12 @@ func hello(c echo.Context) error {
 	return c.String(http.StatusOK, "Hello, World!")
 }
 func prepare(ctx *cli.Context) error {
-	//TODO:连接并初始化Redis, --dataport是ctx.String("dataport"), --database是ctx.String("database")
+	//连接并初始化Redis, 接收数据库端口，密码，数据库号三个参数
+	Db, err := regdb.Setup(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
+	if err != nil {
+		utils.Fatalf("Failed to connect to redis: %v", err)
+	}
+	regDb = Db
 	startNetwork(ctx.String("port"))
 	return nil
 }

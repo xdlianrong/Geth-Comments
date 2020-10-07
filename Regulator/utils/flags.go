@@ -18,4 +18,9 @@ var (
 		Usage: "Network listening port",
 		Value: 1323,
 	}
+	DbPasswdPortFlag = cli.StringFlag{
+		Name:  "passwd, pw",
+		Usage: "Redis password",
+		Value: "",
+	}
 )
