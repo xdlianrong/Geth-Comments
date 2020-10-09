@@ -1,8 +1,6 @@
 package main
 
 import (
-	"echo/regdb"
-	"echo/utils"
 	"fmt"
 	"github.com/go-redis/redis"
 	"github.com/labstack/echo/v4"
@@ -10,6 +8,8 @@ import (
 	"github.com/urfave/cli"
 	"net/http"
 	"os"
+	"regulator/regdb"
+	"regulator/utils"
 )
 
 const (

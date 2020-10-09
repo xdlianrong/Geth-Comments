@@ -1,11 +1,11 @@
 package regdb
 
 import (
-	"echo/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis"
 	"log"
+	"regulator/utils"
 )
 
 type Identity struct {

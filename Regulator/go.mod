@@ -1,4 +1,4 @@
-module echo
+module regulator
 
 go 1.14
 

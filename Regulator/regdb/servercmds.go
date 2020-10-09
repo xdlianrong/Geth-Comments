@@ -1,10 +1,10 @@
 package regdb
 
 import (
-	"echo/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/urfave/cli"
+	"regulator/utils"
 )
 
 var (
