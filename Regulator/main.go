@@ -93,8 +93,12 @@ func register(c echo.Context) error {
 }
 
 func verify(c echo.Context) error {
-	publicKey := c.FormValue("publicKey")
-	if !regdb.Exists(regDb, utils.Hash(publicKey)) {
+	//publicKey := c.FormValue("publicKey")
+	u := new(regdb.Identity)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	if !regdb.Exists(regDb, utils.Hash(u.Hashky)) {
 		return c.String(http.StatusOK, "False")
 	}
 	return c.String(http.StatusOK, "True")
