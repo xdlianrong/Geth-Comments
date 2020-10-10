@@ -9,3 +9,8 @@ $RECYCLE.BIN/
 .Spotlight-V100
 .TemporaryItems
 .Trashes
+
+# Node.js
+node_modules/
+dist/
+
