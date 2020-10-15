@@ -63,8 +63,7 @@ func buy(c echo.Context) error {
 	amount, _ := strconv.Atoi(c.FormValue("amount"))
 	// TODO: 发送http请求到监管者服务器
 	utils.Verify(publickey)
-	utils.CreateCM_v(amount)
-
+	utils.CreateCM_v(publickey, amount)
 
 	return c.JSON(http.StatusCreated, publickey)
 }
