@@ -13,7 +13,7 @@ const url = "http://localhost:8545"
 
 
 func postData() bool {
-	path := "eth_getBlockByHash.json"
+	path := "sendTransaction.json"
 	data,_ := ioutil.ReadFile(path)
 	resp, err := http.Post(url,
 		"application/json",

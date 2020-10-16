@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="ad1e87cd-3ce8-436e-b9cb-c11c8ba24441" name="Default Changelist" comment="" />
+    <list default="true" id="ad1e87cd-3ce8-436e-b9cb-c11c8ba24441" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/post.go" beforeDir="false" afterPath="$PROJECT_DIR$/post.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sendTransaction.json" beforeDir="false" afterPath="$PROJECT_DIR$/sendTransaction.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/unlockAccount.json" beforeDir="false" afterPath="$PROJECT_DIR$/unlockAccount.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../explorer/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../../explorer/package-lock.json" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="GOROOT" path="D:\Program Files\Go" />
+  <component name="GOROOT" path="/usr/lib/go/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
   <component name="ProjectId" id="1iJU8s0CDBH7JxgpIUTRzYVqmgy" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectViewState">
@@ -32,7 +41,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Go Build.go build post.go">
     <configuration name="go build ethDebug" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
       <module name="ethDebug" />
       <working_directory value="$PROJECT_DIR$" />
@@ -42,48 +51,49 @@
       <directory value="$PROJECT_DIR$" />
       <method v="2" />
     </configuration>
+    <configuration name="go build post.go" type="GoApplicationRunConfiguration" factoryName="Go Application" temporary="true" nameIsGenerated="true">
+      <module name="ethDebug" />
+      <working_directory value="$PROJECT_DIR$" />
+      <kind value="FILE" />
+      <filePath value="$PROJECT_DIR$/post.go" />
+      <directory value="$PROJECT_DIR$" />
+      <method v="2" />
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Go Build.go build post.go" />
         <item itemvalue="Go Build.go build ethDebug" />
       </list>
     </recent_temporary>
   </component>
-  <component name="ServiceViewManager">
-    <option name="viewStates">
-      <list>
-        <serviceView>
-          <treeState>
-            <expand />
-            <select />
-          </treeState>
-        </serviceView>
-      </list>
-    </option>
-  </component>
-  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="WindowStateProjectService">
+    <state x="788" y="484" key="#GOROOT" timestamp="1602664444710">
+      <screen x="67" y="27" width="1853" height="1053" />
+    </state>
+    <state x="788" y="484" key="#GOROOT/67.27.1853.1053@67.27.1853.1053" timestamp="1602664444710" />
     <state x="451" y="210" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1601625084572">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
     <state x="451" y="210" key="#com.intellij.execution.impl.EditConfigurationsDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1601625084572" />
-    <state width="1799" height="228" key="GridCell.Tab.0.bottom" timestamp="1601626366676">
+    <state width="1799" height="223" key="GridCell.Tab.0.bottom" timestamp="1602664591340">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1799" height="228" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1601626366676" />
-    <state width="1799" height="228" key="GridCell.Tab.0.center" timestamp="1601626366673">
+    <state width="1799" height="223" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591340" />
+    <state width="1799" height="223" key="GridCell.Tab.0.center" timestamp="1602664591339">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1799" height="228" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1601626366673" />
-    <state width="1799" height="228" key="GridCell.Tab.0.left" timestamp="1601626366673">
+    <state width="1799" height="223" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591339" />
+    <state width="1799" height="223" key="GridCell.Tab.0.left" timestamp="1602664591339">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1799" height="228" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1601626366673" />
-    <state width="1799" height="228" key="GridCell.Tab.0.right" timestamp="1601626366675">
+    <state width="1799" height="223" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591339" />
+    <state width="1799" height="223" key="GridCell.Tab.0.right" timestamp="1602664591339">
       <screen x="67" y="27" width="1853" height="1053" />
     </state>
-    <state width="1799" height="228" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1601626366675" />
+    <state width="1799" height="223" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591339" />
   </component>
 </project>

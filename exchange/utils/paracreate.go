@@ -7,12 +7,16 @@ import (
 	"strconv"
 )
 
-func CreateCM_v(publickey string,amount int)  {
+type Purchase struct {
+	Publickey  string `json:"publickey" xml:"publickey" form:"publickey" query:"publickey"`
+	Amount string `json:"amount" xml:"amount" form:"amount" query:"amount"`
+}
+
+func CreateCM_v(amount int)  {
 	r :=  rand.Uint64()
 	regPub := crypto.PublicKey{params.RegularG1,params.RegularG2,params.RegularBigPrimeNumber,params.RegularPublicKey}
-	usrPub, _ := strconv.Atoi(publickey)
 	r1 := strconv.FormatUint(r, 10)
-	regPub.CommitByUint64(uint64(usrPub), []byte(r1))
+	regPub.CommitByUint64(uint64(amount), []byte(r1))
 }
 
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"echo-demo/crypto"
 	"echo-demo/utils"
 	"fmt"
 	"github.com/labstack/echo"
@@ -14,7 +15,10 @@ var (
 	app = cli.NewApp()
 	baseFlags = []cli.Flag{
 		utils.PortFlag,
+		utils.KeyFlag,
 	}
+	pub  = crypto.PublicKey{}
+	priv = crypto.PrivateKey{}
 
 )
 
@@ -37,7 +41,9 @@ func main() {
 }
 
 func exchange(ctx *cli.Context)  {
-	startNetwork(ctx)
+	gk := ctx.String("generatekey")
+	pub, priv, _ = utils.GenerateKey(gk)
+    startNetwork(ctx)
 }
 
 func startNetwork(ctx *cli.Context) error {
@@ -62,8 +68,9 @@ func buy(c echo.Context) error {
 	//pk,_ := strconv.Atoi(publickey)
 	amount, _ := strconv.Atoi(c.FormValue("amount"))
 	// TODO: 发送http请求到监管者服务器
+
 	utils.Verify(publickey)
-	utils.CreateCM_v(publickey, amount)
+	utils.CreateCM_v(amount)
 
 	return c.JSON(http.StatusCreated, publickey)
 }
