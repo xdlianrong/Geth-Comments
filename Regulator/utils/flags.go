@@ -30,6 +30,11 @@ var (
 		Usage: "Redis password",
 		Value: "",
 	}
+	PassPhraseFlag = cli.StringFlag{
+		Name:  "passphrase, ph",
+		Usage: "Used to generate public and private key",
+		Value: "",
+	}
 )
 
 // MigrateFlags sets the global flag from a local flag when it's set.

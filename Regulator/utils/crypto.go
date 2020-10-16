@@ -1,13 +1,10 @@
 package utils
 
 import (
-	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"io"
 	"regulator/utils/ElGamal"
-	"time"
 )
 
 func Hash(str string) string {
@@ -21,12 +18,6 @@ func Hash(str string) string {
 	fmt.Println(s)
 	return s
 }
-func randContent() string {
-	h := md5.New()
-	io.WriteString(h, "crazyof.me")
-	io.WriteString(h, time.Now().String())
-	return fmt.Sprintf("%x", h.Sum(nil))
-}
-func GenElgKeys() (pub ElGamal.PublicKey, priv ElGamal.PrivateKey, err error) {
-	return ElGamal.GenerateKeys(randContent())
+func GenElgKeys(passphrase string) (pub ElGamal.PublicKey, priv ElGamal.PrivateKey, err error) {
+	return ElGamal.GenerateKeys(passphrase)
 }

@@ -55,9 +55,11 @@ func regulator(ctx *cli.Context) error {
 func prepare(ctx *cli.Context) error {
 	//连接并初始化Redis, 接收数据库端口，密码，数据库号三个参数
 	regDb = regdb.ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
-	// 检查是否有公私钥匙：无则报错退出程序
-	if !regdb.Exists(regDb, "chainConfig") || !regdb.Exists(regDb, "key") {
+	// 检查是否有公私钥：无则报错退出程序
+	if !regdb.Exists(regDb, "chainConfig") {
 		utils.Fatalf("Failed to start server,please initialise first")
+	} else if !regdb.Exists(regDb, "key") {
+		utils.Fatalf("Failed to start server,incomplete database initialization,please initialise again")
 	}
 	startNetwork(ctx.String("port"))
 	return nil
@@ -114,6 +116,6 @@ func regkey(c echo.Context) error {
 		fmt.Println(key)
 		return c.JSON(http.StatusCreated, key.PublicKey)
 	} else {
-		return c.String(http.StatusOK, "chainid错误")
+		return c.String(http.StatusOK, "chainID错误")
 	}
 }

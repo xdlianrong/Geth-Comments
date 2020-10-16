@@ -17,10 +17,11 @@ var (
 			utils.DatabaseFlag,
 			utils.DataportFlag,
 			utils.DbPasswdPortFlag,
+			utils.PassPhraseFlag,
 		},
 		Category: "BASE COMMANDS",
 		Description: `
-The init command initializes a new Redis database for the server.
+The init command initializes a new Redis database for the server and key pairs for the regulator.
 This is a destructive action and changes the network in which you will be
 participating.
 
@@ -31,6 +32,7 @@ It expects the chainID as argument.`,
 // InitDB will initialise the given chainID and writes it into
 // Redis as chain's mark or will fail hard if it can't succeed.
 func InitDB(ctx *cli.Context) error {
+	passphrs := ctx.String("passphrase")
 	chainID := ctx.String("chainID")
 	regDb := ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
 	if Exists(regDb, "chainConfig") {
@@ -38,7 +40,7 @@ func InitDB(ctx *cli.Context) error {
 		if chainConfig.ID == chainID {
 			fmt.Println("Database has been initialised by chainID", chainID, "sometimes before")
 		} else {
-			utils.Fatalf("Database has been initialised by chainID " + chainConfig.ID)
+			utils.Fatalf("Database has been initialised by chainID ", chainConfig.ID+", not ", chainID)
 		}
 	} else {
 		err := Set(regDb, "chainConfig", &Identity{
@@ -53,14 +55,20 @@ func InitDB(ctx *cli.Context) error {
 	}
 	// 判断db有无公私钥，无则生成，有则什么都不干
 	if !Exists(regDb, "key") {
-		_, priv, err := utils.GenElgKeys()
+		if passphrs == "" {
+			utils.Fatalf("Failed to initialise database,please declare passphrase")
+		}
+		_, priv, err := utils.GenElgKeys(passphrs)
 		if err != nil {
 			utils.Fatalf("%v", err)
 		}
 		if err := Set(regDb, "key", priv); err != nil {
 			utils.Fatalf("Failed to set : %v", err)
 		}
-		//fmt.Printf("公钥：P:%x\nG1:%x\nG2:%x\nH:%x\n私钥：\nX:%x\n", pub.P, pub.G1, pub.G2, pub.H, priv.X)
+		fmt.Println("Regulator key generated successfully")
+		fmt.Printf("PublicKey：P:%x\nG1:%x\nG2:%x\nH:%x\nPrivateKey：\nX:%x\n", priv.P, priv.G1, priv.G2, priv.H, priv.X)
+	} else {
+		fmt.Println("Regulator key has been initialised sometimes before")
 	}
 	return nil
 }

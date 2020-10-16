@@ -40,19 +40,29 @@
 
     接收JSON参数：{"Name": "12","ID": "123","Hashky": "1234","ExtInfo": "12345"}
 
+    将用户注册信息存入数据库
+
     返回值："Fail!"或"Successful!"
 
   + /verify [POST]
 
     接收JSON参数{"publicKey": "1234"}
 
+    检查publicKey是否在公钥池中
+    
     返回值："True"或"False"
+    
+  + /regkey [GET]
+
+    接收ChainID为参数
+
+    返回值：此链监管者的公钥
 
 #### 启动命令
 
 **regulator [Arguments...]**
 
-Arguments可选项如下
+Arguments选项如下
 
 GLOBAL OPTIONS:
    --database value, --db value  Number of database for Redis (default: 0)
@@ -64,14 +74,14 @@ GLOBAL OPTIONS:
 
 **regulator init [Arguments...]**
 
-Arguments可选项如下
+Arguments选项如下，其中passphrase必须声明
 
-GLOBAL OPTIONS:
-   --database value, --db value  Number of database for Redis (default: 0)
-   --dataport value, --dp value  Data port for Redis (default: 6379)
-   --passwd value, --pw value    Redis password
-   --help, -h                    show help
-   --version, -v                 print the version
+OPTIONS:
+   --chainID value                 chainID to be stored in Redis (default: 1)
+   --database value, --db value    Number of database for Redis (default: 0)
+   --dataport value, --dp value    Data port for Redis (default: 6379)
+   --passwd value, --pw value      Redis password
+   --passphrase value, --ph value  Used to generate public and private key
 
 #### 启动流程
 
@@ -84,3 +94,4 @@ GLOBAL OPTIONS:
 ### V2.0 前端展示
 
 预期用Vue框架写个前端，边同步交易信息边解密，展示出来。
+
