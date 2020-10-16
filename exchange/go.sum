@@ -9,6 +9,7 @@ github.com/golang/crypto v0.0.0-20190829043050-9756ffdc2472 h1:GzFBbHakMFNZQ91W0
 github.com/golang/crypto v0.0.0-20190829043050-9756ffdc2472/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 github.com/golang/net v0.0.0-20190404232315-eb5bcb51f2a3 h1:UeVAy0UDXS16ESQMxqxN8fugALO4cXbu/puW5eCV2To=
 github.com/golang/net v0.0.0-20190404232315-eb5bcb51f2a3/go.mod h1:t9HGtf8HONx5eT2rtn7q6eTqICYqUVnKs3thJo3Qplg=
+github.com/golang/sys v0.0.0-20190830142957-1e83adbbebd0 h1:4UcTZFWSYUeW7aqKJAE5btLDhJTCiakjQO6kBX8kYf4=
 github.com/golang/sys v0.0.0-20190830142957-1e83adbbebd0/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 github.com/golang/text v0.3.0 h1:uI5zIUA9cg047ctlTptnVc0Ghjfurf2eZMFrod8R7v8=
 github.com/golang/text v0.3.0/go.mod h1:GUiq9pdJKRKKAZXiVgWFEvocYuREvC14NhI4OPgEjeE=

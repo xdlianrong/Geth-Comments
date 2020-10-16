@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -9,10 +8,10 @@ import (
 )
 
 func Verify(publickey string) {
-	url_regular := "http://localhost:1333"
+	url_regular := "http://localhost:1423/verify"
 
 	data := make(url.Values)
-	data["publickey"] = []string{publickey}
+	data["publicKey"] = []string{publickey}
 
 	resp, err := http.PostForm(url_regular, data)
 	if err != nil {
@@ -21,13 +20,13 @@ func Verify(publickey string) {
 	}
 	defer resp.Body.Close()
 	bodyC, _ := ioutil.ReadAll(resp.Body)
-	var jsonMap map[string]interface{}
-	err = json.Unmarshal(bodyC, &jsonMap)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(jsonMap)
+	//var jsonMap map[string]interface{}
+	//err = json.Unmarshal(bodyC, &jsonMap)
+	//if err != nil {
+	//	fmt.Println(err)
+	//	return
+	//}
+	fmt.Println(string(bodyC))
 }
 
 func sendTransaction() {
