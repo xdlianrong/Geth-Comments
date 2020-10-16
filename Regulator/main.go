@@ -10,6 +10,7 @@ import (
 	"os"
 	"regulator/regdb"
 	"regulator/utils"
+	"regulator/utils/ElGamal"
 )
 
 const (
@@ -54,10 +55,10 @@ func regulator(ctx *cli.Context) error {
 func prepare(ctx *cli.Context) error {
 	//连接并初始化Redis, 接收数据库端口，密码，数据库号三个参数
 	regDb = regdb.ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
-	if !regdb.Exists(regDb, "chainConfig") {
+	// 检查是否有公私钥匙：无则报错退出程序
+	if !regdb.Exists(regDb, "chainConfig") || !regdb.Exists(regDb, "key") {
 		utils.Fatalf("Failed to start server,please initialise first")
 	}
-	//TODO:检查是否有公私钥匙：无则报错退出程序
 	startNetwork(ctx.String("port"))
 	return nil
 }
@@ -73,7 +74,7 @@ func startNetwork(port string) {
 	// Routes
 	e.POST("/register", register)
 	e.POST("/verify", verify)
-	//TODO:写一个get路由regkey，接收参数chainid，如果此chainid正确就返回监管者公钥PublicKey
+	e.GET("/regkey", regkey)
 	//TODO:写一个post路由decrypto，接收参数监管者私钥X和需要解密的数据，如果X正确就返回解密后的明文数据
 	// Start server
 	e.Logger.Fatal(e.Start(":" + port))
@@ -104,4 +105,15 @@ func verify(c echo.Context) error {
 		return c.String(http.StatusOK, "False")
 	}
 	return c.String(http.StatusOK, "True")
+}
+
+func regkey(c echo.Context) error {
+	chainID := c.QueryParam("chainID")
+	if regdb.Get(regDb, "chainConfig").(*regdb.Identity).ID == chainID {
+		key := regdb.Get(regDb, "key").(*ElGamal.PrivateKey)
+		fmt.Println(key)
+		return c.JSON(http.StatusCreated, key.PublicKey)
+	} else {
+		return c.String(http.StatusOK, "chainid错误")
+	}
 }

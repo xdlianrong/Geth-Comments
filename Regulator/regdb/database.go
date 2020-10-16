@@ -6,6 +6,7 @@ import (
 	"github.com/go-redis/redis"
 	"log"
 	"regulator/utils"
+	"regulator/utils/ElGamal"
 )
 
 type Identity struct {
@@ -32,7 +33,7 @@ func Setup(dataport string, passwd string, database int) (*redis.Client, error) 
 	return client, err
 }
 
-func Set(regDb *redis.Client, key string, value *Identity) error {
+func Set(regDb *redis.Client, key string, value interface{}) error {
 	//有效期为0表示不设置有效期，非0表示经过该时间后键值对失效
 	var valueM []byte
 	valueM, _ = json.Marshal(value)
@@ -43,7 +44,7 @@ func Set(regDb *redis.Client, key string, value *Identity) error {
 	return err
 }
 
-func Get(regDb *redis.Client, key string) string {
+func Get(regDb *redis.Client, key string) interface{} {
 	result, err := regDb.Get(key).Result()
 
 	if err != nil {
@@ -51,10 +52,24 @@ func Get(regDb *redis.Client, key string) string {
 	}
 	// fmt.Println(result)
 	// raw 为反序列化后的Identity结构体
-	// raw := new(Identity)
-	// err = json.Unmarshal([]byte(result),&raw)
-	// fmt.Println(raw)
-	return result
+	switch key {
+	case "key":
+		{
+			raw := new(ElGamal.PrivateKey)
+			if err := json.Unmarshal([]byte(result), &raw); err != nil {
+				utils.Fatalf("Failed to Unmarshal: %v", err)
+			}
+			return raw
+		}
+	default:
+		{
+			raw := new(Identity)
+			if err := json.Unmarshal([]byte(result), &raw); err != nil {
+				utils.Fatalf("Failed to Unmarshal: %v", err)
+			}
+			return raw
+		}
+	}
 }
 
 func Exists(regDb *redis.Client, key string) bool {

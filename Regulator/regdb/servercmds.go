@@ -1,7 +1,6 @@
 package regdb
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/urfave/cli"
 	"regulator/utils"
@@ -35,14 +34,9 @@ func InitDB(ctx *cli.Context) error {
 	chainID := ctx.String("chainID")
 	regDb := ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
 	if Exists(regDb, "chainConfig") {
-		result := Get(regDb, "chainConfig")
-		chainConfig := new(Identity)
-		if err := json.Unmarshal([]byte(result), &chainConfig); err != nil {
-			utils.Fatalf("Failed to initialise database: %v", err)
-		}
+		chainConfig := Get(regDb, "chainConfig").(*Identity)
 		if chainConfig.ID == chainID {
 			fmt.Println("Database has been initialised by chainID", chainID, "sometimes before")
-
 		} else {
 			utils.Fatalf("Database has been initialised by chainID " + chainConfig.ID)
 		}
@@ -57,14 +51,16 @@ func InitDB(ctx *cli.Context) error {
 			utils.Fatalf("Failed to initialise database: %v", err)
 		}
 	}
-	//TODO:判断db有无公私钥，无则生成，有则什么都不干
+	// 判断db有无公私钥，无则生成，有则什么都不干
 	if !Exists(regDb, "key") {
-		pub, priv, err := utils.GenElgKeys()
+		_, priv, err := utils.GenElgKeys()
 		if err != nil {
 			utils.Fatalf("%v", err)
 		}
-		//TODO:Set(regDb,)
-		fmt.Printf("公钥：P:%x\nG1:%x\nG2:%x\nH:%x\n私钥：\nX:%x\n", pub.P, pub.G1, pub.G2, pub.H, priv.X)
+		if err := Set(regDb, "key", priv); err != nil {
+			utils.Fatalf("Failed to set : %v", err)
+		}
+		//fmt.Printf("公钥：P:%x\nG1:%x\nG2:%x\nH:%x\n私钥：\nX:%x\n", pub.P, pub.G1, pub.G2, pub.H, priv.X)
 	}
 	return nil
 }
