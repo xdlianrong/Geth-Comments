@@ -57,6 +57,7 @@ func prepare(ctx *cli.Context) error {
 	if !regdb.Exists(regDb, "chainConfig") {
 		utils.Fatalf("Failed to start server,please initialise first")
 	}
+	//TODO:检查是否有公私钥匙：无则报错退出程序
 	startNetwork(ctx.String("port"))
 	return nil
 }
@@ -72,7 +73,8 @@ func startNetwork(port string) {
 	// Routes
 	e.POST("/register", register)
 	e.POST("/verify", verify)
-
+	//TODO:写一个get路由regkey，接收参数chainid，如果此chainid正确就返回监管者公钥PublicKey
+	//TODO:写一个post路由decrypto，接收参数监管者私钥X和需要解密的数据，如果X正确就返回解密后的明文数据
 	// Start server
 	e.Logger.Fatal(e.Start(":" + port))
 }

@@ -42,6 +42,7 @@ func InitDB(ctx *cli.Context) error {
 		}
 		if chainConfig.ID == chainID {
 			fmt.Println("Database has been initialised by chainID", chainID, "sometimes before")
+
 		} else {
 			utils.Fatalf("Database has been initialised by chainID " + chainConfig.ID)
 		}
@@ -55,6 +56,15 @@ func InitDB(ctx *cli.Context) error {
 		if err != nil {
 			utils.Fatalf("Failed to initialise database: %v", err)
 		}
+	}
+	//TODO:判断db有无公私钥，无则生成，有则什么都不干
+	if !Exists(regDb, "key") {
+		pub, priv, err := utils.GenElgKeys()
+		if err != nil {
+			utils.Fatalf("%v", err)
+		}
+		//TODO:Set(regDb,)
+		fmt.Printf("公钥：P:%x\nG1:%x\nG2:%x\nH:%x\n私钥：\nX:%x\n", pub.P, pub.G1, pub.G2, pub.H, priv.X)
 	}
 	return nil
 }
