@@ -2,21 +2,34 @@ package utils
 
 import (
 	"echo-demo/crypto"
-	"echo-demo/params"
 	"math/rand"
 	"strconv"
 )
 
+// the struct from user post
 type Purchase struct {
 	Publickey  string `json:"publickey" xml:"publickey" form:"publickey" query:"publickey"`
 	Amount string `json:"amount" xml:"amount" form:"amount" query:"amount"`
 }
 
-func CreateCM_v(amount int)  {
-	r :=  rand.Uint64()
-	regPub := crypto.PublicKey{params.RegularG1,params.RegularG2,params.RegularBigPrimeNumber,params.RegularPublicKey}
-	r1 := strconv.FormatUint(r, 10)
-	regPub.CommitByUint64(uint64(amount), []byte(r1))
+// create commit_v
+func CreateCM_v(regpub crypto.PublicKey, amount string) (CM crypto.Commitment) {
+	amounts, _ := strconv.Atoi(amount)
+	r_f :=  rand.Uint64()
+	r1 := strconv.FormatUint(r_f, 10)
+	CM = regpub.CommitByUint64(uint64(amounts), []byte(r1))
+	return CM
 }
 
+// create elgamal result
+func CreateElgamalC(regpub crypto.PublicKey, amount string, publickey string) (C crypto.CypherText) {
+	M := amount + publickey
+	C  = crypto.Encrypt(regpub, []byte(M))
+	return
+}
 
+// create sign result
+func CreateSign(privpub crypto.PrivateKey, amount string) (sig crypto.Signature) {
+	sig = crypto.Sign(privpub, []byte(amount))
+	return
+}

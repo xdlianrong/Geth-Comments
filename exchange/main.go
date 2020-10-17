@@ -9,7 +9,6 @@ import (
 	"github.com/urfave/cli"
 	"net/http"
 	"os"
-	"strconv"
 )
 var (
 	app = cli.NewApp()
@@ -17,9 +16,12 @@ var (
 		utils.PortFlag,
 		utils.KeyFlag,
 	}
-	pub  = crypto.PublicKey{}
-	priv = crypto.PrivateKey{}
-
+	publisherpub   = crypto.PublicKey{}
+	publisherpriv  = crypto.PrivateKey{}
+	regulatorpub   = crypto.PublicKey{}
+	cm_and_r       = crypto.Commitment{}
+	elgamal        = crypto.CypherText{}
+	signature      = crypto.Signature{}
 )
 
 
@@ -42,7 +44,7 @@ func main() {
 
 func exchange(ctx *cli.Context)  {
 	gk := ctx.String("generatekey")
-	pub, priv, _ = utils.GenerateKey(gk)
+	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
     startNetwork(ctx)
 }
 
@@ -65,12 +67,19 @@ func buy(c echo.Context) error {
 		return err
 	}
 	publickey := c.FormValue("publickey")
+	amount    := c.FormValue("amount")
 	//pk,_ := strconv.Atoi(publickey)
-	amount, _ := strconv.Atoi(c.FormValue("amount"))
-	// TODO: 发送http请求到监管者服务器
+	//amount, _ := strconv.Atoi(c.FormValue("amount"))
 
-	utils.Verify(publickey)
-	utils.CreateCM_v(amount)
+	if(utils.Verify(publickey) == false){
+		return c.JSON(http.StatusCreated, "error publickey, please input again or register now")
+	}else{
+		regulatorpub, _ = utils.GenerateRegKey()
+		cm_and_r        = utils.CreateCM_v(regulatorpub, amount)
+		elgamal         = utils.CreateElgamalC(regulatorpub, amount, publickey)
+		signature       = utils.CreateSign(publisherpriv, amount)
+		//TODO: sendTranscation
+	}
 
 	return c.JSON(http.StatusCreated, publickey)
 }
