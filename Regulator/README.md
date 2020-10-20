@@ -40,22 +40,24 @@
 
     接收JSON参数：{"Name": "12","ID": "123","Hashky": "1234","ExtInfo": "12345"}
 
-    将用户注册信息存入数据库
+    上述参数中除"ExtInfo"外，其他均不能置空。如果字段名写错，认为字段置空。**如果ExtInfo写错，还查不出来。**
+
+    接口功能：将用户注册信息存入数据库
 
     返回值："Fail!"或"Successful!"
 
   + /verify [POST]
 
-    接收JSON参数{"publicKey": "1234"}
-
-    检查publicKey是否在公钥池中
+    接收JSON参数{"Hashky": "1234"}，Hashky为用户公钥，此字段置空或写错，直接返回"False"。
+  
+    检查用户公钥是否在公钥池中
     
     返回值："True"或"False"
-    
+  
   + /regkey [GET]
 
-    接收ChainID为参数
-
+    接收数字ChainID为参数，此参数必须正确填写，否则会返回相应错误。
+  
     返回值：此链监管者的公钥
 
 #### 启动命令
@@ -89,7 +91,7 @@ OPTIONS:
 
 #### 使用方法
 
-在Regulator目录下，使用命令`go build`生成名为`regulator`的可执行文件，运行此文件即可。
+在Regulator目录下，使用命令`go build`生成名为`regulator`的可执行文件，配合参数运行此文件即可。服务端运行需要Redis数据库的支持，需要在运行`regulator`前启动redis服务，redis接口等信息可以在启动参数中配置。
 
 ### V2.0 前端展示
 

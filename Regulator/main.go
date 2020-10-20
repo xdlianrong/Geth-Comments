@@ -40,7 +40,7 @@ func init() {
 }
 func main() {
 	if err := app.Run(os.Args); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
@@ -48,7 +48,7 @@ func regulator(ctx *cli.Context) error {
 	if args := ctx.Args(); len(args) > 0 {
 		return fmt.Errorf("invalid command: %q", args[0])
 	}
-	prepare(ctx)
+	_ = prepare(ctx)
 	return nil
 }
 
@@ -88,6 +88,9 @@ func register(c echo.Context) error {
 		return err
 	}
 	//fmt.Println(u.Hashky)
+	if u.Hashky == "" || u.Name == "" || u.ID == "" {
+		return c.String(http.StatusOK, "Fail!")
+	}
 	hash := utils.Hash(u.Hashky)
 	if err := regdb.Set(regDb, hash, u); err != nil {
 		utils.Fatalf("Failed to set : %v", err)
@@ -103,7 +106,7 @@ func verify(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-	if !regdb.Exists(regDb, utils.Hash(u.Hashky)) {
+	if u.Hashky == "" || !regdb.Exists(regDb, utils.Hash(u.Hashky)) {
 		return c.String(http.StatusOK, "False")
 	}
 	return c.String(http.StatusOK, "True")
@@ -111,6 +114,9 @@ func verify(c echo.Context) error {
 
 func regkey(c echo.Context) error {
 	chainID := c.QueryParam("chainID")
+	if chainID == "" {
+		return c.String(http.StatusOK, "未填写chainID")
+	}
 	if regdb.Get(regDb, "chainConfig").(*regdb.Identity).ID == chainID {
 		key := regdb.Get(regDb, "key").(*ElGamal.PrivateKey)
 		fmt.Println(key)
