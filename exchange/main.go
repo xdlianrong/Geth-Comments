@@ -1,8 +1,8 @@
 package main
 
 import (
-	"echo-demo/crypto"
-	"echo-demo/utils"
+	"exchange/crypto"
+	"exchange/utils"
 	"fmt"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -57,6 +57,8 @@ func startNetwork(ctx *cli.Context) error {
 	e.Use(middleware.Recover())
 
 	e.POST("/buy", buy)
+	e.GET("/pubpub",pubpub)
+
 	e.Logger.Fatal(e.Start(":" + port))
 	return nil
 }
@@ -66,10 +68,9 @@ func buy(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
+
 	publickey := c.FormValue("publickey")
 	amount    := c.FormValue("amount")
-	//pk,_ := strconv.Atoi(publickey)
-	//amount, _ := strconv.Atoi(c.FormValue("amount"))
 
 	if(utils.Verify(publickey) == false){
 		return c.JSON(http.StatusCreated, "error publickey, please input again or register now")
@@ -82,4 +83,8 @@ func buy(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, publickey)
+}
+
+func pubpub(c echo.Context) error {
+	return c.JSON(http.StatusCreated, publisherpub)
 }

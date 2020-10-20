@@ -1,4 +1,4 @@
-module echo-demo
+module exchange
 
 go 1.14
 

@@ -2,16 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="89b358df-230c-431d-9973-e420ce1442e4" name="默认的" comment="">
-      <change afterPath="$PROJECT_DIR$/info.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/utils/genekey.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Regulator/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Regulator/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Regulator/regulator" beforeDir="false" afterPath="$PROJECT_DIR$/../Regulator/regulator" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Regulator/regulator.exe" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/params/regular.go" beforeDir="false" afterPath="$PROJECT_DIR$/params/regular.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/flags.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/flags.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/params/regular.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/genekey.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/genekey.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/generegkey.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/generegkey.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/paracreate.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/paracreate.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/post.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/post.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/require.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/require.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,12 +27,15 @@
       </list>
     </option>
   </component>
-  <component name="GOROOT" path="D:\Program Files\Go" />
+  <component name="GOROOT" url="file:///usr/local/go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="false" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedIndex" value="1" />
   </component>
   <component name="ProjectId" id="1iYAIRCr2yZEvLmJmY06Kgd7kca" />
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
@@ -107,47 +112,29 @@
       </list>
     </option>
   </component>
-  <component name="SpellCheckerSettings" BundledDictionaries="0" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" Dictionaries="0" CorrectionsLimit="5" DefaultDictionary="application-level" UseSingleDictionary="true" />
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
-    <option name="version" value="1" />
+    <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
     <option name="TAB_STATES">
       <map>
         <entry key="MAIN">
           <value>
-            <State>
-              <option name="COLUMN_ORDER" />
-            </State>
+            <State />
           </value>
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>
+    <environment>
+      <map>
+        <entry key="GOPROXY" value="direct" />
+      </map>
+    </environment>
     <proxy>direct</proxy>
-  </component>
-  <component name="WindowStateProjectService">
-    <state x="275" y="26" key="#GOROOT" timestamp="1602930485275">
-      <screen x="0" y="0" width="1366" height="728" />
-    </state>
-    <state x="275" y="26" key="#GOROOT/0.0.1366.728@0.0.1366.728" timestamp="1602930485275" />
-    <state width="1323" height="136" key="GridCell.Tab.0.bottom" timestamp="1602952742503">
-      <screen x="0" y="0" width="1366" height="728" />
-    </state>
-    <state width="1323" height="136" key="GridCell.Tab.0.bottom/0.0.1366.728@0.0.1366.728" timestamp="1602952742503" />
-    <state width="1323" height="136" key="GridCell.Tab.0.center" timestamp="1602952742502">
-      <screen x="0" y="0" width="1366" height="728" />
-    </state>
-    <state width="1323" height="136" key="GridCell.Tab.0.center/0.0.1366.728@0.0.1366.728" timestamp="1602952742502" />
-    <state width="1323" height="136" key="GridCell.Tab.0.left" timestamp="1602952742502">
-      <screen x="0" y="0" width="1366" height="728" />
-    </state>
-    <state width="1323" height="136" key="GridCell.Tab.0.left/0.0.1366.728@0.0.1366.728" timestamp="1602952742502" />
-    <state width="1323" height="136" key="GridCell.Tab.0.right" timestamp="1602952742502">
-      <screen x="0" y="0" width="1366" height="728" />
-    </state>
-    <state width="1323" height="136" key="GridCell.Tab.0.right/0.0.1366.728@0.0.1366.728" timestamp="1602952742502" />
   </component>
 </project>

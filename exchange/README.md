@@ -14,11 +14,11 @@
 
 ## 功能说明：
 
-### 初始化
+#### 1 初始化
 
 通过输入端口号初始化程序（缺省1323），发行者输入任意字符串用来初始化公私钥
 
-### 发行者生成公私钥
+#### 2 发行者生成公私钥
 
 通过GenerateKeys算法生成发行者公私钥，如果本地文件中已经有了公私钥配置，则不再生成
 
@@ -26,13 +26,17 @@
 
 输出：公钥，私钥
 
-### 接收用户响应
+#### 3 接收用户响应
 
 设置监听端口，接收用户发来的publickey和amount判断publickey合法
 
 将publickey发送http请求至监管者服务器（:1423/verify）,若返回false跳出程序，返回ture进入下一步
 
-### 承诺生成
+#### 4 请求获得监管者公钥
+
+调用/regkey获取监管者公钥，存储在本地json文件中
+
+#### 5 承诺生成
 
 先生成uint64位随机数r，利用承诺生成算法CommitByUint64
 
@@ -40,7 +44,7 @@
 
 输出：CM_v，规范后的r
 
-### ElGamal加密
+#### 6 ElGamal加密
 
 调用加密算法Encrypt
 
@@ -48,7 +52,7 @@
 
 输出：交易所服务器E( pk , v )。(C1，C2)
 
-### 发行者签名
+#### 7 发行者签名
 
 调用加密算法Sign
 
@@ -56,7 +60,7 @@
 
 输出：Signature
 
-### sendTranscation
+#### 8 sendTranscation
 
 将交易信息打包通过rpc方式发送上链。
 
@@ -66,28 +70,35 @@
 
 ##### RPC接口：
 
-eth_sendTransaction：暂时先见./dev/RPC接口文档，之后应该要修改接口以判断购币还是转账交易
+todo：链上交易结构修改
 
 ## 监听接口
 
 服务器端口号：缺省1323
 
-路由```/buy```暴露给用户，用户输入json样例如下
+1.路由```/buy``` [POST]暴露给用户，用户输入json样例如下
 
 ```json
 {
-    "publickey" : "0x35763484753468478343432",
+    "publickey" : "0x3576abcdef8345643646453432",
     "amount" : "423412"
 }
 ```
 
+2.路由```/pubpub``` [GET]暴露给用户，返回发行者公钥信息
+
 ## 启动命令
 
 GLOBAL OPTIONS:
-   --port value, -p value      the port of this server (default: "1323")
-   --help, -h                           show help
+   --port value, -p value           the port of this server (default: "1323")
+   --generatekey value, --gk value  the string that you generate your pub/pri key
+   --help, -h                       show help
 
+## 使用方法
 
+go build 
+
+./exchange -p 指定端口 --gk 指定字符串
 
 
 

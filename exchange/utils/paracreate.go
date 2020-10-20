@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"echo-demo/crypto"
+	"exchange/crypto"
 	"math/rand"
 	"strconv"
 )
