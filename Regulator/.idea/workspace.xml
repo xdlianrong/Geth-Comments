@@ -3,16 +3,8 @@
   <component name="ChangeListManager">
     <list default="true" id="62ee18b0-1674-4368-94cc-3fcad3fc1a2e" name="默认的" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/regulator" beforeDir="false" afterPath="$PROJECT_DIR$/regulator" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/regulator.exe" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../exchange/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/params/regular.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/utils/genekey.go" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/utils/genekey.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/utils/generegkey.go" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/utils/generegkey.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../exchange/utils/paracreate.go" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/utils/paracreate.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../exchange/exchange" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/exchange" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../exchange/utils/require.go" beforeDir="false" afterPath="$PROJECT_DIR$/../exchange/utils/require.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -99,6 +91,7 @@
         </entry>
       </map>
     </option>
+    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VgoProject">
     <integration-enabled>true</integration-enabled>

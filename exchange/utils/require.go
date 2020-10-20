@@ -20,7 +20,7 @@ func Verify(publickey string) bool {
 	url_regular := verifyurl
 
 	data := make(url.Values)
-	data["publicKey"] = []string{publickey}
+	data["Hashky"] = []string{publickey}
 
 	resp, err := http.PostForm(url_regular, data)
 	if err != nil {
@@ -29,18 +29,12 @@ func Verify(publickey string) bool {
 	}
 	defer resp.Body.Close()
 	bodyC, _ := ioutil.ReadAll(resp.Body)
-	//var jsonMap map[string]interface{}
-	//err = json.Unmarshal(bodyC, &jsonMap)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
 	fmt.Println(string(bodyC))
 	//TODO: talk to regulator
-	if(string(bodyC) == "Ture" ){
-		return false
-	}else{
+	if(string(bodyC) == "True" ){
 		return true
+	}else{
+		return false
 	}
 }
 

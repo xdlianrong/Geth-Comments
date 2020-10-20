@@ -3,16 +3,9 @@
   <component name="ChangeListManager">
     <list default="true" id="89b358df-230c-431d-9973-e420ce1442e4" name="默认的" comment="">
       <change beforePath="$PROJECT_DIR$/../Regulator/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Regulator/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Regulator/regulator" beforeDir="false" afterPath="$PROJECT_DIR$/../Regulator/regulator" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Regulator/regulator.exe" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/exchange" beforeDir="false" afterPath="$PROJECT_DIR$/exchange" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/params/regular.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/genekey.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/genekey.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/generegkey.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/generegkey.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils/paracreate.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/paracreate.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/require.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/require.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
