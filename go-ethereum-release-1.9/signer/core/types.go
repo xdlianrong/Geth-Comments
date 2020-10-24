@@ -74,24 +74,32 @@ type SendTxArgs struct {
 	Value    hexutil.Big              `json:"value"`
 	Nonce    hexutil.Uint64           `json:"nonce"`
 	// We accept "data" and "input" for backwards-compatibility reasons.
-	Data  *hexutil.Bytes  `json:"data"`
-	Input *hexutil.Bytes  `json:"input,omitempty"`
-	SnO   *hexutil.Uint64 `json:"SnO"`
-	rR1   *hexutil.Uint64 `json:"rR1"`
-	CmSpk *hexutil.Uint64 `json:"CmSpk"`
-	CmRpk *hexutil.Uint64 `json:"CmRpk"`
-	CmO   *hexutil.Uint64 `json:"CmO"`
-	CmS   *hexutil.Uint64 `json:"CmS"`
-	CmR   *hexutil.Uint64 `json:"CmR"`
-	EvR   *hexutil.Uint64 `json:"EvR"`
-	EvR0  *hexutil.Uint64 `json:"EvR0"`
-	EvR_  *hexutil.Uint64 `json:"EvR_"`
-	EvR_0 *hexutil.Uint64 `json:"EvR_0"`
-	pi    *hexutil.Uint64 `json:"pi"`
-	ID    *hexutil.Uint64 `json:"ID"`
-	Sig   *string `json:"Sig"`
-	CmV   *hexutil.Uint64 `json:"CmV"`
-	EpkV  *hexutil.Uint64 `json:"EpkV"`
+	Data     *hexutil.Bytes  `json:"data"`
+	Input    *hexutil.Bytes  `json:"input,omitempty"`
+	SnO      *hexutil.Uint64 `json:"SnO"`
+	rR1      *hexutil.Uint64 `json:"rR1"`
+	CmSpk    *hexutil.Uint64 `json:"CmSpk"`
+	CmRpk    *hexutil.Uint64 `json:"CmRpk"`
+	CmO      *hexutil.Uint64 `json:"CmO"`
+	CmS      *hexutil.Uint64 `json:"CmS"`
+	CmR      *hexutil.Uint64 `json:"CmR"`
+	EvR      *hexutil.Uint64 `json:"EvR"`
+	EvR0     *hexutil.Uint64 `json:"EvR0"`
+	EvR_     *hexutil.Uint64 `json:"EvR_"`
+	EvR_0    *hexutil.Uint64 `json:"EvR_0"`
+	ID       *hexutil.Uint64 `json:"ID"`
+	Sig      *string         `json:"Sig"`
+	CmV      *hexutil.Uint64 `json:"CmV"`
+	EpkV     *hexutil.Uint64 `json:"EpkV"`
+	CFormat  *hexutil.Big    `json:"CFormat"`  //格式正确证明字段1/3
+	Z1       *hexutil.Big    `json:"Z1"`       //格式正确证明字段2/3
+	Z2       *hexutil.Big    `json:"Z2"`       //格式正确证明字段3/3
+	CBalance *hexutil.Big    `json:"CBalance"` //会计平衡证明字段1/6
+	Rv       *hexutil.Big    `json:"Rv"`       //会计平衡证明字段2/6
+	Rr       *hexutil.Big    `json:"Rr"`       //会计平衡证明字段3/6
+	Sv       *hexutil.Big    `json:"Sv"`       //会计平衡证明字段4/6
+	Sr       *hexutil.Big    `json:"Sr"`       //会计平衡证明字段5/6
+	Sor      *hexutil.Big    `json:"Sor"`      //会计平衡证明字段6/6
 }
 
 func (args SendTxArgs) String() string {
@@ -110,7 +118,7 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Input
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.pi), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV))
+		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV), (*big.Int)(args.CFormat), (*big.Int)(args.Z1), (*big.Int)(args.Z2), (*big.Int)(args.CBalance), (*big.Int)(args.Rv), (*big.Int)(args.Rr), (*big.Int)(args.Sv), (*big.Int)(args.Sr), (*big.Int)(args.Sor))
 	}
-	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.pi), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV))
+	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV), (*big.Int)(args.CFormat), (*big.Int)(args.Z1), (*big.Int)(args.Z2), (*big.Int)(args.CBalance), (*big.Int)(args.Rv), (*big.Int)(args.Rr), (*big.Int)(args.Sv), (*big.Int)(args.Sr), (*big.Int)(args.Sor))
 }

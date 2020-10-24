@@ -67,13 +67,21 @@ type TransactOpts struct {
 	EvR0  uint64 //EvR 的后64位
 	EvR_  uint64 //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
 	EvR_0 uint64 //EvR_ 的后64位
-	pi    uint64 //零知识证明Π
 
 	//新增购币字段
-	ID   uint64 //购币标识
-	Sig  string //发行者签名
-	CmV  uint64 //购币承诺
-	EpkV uint64 //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
+	ID       uint64   //购币标识
+	Sig      string   //发行者签名
+	CmV      uint64   //购币承诺
+	EpkV     uint64   //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
+	CFormat  *big.Int //格式正确证明字段1/3
+	Z1       *big.Int //格式正确证明字段2/3
+	Z2       *big.Int //格式正确证明字段3/3
+	CBalance *big.Int //会计平衡证明字段1/6
+	Rv       *big.Int //会计平衡证明字段2/6
+	Rr       *big.Int //会计平衡证明字段3/6
+	Sv       *big.Int //会计平衡证明字段4/6
+	Sr       *big.Int //会计平衡证明字段5/6
+	Sor      *big.Int //会计平衡证明字段6/6
 }
 
 // FilterOpts is the collection of options to fine tune filtering for events
@@ -247,9 +255,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	// Create the transaction, sign it and schedule it for execution
 	var rawTx *types.Transaction
 	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.pi, opts.ID, opts.Sig, opts.CmV, opts.EpkV)
+		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.ID, opts.Sig, opts.CmV, opts.EpkV, opts.CFormat, opts.Z1, opts.Z2, opts.CBalance, opts.Rv, opts.Rr, opts.Sv, opts.Sr, opts.Sor)
 	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.pi, opts.ID, opts.Sig, opts.CmV, opts.EpkV)
+		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.ID, opts.Sig, opts.CmV, opts.EpkV, opts.CFormat, opts.Z1, opts.Z2, opts.CBalance, opts.Rv, opts.Rr, opts.Sv, opts.Sr, opts.Sor)
 	}
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")

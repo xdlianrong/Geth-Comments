@@ -79,11 +79,19 @@ type txdata struct {
 	EvR0         uint64          `json:"EvR0"     gencodec:"required"` //EvR 的后64位
 	EvR_         uint64          `json:"EvR_"     gencodec:"required"` //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
 	EvR_0        uint64          `json:"EvR_0"    gencodec:"required"` //EvR_ 的后64位
-	PI           uint64          `json:"PI"       gencodec:"required"` //零知识证明Π
 	ID           uint64          `json:"ID"       gencodec:"required"` //购币标识
 	Sig          string          `json:"Sig"      gencodec:"required"` //发行者签名
 	CmV          uint64          `json:"CmV"      gencodec:"required"` //购币承诺
 	EpkV         uint64          `json:"EpkV"     gencodec:"required"` //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
+	CFormat      *big.Int        `json:"CFormat"  gencodec:"required"` //格式正确证明字段1/3
+	Z1           *big.Int        `json:"Z1"       gencodec:"required"` //格式正确证明字段2/3
+	Z2           *big.Int        `json:"Z2"       gencodec:"required"` //格式正确证明字段3/3
+	CBalance     *big.Int        `json:"CBalance" gencodec:"required"` //会计平衡证明字段1/6
+	Rv           *big.Int        `json:"Rv"      gencodec:"required"`  //会计平衡证明字段2/6
+	Rr           *big.Int        `json:"Rr"      gencodec:"required"`  //会计平衡证明字段3/6
+	Sv           *big.Int        `json:"Sv"      gencodec:"required"`  //会计平衡证明字段4/6
+	Sr           *big.Int        `json:"Sr"      gencodec:"required"`  //会计平衡证明字段5/6
+	Sor          *big.Int        `json:"Sor"     gencodec:"required"`  //会计平衡证明字段6/6
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"` //v, r, s: 与交易签名相符的若干数值，用于确定交易的发送者，由 Tw，Tr 和 Ts 表示。
 	R *big.Int `json:"r" gencodec:"required"`
@@ -105,17 +113,17 @@ type txdataMarshaling struct {
 }
 
 func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig string, CmV uint64, EpkV uint64) *Transaction {
-	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, PI, ID, Sig, CmV, EpkV)
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, ID uint64, Sig string, CmV uint64, EpkV uint64, CFormat *big.Int, Z1 *big.Int, Z2 *big.Int, CBalance *big.Int, Rv *big.Int, Rr *big.Int, Sv *big.Int, Sr *big.Int, Sor *big.Int) *Transaction {
+	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, ID, Sig, CmV, EpkV, CFormat, Z1, Z2, CBalance, Rv, Rr, Sv, Sr, Sor)
 }
 
 func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig string, CmV uint64, EpkV uint64) *Transaction {
-	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, PI, ID, Sig, CmV, EpkV)
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, ID uint64, Sig string, CmV uint64, EpkV uint64, CFormat *big.Int, Z1 *big.Int, Z2 *big.Int, CBalance *big.Int, Rv *big.Int, Rr *big.Int, Sv *big.Int, Sr *big.Int, Sor *big.Int) *Transaction {
+	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, ID, Sig, CmV, EpkV, CFormat, Z1, Z2, CBalance, Rv, Rr, Sv, Sr, Sor)
 }
 
 func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, PI uint64, ID uint64, Sig string, CmV uint64, EpkV uint64) *Transaction {
+	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, ID uint64, Sig string, CmV uint64, EpkV uint64, CFormat *big.Int, Z1 *big.Int, Z2 *big.Int, CBalance *big.Int, Rv *big.Int, Rr *big.Int, Sv *big.Int, Sr *big.Int, Sor *big.Int) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -140,11 +148,19 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		EvR0:         EvR0,
 		EvR_:         EvR_,
 		EvR_0:        EvR_0,
-		PI:           PI,
 		ID:           ID,
 		Sig:          Sig,
 		CmV:          CmV,
 		EpkV:         EpkV,
+		CFormat:      CFormat,
+		Z1:           Z1,
+		Z2:           Z2,
+		CBalance:     CBalance,
+		Rv:           Rv,
+		Rr:           Rr,
+		Sv:           Sv,
+		Sr:           Sr,
+		Sor:          Sor,
 	}
 	if amount != nil {
 		d.Amount.Set(amount)
@@ -236,12 +252,20 @@ func (tx *Transaction) EvR() uint64        { return tx.data.EvR }
 func (tx *Transaction) EvR0() uint64       { return tx.data.EvR0 }
 func (tx *Transaction) EvR_() uint64       { return tx.data.EvR_ }
 func (tx *Transaction) EvR_0() uint64      { return tx.data.EvR_0 }
-func (tx *Transaction) PI() uint64         { return tx.data.PI }
 func (tx *Transaction) ID() uint64         { return tx.data.ID }
 func (tx *Transaction) Sig() string        { return tx.data.Sig }
 func (tx *Transaction) CmV() uint64        { return tx.data.CmV }
 func (tx *Transaction) EpkV() uint64       { return tx.data.EpkV }
 func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
+func (tx *Transaction) CFormat() *big.Int  { return new(big.Int).Set(tx.data.CFormat) }
+func (tx *Transaction) Z1() *big.Int       { return new(big.Int).Set(tx.data.Z1) }
+func (tx *Transaction) Z2() *big.Int       { return new(big.Int).Set(tx.data.Z2) }
+func (tx *Transaction) CBalance() *big.Int { return new(big.Int).Set(tx.data.CBalance) }
+func (tx *Transaction) Rv() *big.Int       { return new(big.Int).Set(tx.data.Rv) }
+func (tx *Transaction) Rr() *big.Int       { return new(big.Int).Set(tx.data.Rr) }
+func (tx *Transaction) Sv() *big.Int       { return new(big.Int).Set(tx.data.Sv) }
+func (tx *Transaction) Sr() *big.Int       { return new(big.Int).Set(tx.data.Sr) }
+func (tx *Transaction) Sor() *big.Int      { return new(big.Int).Set(tx.data.Sor) }
 func (tx *Transaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amount) }
 func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
 func (tx *Transaction) CheckNonce() bool   { return true }

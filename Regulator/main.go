@@ -16,7 +16,7 @@ import (
 const (
 	clientIdentifier = "regulator" // Client identifier to advertise over the network
 	clientVersion    = "1.0.0"
-	clientUsage      = "Regulatory side server for ethereumZKP"
+	clientUsage      = "Regulatory server for ethereumZKP"
 )
 
 var (
