@@ -64,15 +64,15 @@ func UnlockAccount(ethaccount string, ethkey string) bool{
 
 	datapost, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println("err = ", err)
-		return true
+		fmt.Println(err)
+		return false
 	}
 	req, err := http.NewRequest("POST", ethurl, bytes.NewBuffer(datapost))
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil{
-		panic(err)
+		fmt.Println(err)
 		return false
 	}
 	defer resp.Body.Close()
