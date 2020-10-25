@@ -2,18 +2,22 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ad1e87cd-3ce8-436e-b9cb-c11c8ba24441" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../../../Regulator/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../Regulator/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/post.go" beforeDir="false" afterPath="$PROJECT_DIR$/post.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sendTransaction.json" beforeDir="false" afterPath="$PROJECT_DIR$/sendTransaction.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/unlockAccount.json" beforeDir="false" afterPath="$PROJECT_DIR$/unlockAccount.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../explorer/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../../explorer/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../exchange/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../exchange/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../exchange/exchange" beforeDir="false" afterPath="$PROJECT_DIR$/../../../exchange/exchange" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../exchange/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../exchange/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../exchange/utils/flags.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../exchange/utils/flags.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../exchange/utils/require.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../exchange/utils/require.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
-  <component name="GOROOT" path="/usr/lib/go/go" />
+  <component name="GOROOT" url="file:///usr/local/go" />
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
   </component>
@@ -25,6 +29,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
@@ -69,31 +74,5 @@
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
-  </component>
-  <component name="WindowStateProjectService">
-    <state x="788" y="484" key="#GOROOT" timestamp="1602664444710">
-      <screen x="67" y="27" width="1853" height="1053" />
-    </state>
-    <state x="788" y="484" key="#GOROOT/67.27.1853.1053@67.27.1853.1053" timestamp="1602664444710" />
-    <state x="451" y="210" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1601625084572">
-      <screen x="67" y="27" width="1853" height="1053" />
-    </state>
-    <state x="451" y="210" key="#com.intellij.execution.impl.EditConfigurationsDialog/67.27.1853.1053@67.27.1853.1053" timestamp="1601625084572" />
-    <state width="1799" height="223" key="GridCell.Tab.0.bottom" timestamp="1602664591340">
-      <screen x="67" y="27" width="1853" height="1053" />
-    </state>
-    <state width="1799" height="223" key="GridCell.Tab.0.bottom/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591340" />
-    <state width="1799" height="223" key="GridCell.Tab.0.center" timestamp="1602664591339">
-      <screen x="67" y="27" width="1853" height="1053" />
-    </state>
-    <state width="1799" height="223" key="GridCell.Tab.0.center/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591339" />
-    <state width="1799" height="223" key="GridCell.Tab.0.left" timestamp="1602664591339">
-      <screen x="67" y="27" width="1853" height="1053" />
-    </state>
-    <state width="1799" height="223" key="GridCell.Tab.0.left/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591339" />
-    <state width="1799" height="223" key="GridCell.Tab.0.right" timestamp="1602664591339">
-      <screen x="67" y="27" width="1853" height="1053" />
-    </state>
-    <state width="1799" height="223" key="GridCell.Tab.0.right/67.27.1853.1053@67.27.1853.1053" timestamp="1602664591339" />
   </component>
 </project>

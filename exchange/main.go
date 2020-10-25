@@ -15,6 +15,8 @@ var (
 	baseFlags = []cli.Flag{
 		utils.PortFlag,
 		utils.KeyFlag,
+		utils.EthAccountFlag,
+		utils.EthKeyFlag,
 	}
 	publisherpub   = crypto.PublicKey{}
 	publisherpriv  = crypto.PrivateKey{}
@@ -44,8 +46,15 @@ func main() {
 
 func exchange(ctx *cli.Context)  {
 	gk := ctx.String("generatekey")
+	ea := ctx.String("ethaccount")
+	ek := ctx.String("ethkey")
 	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
-    startNetwork(ctx)
+	if(utils.UnlockAccount(ea, ek) == true) {
+		startNetwork(ctx)
+	}else{
+		fmt.Println("erro unlock exchanger eth_account")
+		return
+	}
 }
 
 func startNetwork(ctx *cli.Context) error {

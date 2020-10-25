@@ -11,9 +11,10 @@ import (
 
 const url = "http://localhost:8545"
 
-
+// unlockAccount.json
+// sendTransaction.json
 func postData() bool {
-	path := "sendTransaction.json"
+	path := "u.json"
 	data,_ := ioutil.ReadFile(path)
 	resp, err := http.Post(url,
 		"application/json",
@@ -25,7 +26,7 @@ func postData() bool {
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(body))
 
-	if path == "getTransactionCount.json"{
+	if path == "sendTransaction.json"{
 		json := string(body)
 		value := gjson.Get(json,"result")
 		int64, _ := strconv.ParseInt(value.Value().(string), 10, 64)

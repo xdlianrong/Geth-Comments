@@ -3,9 +3,13 @@
   <component name="ChangeListManager">
     <list default="true" id="89b358df-230c-431d-9973-e420ce1442e4" name="默认的" comment="">
       <change beforePath="$PROJECT_DIR$/../Regulator/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Regulator/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dev/debug/ethDebug/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../dev/debug/ethDebug/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dev/debug/ethDebug/post.go" beforeDir="false" afterPath="$PROJECT_DIR$/../dev/debug/ethDebug/post.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dev/debug/ethDebug/sendTransaction.json" beforeDir="false" afterPath="$PROJECT_DIR$/../dev/debug/ethDebug/sendTransaction.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/exchange" beforeDir="false" afterPath="$PROJECT_DIR$/exchange" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/utils/flags.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/flags.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/utils/require.go" beforeDir="false" afterPath="$PROJECT_DIR$/utils/require.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
