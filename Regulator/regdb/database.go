@@ -16,18 +16,23 @@ type Identity struct {
 	ExtInfo string //新增个备注信息
 }
 
-func ConnectToDB(dataport string, passwd string, database int) *redis.Client {
-	Db, err := Setup(dataport, passwd, database)
+func (id *Identity) GetName() string    { return id.Name }
+func (id *Identity) GetID() string      { return id.ID }
+func (id *Identity) GetHashky() string  { return id.Hashky }
+func (id *Identity) GetExtInfo() string { return id.ExtInfo }
+
+func ConnectToDB(dataip string, dataport string, passwd string, database int) *redis.Client {
+	Db, err := Setup(dataip, dataport, passwd, database)
 	if err != nil {
 		utils.Fatalf("Failed to connect to redis: %v", err)
 	}
 	return Db
 }
-func Setup(dataport string, passwd string, database int) (*redis.Client, error) {
+func Setup(dataip string, dataport string, passwd string, database int) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:" + dataport, // use default Addr
+		Addr:     dataip + ":" + dataport, // allow custom ip and port
 		Password: passwd,                  // no password set
-		DB:       database,                // use default DB
+		DB:       database,
 	})
 	_, err := client.Ping().Result()
 	return client, err

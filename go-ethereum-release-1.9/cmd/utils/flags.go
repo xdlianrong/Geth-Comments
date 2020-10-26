@@ -19,11 +19,13 @@ package utils
 
 import (
 	"crypto/ecdsa"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"math/big"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -753,6 +755,16 @@ var (
 		Usage: "External EVM configuration (default = built-in interpreter)",
 		Value: "",
 	}
+	RegulatorIPFlag = cli.StringFlag{
+		Name:  "regulatorip",
+		Usage: "regulator IP address",
+		Value: "127.0.0.1",
+	}
+	RegulatorPortFlag = cli.IntFlag{
+		Name:  "regulatorport",
+		Usage: "regulator server port",
+		Value: 1423,
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -1167,6 +1179,28 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 		cfg.DiscoveryV5 = false
 	}
 }
+func setRegulator(ctx *cli.Context, cfg *node.Config) {
+	cfg.Regulator.IP = ctx.GlobalString("regulatorip")
+	cfg.Regulator.Port = ctx.GlobalInt("regulatorport")
+	//做网络请求获取监管者公钥
+	client := &http.Client{}
+	//url := fmt.Sprintf("http://%s:%d/regkey?chainID=%s", cfg.Regulator.IP, cfg.Regulator.Port, cfg.UserIdent)
+	url := fmt.Sprintf("http://%s:%d/regkey?chainID=1", cfg.Regulator.IP, cfg.Regulator.Port)
+	resp, err := client.Get(url)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	json.Unmarshal(body, &cfg.Regulator.PubK)
+	if cfg.Regulator.PubK.G1 == nil || cfg.Regulator.PubK.G2 == nil || cfg.Regulator.PubK.P == nil || cfg.Regulator.PubK.H == nil {
+		log.Warn("Failed to connect to regulator server", "ip", cfg.Regulator.IP, "port", cfg.Regulator.Port)
+	} else {
+		pubK := strings.Replace(string(body), "\"", "", -1)
+		pubK = strings.Replace(pubK, "\n", "", -1)
+		log.Info("Succeed to connect to regulator server", "publicKey", pubK)
+	}
+}
 
 // SetNodeConfig applies node-related command line flags to the config.
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
@@ -1178,6 +1212,7 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setNodeUserIdent(ctx, cfg)
 	setDataDir(ctx, cfg)
 	setSmartCard(ctx, cfg)
+	setRegulator(ctx, cfg) //设置监管者
 
 	if ctx.GlobalIsSet(ExternalSignerFlag.Name) {
 		cfg.ExternalSigner = ctx.GlobalString(ExternalSignerFlag.Name)

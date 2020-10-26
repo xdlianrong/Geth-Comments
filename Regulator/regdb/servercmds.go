@@ -14,6 +14,7 @@ var (
 		ArgsUsage: "<genesisPath>",
 		Flags: []cli.Flag{
 			utils.ChainIDFlag,
+			utils.DataipFlag,
 			utils.DatabaseFlag,
 			utils.DataportFlag,
 			utils.DbPasswdPortFlag,
@@ -34,7 +35,7 @@ It expects the chainID as argument.`,
 func InitDB(ctx *cli.Context) error {
 	passphrs := ctx.String("passphrase")
 	chainID := ctx.String("chainID")
-	regDb := ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
+	regDb := ConnectToDB(ctx.String("dataip"), ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
 	if Exists(regDb, "chainConfig") {
 		chainConfig := Get(regDb, "chainConfig").(*Identity)
 		if chainConfig.ID == chainID {

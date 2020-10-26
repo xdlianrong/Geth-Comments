@@ -15,6 +15,11 @@ var (
 		Usage: "Data port for Redis",
 		Value: 6379,
 	}
+	DataipFlag = cli.StringFlag{
+		Name:  "dataip, di",
+		Usage: "Database ip address",
+		Value: "localhost",
+	}
 	DatabaseFlag = cli.IntFlag{
 		Name:  "database, db",
 		Usage: "Number of database for Redis",

@@ -189,6 +189,12 @@ var (
 		utils.MetricsInfluxDBPasswordFlag,
 		utils.MetricsInfluxDBTagsFlag,
 	}
+	//监管者服务器相关的flags
+	//监管者IP和端口
+	regulatorFlags = []cli.Flag{
+		utils.RegulatorIPFlag,
+		utils.RegulatorPortFlag,
+	}
 )
 
 func init() {
@@ -233,6 +239,7 @@ func init() {
 	app.Flags = append(app.Flags, debug.Flags...)
 	app.Flags = append(app.Flags, whisperFlags...)
 	app.Flags = append(app.Flags, metricsFlags...)
+	app.Flags = append(app.Flags, regulatorFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		return debug.Setup(ctx)

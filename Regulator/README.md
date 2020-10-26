@@ -68,6 +68,7 @@ Arguments选项如下
 
 GLOBAL OPTIONS:
    --database value, --db value  Number of database for Redis (default: 0)
+   --dataip value, --di value    Database ip address (default: "localhost")
    --dataport value, --dp value  Data port for Redis (default: 6379)
    --port value, -p value        Network listening port (default: 1423)
    --passwd value, --pw value    Redis password
@@ -80,6 +81,7 @@ Arguments选项如下，其中passphrase必须声明
 
 OPTIONS:
    --chainID value                 chainID to be stored in Redis (default: 1)
+   --dataip value, --di value    Database ip address (default: "localhost")
    --database value, --db value    Number of database for Redis (default: 0)
    --dataport value, --dp value    Data port for Redis (default: 6379)
    --passwd value, --pw value      Redis password

@@ -23,6 +23,7 @@ var (
 	app       = cli.NewApp()
 	baseFlags = []cli.Flag{
 		utils.DatabaseFlag,
+		utils.DataipFlag,
 		utils.DataportFlag,
 		utils.ListenPortFlag,
 		utils.DbPasswdPortFlag,
@@ -54,13 +55,15 @@ func regulator(ctx *cli.Context) error {
 
 func prepare(ctx *cli.Context) error {
 	//连接并初始化Redis, 接收数据库端口，密码，数据库号三个参数
-	regDb = regdb.ConnectToDB(ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
+	regDb = regdb.ConnectToDB(ctx.String("dataip"), ctx.String("dataport"), ctx.String("passwd"), ctx.Int("database"))
+	fmt.Printf("Successfully connected to redis database.IP address:%s:%s,database number:%d\n", ctx.String("dataip"), ctx.String("dataport"), ctx.Int("database"))
 	// 检查是否有公私钥：无则报错退出程序
 	if !regdb.Exists(regDb, "chainConfig") {
 		utils.Fatalf("Failed to start server,please initialise first")
 	} else if !regdb.Exists(regDb, "key") {
 		utils.Fatalf("Failed to start server,incomplete database initialization,please initialise again")
 	}
+	fmt.Printf("Chain ID:%s\n", regdb.Get(regDb, "chainConfig").(*regdb.Identity).ID)
 	startNetwork(ctx.String("port"))
 	return nil
 }
