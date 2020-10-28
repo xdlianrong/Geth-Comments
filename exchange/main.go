@@ -49,6 +49,7 @@ func exchange(ctx *cli.Context)  {
 	ea := ctx.String("ethaccount")
 	ek := ctx.String("ethkey")
 	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
+	regulatorpub, _ = utils.GenerateRegKey()
 	if(utils.UnlockAccount(ea, ek) == true) {
 		startNetwork(ctx)
 	}else{
@@ -82,9 +83,8 @@ func buy(c echo.Context) error {
 	amount    := c.FormValue("amount")
 
 	if(utils.Verify(publickey) == false){
-		return c.JSON(http.StatusCreated, "error publickey, please input again or registe now")
+		return c.JSON(http.StatusCreated, "error publickey, please check again or registe now")
 	}else{
-		regulatorpub, _ = utils.GenerateRegKey()
 		cm_and_r        = utils.CreateCM_v(regulatorpub, amount)
 		elgamal         = utils.CreateElgamalC(regulatorpub, amount, publickey)
 		signature       = utils.CreateSign(publisherpriv, amount)

@@ -10,12 +10,14 @@ import (
 	"net/url"
 )
 
+// require url
 var(
-	verifyurl = "http://localhost:1423/verify"
-	getpuburl = "http://localhost:1423/regkey?chainID=1"
+	verifyurl = "http://39.99.227.43:1423/verify"
+	getpuburl = "http://39.99.227.43:1423/regkey?chainID=1"
 	ethurl    = "http://localhost:8545"
 )
 
+// unlock publisher eth_account struct
 type unlock struct {
 	Jsonrpc	 string			`json:"jsonrpc"`
 	Method	 string	    	`json:"method"`
@@ -23,6 +25,14 @@ type unlock struct {
 	Id       int			`json:"id"`
 }
 
+// get result from unlock to ethereum
+type unlockget struct {
+	Jsonrpc	 string			`json:"jsonrpc"`
+	Id       int			`json:"id"`
+	Result   bool           `json:"result"`
+}
+
+// verify the publickey of usr to regulator
 func Verify(publickey string) bool {
 	data := make(url.Values)
 	data["Hashky"] = []string{publickey}
@@ -33,27 +43,30 @@ func Verify(publickey string) bool {
 		return false
 	}
 	defer resp.Body.Close()
-	bodyC, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(bodyC))
-	if(string(bodyC) == "True" ){
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(body) + ": check publickey right")
+	if(string(body) == "True" ){
 		return true
 	}else{
 		return false
 	}
 }
 
+// get ragulator publickey--struct
 func GetRegPub() crypto.PublicKey {
 	resp, _ := http.Get(getpuburl)
 	defer resp.Body.Close()
 	reqBody := crypto.PublicKey{}
 	body, _ := ioutil.ReadAll(resp.Body)
 	err := json.Unmarshal(body, &reqBody)
+	fmt.Println(string(body))
 	if err != nil {
 		fmt.Println("CreateVMProcess: Unmarshal data failed")
 	}
 	return reqBody
 }
 
+// unlock publisher eth_account
 func UnlockAccount(ethaccount string, ethkey string) bool{
 	params := make([]interface{}, 3)
 	params[0] = ethaccount
@@ -76,9 +89,16 @@ func UnlockAccount(ethaccount string, ethkey string) bool{
 		return false
 	}
 	defer resp.Body.Close()
+
 	bodyC, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(bodyC))
-	return true
+	var s unlockget;
+	json.Unmarshal([]byte(bodyC), &s)
+	if(s.Result == true){
+		return true
+	}else{
+		return false
+	}
 }
 
 func SendTransaction() {

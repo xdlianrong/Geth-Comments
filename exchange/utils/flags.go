@@ -23,5 +23,4 @@ var(
 		Usage: "the key that you unlock your eth_account",
 		Value: "",
 	}
-
 )
