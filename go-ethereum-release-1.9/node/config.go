@@ -439,6 +439,7 @@ func (c *Config) parsePersistentNodes(w *bool, path string) []*enode.Node {
 }
 
 // AccountConfig determines the settings for scrypt and keydirectory
+// AccountConfig 确认scrypt和keydirectory的设置
 func (c *Config) AccountConfig() (int, int, string, error) {
 	scryptN := keystore.StandardScryptN
 	scryptP := keystore.StandardScryptP
