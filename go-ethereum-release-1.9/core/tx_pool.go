@@ -20,7 +20,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethdb"
 	"math"
 	"math/big"
 	"sort"
@@ -99,6 +101,12 @@ var (
 	// ErrVerifySignatureFailed is returned if CMV and ID of a transaction
 	//cannot be verified using the given signature
 	ErrVerifySignatureFailed = errors.New("verify signature failed")
+
+	ErrExistedCM = errors.New("existed commitment to purchase coins")
+
+	ErrInvalidCM = errors.New("invalid commitment to transfer coins")
+
+	ErrID = errors.New("unsupported ID")
 )
 
 var (
@@ -146,6 +154,7 @@ const (
 type blockChain interface {
 	CurrentBlock() *types.Block
 	GetBlock(hash common.Hash, number uint64) *types.Block
+	GetCMdb() ethdb.Database
 	StateAt(root common.Hash) (*state.StateDB, error)
 
 	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
@@ -533,6 +542,7 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
+// TODO
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// Reject transactions over defined size to prevent DOS attacks
 	if uint64(tx.Size()) > txMaxSize {
@@ -567,6 +577,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	//if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
 	//	return ErrInsufficientFunds
 	//}
+
 	// Ensure the transaction has more gas than the basic tx fee.
 	intrGas, err := IntrinsicGas(tx.Data(), tx.To() == nil, true, pool.istanbul)
 	if err != nil {
@@ -599,6 +610,42 @@ func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
 	return nil
 }
 
+func (pool *TxPool) validateCM(tx *types.Transaction) error {
+	// 三种情况报错：
+	// 1、购币交易的购币承诺已存在于CMdb中
+	// 2、转账交易的CmO 不存在 或 存在但已使用
+	// 3、交易ID既不为0也不为1,暂未知类型交易
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 0 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hash := CmV.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+	}
+	if tx.ID() == 1 {
+		// 转账交易
+		CmO := types.NewDefaultCM(tx.CmO())
+		hash := CmO.Hash()
+		CmO_ := rawdb.ReadCM(CMdb, hash)
+		if CmO_ == nil || CmO_.Spent == true {
+			return ErrInvalidCM
+		}
+		CmS := types.NewDefaultCM(tx.CmS())
+		hash = CmS.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+		CmR := types.NewDefaultCM(tx.CmR())
+		hash = CmR.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+	}
+	return ErrID
+}
+
 // add validates a transaction and inserts it into the non-executable queue for later
 // pending promotion and execution. If the transaction is a replacement for an already
 // pending or queued one, it overwrites the previous transaction if its price is higher.
@@ -616,6 +663,12 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		log.Trace("Discarding already known transaction", "hash", hash)
 		knownTxMeter.Mark(1)
 		return false, ErrAlreadyKnown
+	}
+	// 若交易承诺检验未通过，丢弃
+	if err := pool.validateCM(tx); err != nil {
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		invalidTxMeter.Mark(1)
+		return false, err
 	}
 	// If the transaction fails basic validation, discard it
 	// 若交易有效性检验未通过，丢弃

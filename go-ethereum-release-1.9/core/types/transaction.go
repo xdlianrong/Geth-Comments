@@ -35,24 +35,6 @@ var (
 	ErrInvalidSig = errors.New("invalid transaction v, r, s values")
 )
 
-// author : zr
-// CM 承诺结构，包含承诺字段以及判断该承诺是否被使用过的spent字段，true表示已使用
-type CM struct {
-	Cm    uint64
-	Spent bool
-}
-
-func NewCM(cm uint64, spent bool) *CM {
-	return &CM{
-		Cm:    cm,
-		Spent: spent,
-	}
-}
-
-func (cm *CM) Hash() common.Hash {
-	return rlpHash(cm)
-}
-
 type Transaction struct {
 	data txdata //一个不限制大小的字节数组，用来指定消息调用的输入数据
 	// caches

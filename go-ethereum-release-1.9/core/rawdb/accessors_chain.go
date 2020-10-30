@@ -19,6 +19,7 @@ package rawdb
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -319,6 +320,7 @@ func ReadBody(db ethdb.Reader, hash common.Hash, number uint64) *types.Body {
 	}
 	body := new(types.Body)
 	if err := rlp.Decode(bytes.NewReader(data), body); err != nil {
+		fmt.Println(hash)
 		log.Error("Invalid block body RLP", "hash", hash, "err", err)
 		return nil
 	}
@@ -620,14 +622,14 @@ func FindCommonAncestor(db ethdb.Reader, a, b *types.Header) *types.Header {
 // author : zr
 // 对承诺的读，写，查，删操作 ，可通过`rawdb.xxxx()`进行调用。
 // 2020.9.18  首次添加，暂未尝试调用
-func HasCM(db ethdb.Reader, hash common.Hash) bool {
+func HasCM(db ethdb.Database, hash common.Hash) bool {
 	if has, err := db.Has(CMKey(hash)); !has || err != nil {
 		return false
 	}
 	return true
 }
 
-func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM *types.CM) {
+func WriteCM(db ethdb.Database, hash common.Hash, CM *types.CM) {
 	data, err := rlp.EncodeToBytes(CM) // 对CM进行RLP编码
 	if err != nil {
 		log.Crit("Failed to RLP encode CM", "err", err)
@@ -637,7 +639,7 @@ func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM *types.CM) {
 	}
 }
 
-func ReadCMRLP(db ethdb.Reader, hash common.Hash) rlp.RawValue {
+func ReadCMRLP(db ethdb.Database, hash common.Hash) rlp.RawValue {
 	data, _ := db.Get(CMKey(hash))
 	if len(data) > 0 {
 		return data
@@ -645,7 +647,7 @@ func ReadCMRLP(db ethdb.Reader, hash common.Hash) rlp.RawValue {
 	return nil
 }
 
-func ReadCM(db ethdb.Reader, hash common.Hash) *types.CM {
+func ReadCM(db ethdb.Database, hash common.Hash) *types.CM {
 	data := ReadCMRLP(db, hash)
 	if len(data) == 0 {
 		return nil
@@ -658,20 +660,36 @@ func ReadCM(db ethdb.Reader, hash common.Hash) *types.CM {
 	return CM
 }
 
-func DeleteCM(db ethdb.KeyValueWriter, hash common.Hash) {
+func DeleteCM(db ethdb.Database, hash common.Hash) {
 	if err := db.Delete(CMKey(hash)); err != nil {
 		log.Crit("Failed to delete CM", "err", err)
 	}
 }
 
-func WriteAllCM(db ethdb.KeyValueWriter, block *types.Block) {
+func WriteAllCM(db ethdb.Database, block *types.Block) {
 	for _, tx := range block.Transactions() {
-		var CMV *types.CM
-		CMV = types.NewCM(tx.CmV(), true)
-		hash := CMV.Hash()
-		WriteCM(db, hash, CMV)
-		// author : zr
-		// for test
-		log.Info("向CMdb中存入CM成功", "CMV,hash", CMV, hash)
+		if tx.ID() == 0 {
+			// 购币交易
+			CmV := types.NewDefaultCM(tx.CmV())
+			hashV := CmV.Hash()
+			WriteCM(db, hashV, CmV)
+			log.Info("Succeed to store CMV into CMdb", "CMV", CmV, "hash", hashV)
+		}
+		if tx.ID() == 1 {
+			// 转账交易
+			CmO := types.NewCM(tx.CmO(), true)
+			hashO := CmO.Hash()
+			WriteCM(db, hashO, CmO)
+			log.Info("Succeed to store CMO into CMdb", "CMO", CmO, "hash", hashO)
+			CmS := types.NewDefaultCM(tx.CmS())
+			hashS := CmS.Hash()
+			WriteCM(db, hashS, CmS)
+			log.Info("Succeed to store CMS into CMdb", "CMS", CmS, "hash", hashS)
+			CmR := types.NewDefaultCM(tx.CmR())
+			hashR := CmR.Hash()
+			WriteCM(db, hashR, CmR)
+
+			log.Info("Succeed to store CMR into CMdb", "CMR", CmR, "hash", hashR)
+		}
 	}
 }
