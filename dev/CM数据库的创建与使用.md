@@ -4,24 +4,34 @@
 
 对承诺数据库的初始化及打开，使用。对外暂提供对承诺的写，读，改。
 
-### 在rawdb包中的database中添加CM字段
+### 在type包中新增commitment.go文件，包含CM字段及相关接口
 
 CM 承诺结构，包含承诺字段以及判断该承诺是否被使用过的spent字段，true表示已使用
 
 ```go
-//cmdb 承诺数据库，可读可写
-type cmdb struct {
-	ethdb.KeyValueStore
-}
-
-// CM 承诺结构，包含承诺字段以及判断该承诺是否被使用过的spent字段，true表示已使用
 type CM struct {
-	Cm    common.Hash
+	Cm    uint64
 	Spent bool
 }
 ```
 
-### CM数据库的创建及打开
+**Hash**:对CM中的Cm字段取hash
+
+```go
+func (cm *CM) Hash() common.Hash {
+	return rlpHash(cm.Cm)
+}
+```
+
+**New**：两种新建CM结构的函数第一种默认spent字段为`false`
+
+```go
+func NewDefaultCM(Cm uint64) *CM {}
+
+func NewCM(Cm uint64, Spent bool) *CM {}
+```
+
+### CM数据库的创建与初始化
 
 1、CM数据库的创建
 
@@ -104,6 +114,10 @@ func WriteAllCM(db ethdb.KeyValueWriter, block *types.Block) {}
 
 输出：无
 
+**新增**：写入购币交易与转账交易的各个承诺
+
+功能：默认将CmV有效，CmO无效，CmS有效，CmR有效写入数据库中，将验证过程放在交易进交易池时。
+
 4、根据给定hash从数据库中取出承诺CM
 
 ```go
@@ -152,3 +166,37 @@ log.Info("Successfully wrote x", "x", x)
 输出如下
 
 > INFO [09-25|23:24:46.380] Successfully wrote x                     x="&{Cm:1 Spent:true}"
+
+
+
+### CM的验证
+
+对即将进入交易池的交易内承诺验证
+
+三种情况报错：
+
+* 购币交易的购币承诺已存在于CMdb中
+* 转账交易的CmO **不存在** 或 **存在但已使用**
+* 交易ID既不为0也不为1,暂未知类型交易
+
+```go
+// core/tx_pool.go 613行
+func (pool *TxPool) validateCM(tx *types.Transaction) error 
+```
+
+validateCM调用
+
+```go
+// core/tx_pool.go 658行
+func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err error)	{
+	...
+    // 若交易承诺检验未通过，丢弃
+	if err := pool.validateCM(tx); err != nil {
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		invalidTxMeter.Mark(1)
+		return false, err
+	}
+    ...
+}
+```
+
