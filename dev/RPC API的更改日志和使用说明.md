@@ -24,47 +24,27 @@
 - value: QUANTITY - 交易发送的金额，可选整数
 - data: DATA - 合约的编译带啊或被调用方法的签名及编码参数
 - nonce: QUANTITY - nonce，可选。可以使用同一个nonce来实现挂起的交易的重写
-- SnO: QUANTITY - 要花费代币的序列号
-- Rr1: QUANTITY - 随机数，交易时对交易金额v_r进行加密
-- CmSpk: QUANTITY - 发送方公钥的承诺
-- CmRpk: QUANTITY - 接收方公钥的承诺
-- CmO: QUANTITY - 原始金额承诺
-- CmS: QUANTITY - 消费金额承诺
-- CmR: QUANTITY - 找零金额承诺
-- EvR: QUANTITY - E(v_r) = (v_r * G1_R + r_r2 * H_R, r_r2 * G2_R)
-- EvR0: QUANTITY - EvR 的后64位
-- EvR_: QUANTITY - E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
-- EvR_0: QUANTITY - EvR_ 的后64位
-- PI: QUANTITY - 零知识证明Π
-- CmV: QUANTITY - 购币承诺
-- EpkV: QUANTITY - 监管者公钥对购币用户公钥和购币金额的加密
-- ID: QUANTITY - 购币标识
-- Sig: QUANTITY - 发行者签名
+- spk: DATA - 发送方公钥
+- rpk: DATA - 接收方公钥
+- s: QUANTITY - 发送金额
+- r: QUANTITY - 返还（找零）金额
+- vor: QUANTITY - 被花费货币的承诺随机数
+- cmo: QUANTITY - 被花费货币的承诺
 
 ```json
 params: [{
-  "from": "0xb60e8dd61c5d32be8058bb8eb970870f07233155",
-  "to": "0xd46e8dd67c5d32be8058bb8eb970870f07244567",
-  "gas": "0x76c0", // 30400
-  "gasPrice": "0x9184e72a000", // 10000000000000
-  "value": "0x9184e72a", // 2441406250
-  "data": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
-  "SnO": "0x0",
-  "Rr1": "0x0",
-  "CmSpk": "0x0",
-  "CmRpk": "0x0",
-  "CmO": "0x0",
-  "CmS": "0x0",
-  "CmR": "0x0",
-  "EvR": "0x0",
-  "EvR0": "0x0",
-  "EvR_": "0x0",
-  "EvR_0": "0x0",
-  "PI": "0x0",
-  "CmV": "0x0",
-  "EpkV": "0x0",
-  "ID":"0x0",
-  "Sig":"0x0"
+  "from": "0x362de6cfc9ed13bbf207d8a243a95451883a1af2",
+            "to": "0x8203599e641af59593e7dbf576dfd195eb86ff28",
+            "gas": "0x76c0",
+            "gasPrice": "0x9184e72a000",
+            "value": "0x1",
+            "data": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
+            "spk": "234b7f8dcdec50b47127a9ba7f03d629bd751b571ff07ac8879c4ca0a91b146205e72bd1ac5e39bcf34cbbbcf48a13edc865f862a85ce69866be24e078a3942a33333f914834ced561c145797d9b5782719dbd1b43a668d4b01151f9c0e67d9f1569899100a4ce41de3c549b649ff72d5d7c9fe8983c244cc28f2ce84b2a758c",
+            "rpk": "234b7f8dcdec50b47127a9ba7f03d629bd751b571ff07ac8879c4ca0a91b146205e72bd1ac5e39bcf34cbbbcf48a13edc865f862a85ce69866be24e078a3942a33333f914834ced561c145797d9b5782719dbd1b43a668d4b01151f9c0e67d9f1569899100a4ce41de3c549b649ff72d5d7c9fe8983c244cc28f2ce84b2a758c",
+            "s": "0x19",
+            "r": "0x2",
+            "vor":"0x0c21ccfaaa23f4562094fa71c16bbfeb1db461c2f96dc72c3a70b8cd266bd37c",
+            "cmo":"0x145efb9d48584450198d2fb30a1ba7e9396eb08e0b5c662dd9414d9d8fa1abe4"
 }]
 ```
 

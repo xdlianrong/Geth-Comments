@@ -1,14 +1,16 @@
 package types
 
-import "math/big"
+import (
+	"math/big"
+)
 
 type Regulator struct {
-	PubK pubKey
+	PubK PubKey
 	IP   string
 	Port int
 }
 
-type pubKey struct {
+type PubKey struct {
 	G1 *big.Int
 	G2 *big.Int
 	P  *big.Int

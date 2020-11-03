@@ -20,7 +20,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"math"
@@ -592,7 +591,9 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // author mzliu 20200918
 // validate Sign using tx : sig and CMV+ID
 func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
-	i := tx.CmV() + tx.ID()
+	// TODO:刘明哲改，20201103
+	//i := tx.CmV() + tx.ID()
+	i := uint64(1)
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
 	// sig to []bytes
@@ -615,35 +616,39 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	// 1、购币交易的购币承诺已存在于CMdb中
 	// 2、转账交易的CmO 不存在 或 存在但已使用
 	// 3、交易ID既不为0也不为1,暂未知类型交易
-	CMdb := pool.chain.GetCMdb()
-	if tx.ID() == 0 {
-		// 购币交易
-		CmV := types.NewDefaultCM(tx.CmV())
-		hash := CmV.Hash()
-		if rawdb.HasCM(CMdb, hash) {
-			return ErrExistedCM
+	// TODO:张锐改，20201103
+	/*
+		CMdb := pool.chain.GetCMdb()
+		if tx.ID() == 0 {
+			// 购币交易
+			CmV := types.NewDefaultCM(tx.CmV())
+			hash := CmV.Hash()
+			if rawdb.HasCM(CMdb, hash) {
+				return ErrExistedCM
+			}
 		}
-	}
-	if tx.ID() == 1 {
-		// 转账交易
-		CmO := types.NewDefaultCM(tx.CmO())
-		hash := CmO.Hash()
-		CmO_ := rawdb.ReadCM(CMdb, hash)
-		if CmO_ == nil || CmO_.Spent == true {
-			return ErrInvalidCM
+		if tx.ID() == 1 {
+			// 转账交易
+			CmO := types.NewDefaultCM(tx.CmO())
+			hash := CmO.Hash()
+			CmO_ := rawdb.ReadCM(CMdb, hash)
+			if CmO_ == nil || CmO_.Spent == true {
+				return ErrInvalidCM
+			}
+			CmS := types.NewDefaultCM(tx.CmS())
+			hash = CmS.Hash()
+			if rawdb.HasCM(CMdb, hash) {
+				return ErrExistedCM
+			}
+			CmR := types.NewDefaultCM(tx.CmR())
+			hash = CmR.Hash()
+			if rawdb.HasCM(CMdb, hash) {
+				return ErrExistedCM
+			}
 		}
-		CmS := types.NewDefaultCM(tx.CmS())
-		hash = CmS.Hash()
-		if rawdb.HasCM(CMdb, hash) {
-			return ErrExistedCM
-		}
-		CmR := types.NewDefaultCM(tx.CmR())
-		hash = CmR.Hash()
-		if rawdb.HasCM(CMdb, hash) {
-			return ErrExistedCM
-		}
-	}
-	return ErrID
+		return ErrID
+	*/
+	return nil
 }
 
 // add validates a transaction and inserts it into the non-executable queue for later

@@ -19,6 +19,7 @@ package ethapi
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"math/big"
@@ -39,6 +40,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/zkp"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/params"
@@ -353,8 +355,10 @@ func (s *PrivateAccountAPI) signTransaction(ctx context.Context, args *SendTxArg
 		return nil, err
 	}
 	// Assemble the transaction and sign with the wallet
-	tx := args.toTransaction()
-
+	tx, err := args.toTransaction()
+	if err != nil {
+		return nil, err
+	}
 	return wallet.SignTxWithPassphrase(account, passwd, tx, s.b.ChainConfig().ChainID)
 }
 
@@ -1110,31 +1114,52 @@ type RPCTransaction struct {
 	V                *hexutil.Big    `json:"v"`
 	R                *hexutil.Big    `json:"r"`
 	S                *hexutil.Big    `json:"s"`
-	SnO              hexutil.Uint64  `json:"SnO"`
-	Rr1              hexutil.Uint64  `json:"Rr1"`
-	CmSpk            hexutil.Uint64  `json:"CmSpk"`
-	CmRpk            hexutil.Uint64  `json:"CmRpk"`
-	CmO              hexutil.Uint64  `json:"CmO"`
-	CmS              hexutil.Uint64  `json:"CmS"`
-	CmR              hexutil.Uint64  `json:"CmR"`
-	EvR              hexutil.Uint64  `json:"EvR"`
-	EvR0             hexutil.Uint64  `json:"EvR0"`
-	EvR_             hexutil.Uint64  `json:"EvR_"`
-	EvR_0            hexutil.Uint64  `json:"EvR_0"`
-	PI               hexutil.Uint64  `json:"PI"`
 	ID               hexutil.Uint64  `json:"ID"`
 	Sig              string          `json:"Sig"`
-	CmV              hexutil.Uint64  `json:"CmV"`
-	EpkV             hexutil.Uint64  `json:"EpkV"`
-	CFormat          *hexutil.Big    `json:"CFormat"`  //格式正确证明字段1/3
-	Z1               *hexutil.Big    `json:"Z1"`       //格式正确证明字段2/3
-	Z2               *hexutil.Big    `json:"Z2"`       //格式正确证明字段3/3
-	CBalance         *hexutil.Big    `json:"CBalance"` //会计平衡证明字段1/6
-	Rv               *hexutil.Big    `json:"Rv"`       //会计平衡证明字段2/6
-	Rr               *hexutil.Big    `json:"Rr"`       //会计平衡证明字段3/6
-	Sv               *hexutil.Big    `json:"Sv"`       //会计平衡证明字段4/6
-	Sr               *hexutil.Big    `json:"Sr"`       //会计平衡证明字段5/6
-	Sor              *hexutil.Big    `json:"Sor"`      //会计平衡证明字段6/6
+	ErpkC1           *hexutil.Bytes  `json:"erpkc1"`
+	ErpkC2           *hexutil.Bytes  `json:" erpkc2"`
+	EspkC1           *hexutil.Bytes  `json:" espkc1"`
+	EspkC2           *hexutil.Bytes  `json:" espkc2"`
+	CMRpk            *hexutil.Bytes  `json:" cmrpk"`
+	CMSpk            *hexutil.Bytes  `json:" cmspk"`
+	ErpkEPs0         *hexutil.Bytes  `json:" erpkeps0"`
+	ErpkEPs1         *hexutil.Bytes  `json:" erpkeps1"`
+	ErpkEPs2         *hexutil.Bytes  `json:" erpkeps2"`
+	ErpkEPs3         *hexutil.Bytes  `json:" erpkeps3"`
+	ErpkEPt          *hexutil.Bytes  `json:" erpkept"`
+	EspkEPs0         *hexutil.Bytes  `json:" espkeps0"`
+	EspkEPs1         *hexutil.Bytes  `json:" espkeps1"`
+	EspkEPs2         *hexutil.Bytes  `json:" espkeps2"`
+	EspkEPs3         *hexutil.Bytes  `json:" espkeps3"`
+	EspkEPt          *hexutil.Bytes  `json:" espkept"`
+	EvSC1            *hexutil.Bytes  `json:" evsc1"`
+	EvSC2            *hexutil.Bytes  `json:" evsc2"`
+	EvRC1            *hexutil.Bytes  `json:" evrc1"`
+	EvRC2            *hexutil.Bytes  `json:" evrc2"`
+	CmS              *hexutil.Bytes  `json:" cms"`
+	CmR              *hexutil.Bytes  `json:" cmr"`
+	CMsFPC           *hexutil.Bytes  `json:" cmsfpc"`
+	CMsFPZ1          *hexutil.Bytes  `json:" cmsfpz1"`
+	CMsFPZ2          *hexutil.Bytes  `json:" cmsfpz2"`
+	CMrFPC           *hexutil.Bytes  `json:" cmrfpc"`
+	CMrFPZ1          *hexutil.Bytes  `json:" cmrfpz1"`
+	CMrFPZ2          *hexutil.Bytes  `json:" cmrfpz2"`
+	EvsBsC1          *hexutil.Bytes  `json:" evsbsc1"`
+	EvsBsC2          *hexutil.Bytes  `json:" evsbsc2"`
+	EvOC1            *hexutil.Bytes  `json:" evoc1"`
+	EvOC2            *hexutil.Bytes  `json:" evoc2"`
+	CmO              *hexutil.Bytes  `json:" cmo"`
+	EvOEPs0          *hexutil.Bytes  `json:" evoeps0"`
+	EvOEPs1          *hexutil.Bytes  `json:" evoeps1"`
+	EvOEPs2          *hexutil.Bytes  `json:" evoeps2"`
+	EvOEPs3          *hexutil.Bytes  `json:" evoeps3"`
+	EvOEPt           *hexutil.Bytes  `json:" evoept"`
+	BPC              *hexutil.Bytes  `json:" bpc"`
+	BPRV             *hexutil.Bytes  `json:" bprv"`
+	BPRR             *hexutil.Bytes  `json:" bprr"`
+	BPSV             *hexutil.Bytes  `json:" bpsv"`
+	BPSR             *hexutil.Bytes  `json:" bpsr"`
+	BPSOr            *hexutil.Bytes  `json:" bpsor "`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -1159,30 +1184,52 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		V:        (*hexutil.Big)(v),
 		R:        (*hexutil.Big)(r),
 		S:        (*hexutil.Big)(s),
-		SnO:      hexutil.Uint64(tx.SnO()),
-		Rr1:      hexutil.Uint64(tx.Rr1()),
-		CmSpk:    hexutil.Uint64(tx.CmSpk()),
-		CmRpk:    hexutil.Uint64(tx.CmRpk()),
-		CmO:      hexutil.Uint64(tx.CmO()),
-		CmS:      hexutil.Uint64(tx.CmS()),
-		CmR:      hexutil.Uint64(tx.CmR()),
-		EvR:      hexutil.Uint64(tx.EvR()),
-		EvR0:     hexutil.Uint64(tx.EvR0()),
-		EvR_:     hexutil.Uint64(tx.EvR_()),
-		EvR_0:    hexutil.Uint64(tx.EvR_0()),
 		ID:       hexutil.Uint64(tx.ID()),
 		Sig:      tx.Sig(),
-		CmV:      hexutil.Uint64(tx.CmV()),
-		EpkV:     hexutil.Uint64(tx.EpkV()),
-		CFormat:  (*hexutil.Big)(tx.CFormat()),
-		Z1:       (*hexutil.Big)(tx.Z1()),
-		Z2:       (*hexutil.Big)(tx.Z2()),
-		CBalance: (*hexutil.Big)(tx.CBalance()),
-		Rv:       (*hexutil.Big)(tx.Rv()),
-		Rr:       (*hexutil.Big)(tx.Rr()),
-		Sv:       (*hexutil.Big)(tx.Sv()),
-		Sr:       (*hexutil.Big)(tx.Sr()),
-		Sor:      (*hexutil.Big)(tx.Sor()),
+		ErpkC1:   tx.ErpkC1(),
+		ErpkC2:   tx.ErpkC2(),
+		EspkC1:   tx.EspkC1(),
+		EspkC2:   tx.EspkC2(),
+		CMRpk:    tx.CMRpk(),
+		CMSpk:    tx.CMSpk(),
+		ErpkEPs0: tx.ErpkEPs0(),
+		ErpkEPs1: tx.ErpkEPs1(),
+		ErpkEPs2: tx.ErpkEPs2(),
+		ErpkEPs3: tx.ErpkEPs3(),
+		ErpkEPt:  tx.ErpkEPt(),
+		EspkEPs0: tx.EspkEPs0(),
+		EspkEPs1: tx.EspkEPs1(),
+		EspkEPs2: tx.EspkEPs2(),
+		EspkEPs3: tx.EspkEPs3(),
+		EspkEPt:  tx.EspkEPt(),
+		EvSC1:    tx.EvSC1(),
+		EvSC2:    tx.EvSC2(),
+		EvRC1:    tx.EvRC1(),
+		EvRC2:    tx.EvRC2(),
+		CmS:      tx.CmS(),
+		CmR:      tx.CmR(),
+		CMsFPC:   tx.CMsFPC(),
+		CMsFPZ1:  tx.CMsFPZ1(),
+		CMsFPZ2:  tx.CMsFPZ2(),
+		CMrFPC:   tx.CMrFPC(),
+		CMrFPZ1:  tx.CMrFPZ1(),
+		CMrFPZ2:  tx.CMrFPZ2(),
+		EvsBsC1:  tx.EvsBsC1(),
+		EvsBsC2:  tx.EvsBsC2(),
+		EvOC1:    tx.EvOC1(),
+		EvOC2:    tx.EvOC2(),
+		CmO:      tx.CmO(),
+		EvOEPs0:  tx.EvOEPs0(),
+		EvOEPs1:  tx.EvOEPs1(),
+		EvOEPs2:  tx.EvOEPs2(),
+		EvOEPs3:  tx.EvOEPs3(),
+		EvOEPt:   tx.EvOEPt(),
+		BPC:      tx.BPC(),
+		BPRV:     tx.BPRV(),
+		BPRR:     tx.BPRR(),
+		BPSV:     tx.BPSV(),
+		BPSR:     tx.BPSR(),
+		BPSOr:    tx.BPSOr(),
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
@@ -1409,6 +1456,7 @@ func (s *PublicTransactionPoolAPI) sign(addr common.Address, tx *types.Transacti
 }
 
 // SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
+// 只接收从Postman发过来的参数，所以不包括零知识证明那些
 type SendTxArgs struct {
 	From     common.Address  `json:"from"`
 	To       *common.Address `json:"to"`
@@ -1418,33 +1466,15 @@ type SendTxArgs struct {
 	Nonce    *hexutil.Uint64 `json:"nonce"`
 	// We accept "data" and "input" for backwards-compatibility reasons. "input" is the
 	// newer name and should be preferred by clients.
-	Data     *hexutil.Bytes  `json:"data"`
-	Input    *hexutil.Bytes  `json:"input"`
-	SnO      *hexutil.Uint64 `json:"SnO"`
-	Rr1      *hexutil.Uint64 `json:"Rr1"`
-	CmSpk    *hexutil.Uint64 `json:"CmSpk"`
-	CmRpk    *hexutil.Uint64 `json:"CmRpk"`
-	CmO      *hexutil.Uint64 `json:"CmO"`
-	CmS      *hexutil.Uint64 `json:"CmS"`
-	CmR      *hexutil.Uint64 `json:"CmR"`
-	EvR      *hexutil.Uint64 `json:"EvR"`
-	EvR0     *hexutil.Uint64 `json:"EvR0"`
-	EvR_     *hexutil.Uint64 `json:"EvR_"`
-	EvR_0    *hexutil.Uint64 `json:"EvR_0"`
-	PI       *hexutil.Uint64 `json:"PI"`
-	ID       *hexutil.Uint64 `json:"ID"`
-	Sig      *string         `json:"Sig"`
-	CmV      *hexutil.Uint64 `json:"CmV"`
-	EpkV     *hexutil.Uint64 `json:"EpkV"`
-	CFormat  *hexutil.Big    `json:"CFormat"`  //格式正确证明字段1/3
-	Z1       *hexutil.Big    `json:"Z1"`       //格式正确证明字段2/3
-	Z2       *hexutil.Big    `json:"Z2"`       //格式正确证明字段3/3
-	CBalance *hexutil.Big    `json:"CBalance"` //会计平衡证明字段1/6
-	Rv       *hexutil.Big    `json:"Rv"`       //会计平衡证明字段2/6
-	Rr       *hexutil.Big    `json:"Rr"`       //会计平衡证明字段3/6
-	Sv       *hexutil.Big    `json:"Sv"`       //会计平衡证明字段4/6
-	Sr       *hexutil.Big    `json:"Sr"`       //会计平衡证明字段5/6
-	Sor      *hexutil.Big    `json:"Sor"`      //会计平衡证明字段6/6
+	Data  *hexutil.Bytes  `json:"data"`
+	Input *hexutil.Bytes  `json:"input"`
+	CmO   *hexutil.Bytes  `json:"cmo"` // 总金额承诺
+	Vr    *hexutil.Uint64 `json:"r"`   // 找零金额
+	Vs    *hexutil.Uint64 `json:"s"`   // 花费金额
+	VoR   *hexutil.Bytes  `json:"vor"`
+	Spk   *string         `json:"spk"` // 发送方公钥
+	Rpk   *string         `json:"rpk"` // 接收方公钥
+
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
@@ -1506,8 +1536,110 @@ func (args *SendTxArgs) setDefaults(ctx context.Context, b Backend) error {
 	}
 	return nil
 }
+func paraPK(pk string) (zkp.PublicKey, error) {
+	if len(pk) != 256 {
+		//return errors.New(`public key length should be 256`)
+	}
+	P, _ := new(big.Int).SetString(pk[:64], 16)
+	G1, _ := new(big.Int).SetString(pk[64:128], 16)
+	G2, _ := new(big.Int).SetString(pk[128:192], 16)
+	H, _ := new(big.Int).SetString(pk[192:], 16)
+	pubK := zkp.PublicKey{
+		P:  P,
+		G1: G1,
+		G2: G2,
+		H:  H,
+	}
+	return pubK, nil
+}
+func Hash(str string) []byte {
+	//使用sha256哈希函数
+	h := sha256.New()
+	h.Write([]byte(str))
+	return h.Sum(nil)
+}
+func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Transaction, error) {
+	Vs := uint64(*args.Vs)
+	Vr := uint64(*args.Vr)
+	Rpk, _ := paraPK(*args.Rpk) // 接收方公钥，不写入交易
+	//Spk, _ := paraPK(*args.Spk)                      // 发送方公钥，不写入交易
+	VoR := []byte(*args.VoR)                       // 被花费承诺的随机数，不写入交易
+	CmO := []byte(*args.CmO)                       // 被花费承诺
+	regulatorPubk := zkp.PublicKey(regulator.PubK) // 监管者公钥，不写入交易
+	addrpkt := new(big.Int).SetBytes(Hash(*args.Rpk))
+	addrpk := addrpkt.Mod(addrpkt, regulatorPubk.P).Bytes() //接收方地址公钥，不写入交易
+	addspkt := new(big.Int).SetBytes(Hash(*args.Spk))
+	addspk := addspkt.Mod(addspkt, regulatorPubk.P).Bytes() //发送方地址公钥，不写入交易
+	// 加密并承诺双方地址公钥
+	Erpk, _CMrpk, _ := zkp.EncryptAddress(regulatorPubk, addrpk)
+	Espk, _CMspk, _ := zkp.EncryptAddress(regulatorPubk, addspk)
+	_, CMrpk, _ := zkp.EncryptAddress(regulatorPubk, addrpk)
+	_, CMspk, _ := zkp.EncryptAddress(regulatorPubk, addspk)
+	// 双方地址公钥相等证明
+	ErpkEP := zkp.GenerateAddressEqualityProof(regulatorPubk, regulatorPubk, CMrpk, _CMrpk, addrpk)
+	EspkEP := zkp.GenerateAddressEqualityProof(regulatorPubk, regulatorPubk, CMspk, _CMspk, addspk)
+	// 花费额承诺，格式正确证明
+	EvS, CmS, _ := zkp.EncryptValue(regulatorPubk, Vs)
+	CMsFP := zkp.GenerateFormatProof(regulatorPubk, Vs, CmS.R)
+	Evs, _, _ := zkp.EncryptValue(Rpk, Vs) // 接收方公钥加密发送金额
+	// 找零承诺，格式正确证明
+	EvR, CmR, _ := zkp.EncryptValue(regulatorPubk, Vr)
+	CMrFP := zkp.GenerateFormatProof(regulatorPubk, Vr, CmR.R)
+	// 总花费额，由找零和发出相加求得
+	EvO, CMo, _ := zkp.EncryptValue(regulatorPubk, Vr+Vs)
+	// 总额度相等证明
+	EvoEP := zkp.GenerateEqualityProof(regulatorPubk, regulatorPubk, CMo, zkp.Commitment{
+		Commitment: CmO,
+		R:          VoR,
+	}, uint(Vr+Vs))
+	// 会计平衡证明
+	BP := zkp.GenerateBalanceProof(regulatorPubk, Vr, Vs, 0, CmR.R, CmS.R, VoR)
+	// 将需要编码进入交易的量转换成*big.Int或*hexutil.Uint64或*hexutil.Bytes
+	// CmO是 *hexutil.Bytes，不需编码
+	ErpkC1, ErpkC2 := hexutil.Bytes(Erpk.C1), hexutil.Bytes(Erpk.C2)
+	EspkC1, EspkC2 := hexutil.Bytes(Espk.C1), hexutil.Bytes(Espk.C2)
+	CMRpk, CMSpk := hexutil.Bytes(CMrpk.Commitment), hexutil.Bytes(CMspk.Commitment)
+	ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt := hexutil.Bytes(ErpkEP.LinearEquationProof.S[0]), hexutil.Bytes(ErpkEP.LinearEquationProof.S[1]), hexutil.Bytes(ErpkEP.LinearEquationProof.S[2]), hexutil.Bytes(ErpkEP.LinearEquationProof.S[3]), hexutil.Bytes(ErpkEP.LinearEquationProof.T)
+	EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt := hexutil.Bytes(EspkEP.LinearEquationProof.S[0]), hexutil.Bytes(EspkEP.LinearEquationProof.S[1]), hexutil.Bytes(EspkEP.LinearEquationProof.S[2]), hexutil.Bytes(EspkEP.LinearEquationProof.S[3]), hexutil.Bytes(EspkEP.LinearEquationProof.T)
+	EvSC1, EvSC2 := hexutil.Bytes(EvS.C1), hexutil.Bytes(EvS.C2)
+	EvRC1, EvRC2 := hexutil.Bytes(EvR.C1), hexutil.Bytes(EvR.C2)
+	_CmS, _CmR := hexutil.Bytes(CmS.Commitment), hexutil.Bytes(CmR.Commitment)
+	CMsFPC, CMsFPZ1, CMsFPZ2 := hexutil.Bytes(CMsFP.C), hexutil.Bytes(CMsFP.Z1), hexutil.Bytes(CMsFP.Z2)
+	CMrFPC, CMrFPZ1, CMrFPZ2 := hexutil.Bytes(CMrFP.C), hexutil.Bytes(CMrFP.Z1), hexutil.Bytes(CMrFP.Z2)
+	EvsBsC1, EvsBsC2 := hexutil.Bytes(Evs.C1), hexutil.Bytes(Evs.C2)
+	EvOC1, EvOC2 := hexutil.Bytes(EvO.C1), hexutil.Bytes(EvO.C2)
+	_CmO := hexutil.Bytes(CMo.Commitment)
+	EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt := hexutil.Bytes(EvoEP.LinearEquationProof.S[0]), hexutil.Bytes(EvoEP.LinearEquationProof.S[1]), hexutil.Bytes(EvoEP.LinearEquationProof.S[2]), hexutil.Bytes(EvoEP.LinearEquationProof.S[3]), hexutil.Bytes(EvoEP.LinearEquationProof.T)
+	BPC, BPRV, BPRR, BPSV, BPSR, BPSOr := hexutil.Bytes(BP.C), hexutil.Bytes(BP.R_v), hexutil.Bytes(BP.R_r), hexutil.Bytes(BP.S_v), hexutil.Bytes(BP.S_r), hexutil.Bytes(BP.S_or)
+	// TODO:产生签名Sig
+	// fmt.Println(ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, _CmS, _CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, _CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr)
+	// 以上
 
-func (args *SendTxArgs) toTransaction() *types.Transaction {
+	/*fmt.Println(Erpk.C1, Erpk.C2, Espk.C1, Espk.C2)            // 4个字节数组
+	fmt.Println(ErpkEP, EspkEP)                                //
+	fmt.Println(addrpk, addspk)                                //
+	fmt.Println(Rpk, Spk)                                      // 不需要编码
+	fmt.Println(VoR)                                           // 字节数组
+	fmt.Println(EvS.C1, EvS.C2, CMsFP.C, CMsFP.Z1, CMsFP.Z2)   // 5个字节数组
+	fmt.Println(Evs.C1, Evs.C2)                                // 2个字节数组
+	fmt.Println(EvR.C1, EvR.C2, CMrFP.C, CMrFP.Z1, CMrFP.Z2)   // 5个字节数组
+	fmt.Println(BP.C, BP.R_r, BP.R_v, BP.S_or, BP.S_r, BP.S_v) // 6个字节数组
+	fmt.Println(EvoEP)                                         // 总额度相等证明
+	// 验证
+	verify := zkp.VerifyFormatProof(EvS, regulatorPubk, CMsFP)
+	fmt.Println("花费额承诺，格式正确证明:", verify)
+	verify = zkp.VerifyFormatProof(EvR, regulatorPubk, CMrFP)
+	fmt.Println("找零承诺，格式正确证明:", verify)
+	verify = zkp.VerifyBalanceProof(CmR.Commitment, CmS.Commitment, CmO, regulatorPubk, BP)
+	fmt.Println("会计平衡证明:", verify)
+	verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, EvO, zkp.CypherText{C1: nil, C2: CmO}, EvoEP) //EvO和CmO里面的金额相等
+	fmt.Println("总额度相等证明:", verify)
+	verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Erpk, zkp.CypherText{C1: nil, C2: CMrpk.Commitment}, ErpkEP) //EvO和CmO里面的金额相等
+	fmt.Println("接收方公钥相等证明:", verify)
+	verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Espk, zkp.CypherText{C1: nil, C2: CMspk.Commitment}, EspkEP) //EvO和CmO里面的金额相等
+	fmt.Println("发送方公钥相等证明:", verify)*/
+
+	//
 	var input []byte
 	if args.Input != nil {
 		input = *args.Input
@@ -1515,9 +1647,38 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Data
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV), (*big.Int)(args.CFormat), (*big.Int)(args.Z1), (*big.Int)(args.Z2), (*big.Int)(args.CBalance), (*big.Int)(args.Rv), (*big.Int)(args.Rr), (*big.Int)(args.Sv), (*big.Int)(args.Sr), (*big.Int)(args.Sor))
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, ""), nil
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV), (*big.Int)(args.CFormat), (*big.Int)(args.Z1), (*big.Int)(args.Z2), (*big.Int)(args.CBalance), (*big.Int)(args.Rv), (*big.Int)(args.Rr), (*big.Int)(args.Sv), (*big.Int)(args.Sr), (*big.Int)(args.Sor))
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, ""), nil
+}
+func (args *SendTxArgs) toTransaction() (*types.Transaction, error) {
+	/*rpk, err := paraPK(*args.Rpk)
+	if err != nil {
+		return nil, err
+	}
+	spk, err := paraPK(*args.Spk)
+	if err != nil {
+		return nil, err
+	}
+	rpk := []byte(*args.Rpk)
+	spk := []byte(*args.Spk)
+
+	fmt.Println(rpk)
+	fmt.Println(spk)*/
+	/*var input []byte
+	if args.Input != nil {
+		input = *args.Input
+	} else if args.Data != nil {
+		input = *args.Data
+	}
+	spk := []byte(*args.Spk)
+	rpk := []byte(*args.Rpk)
+	if args.To == nil {
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV))
+	}
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, uint64(*args.SnO), uint64(*args.Rr1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.PI), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV))
+	*/
+	return nil, nil
 }
 
 // SubmitTransaction is a helper function that submits tx to txPool and logs a message.
@@ -1541,16 +1702,17 @@ func SubmitTransaction(ctx context.Context, b Backend, tx *types.Transaction) (c
 
 // SendTransaction creates a transaction for the given argument, sign it and submit it to the
 // transaction pool.
+// 从Postman发出的交易从此处开始
 func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args SendTxArgs) (common.Hash, error) {
 	// Look up the wallet containing the requested signer
 	account := accounts.Account{Address: args.From}
-
+	// 拿到发出账户的钱包，即使账户未解锁也能拿到
 	wallet, err := s.b.AccountManager().Find(account)
 	if err != nil {
 		return common.Hash{}, err
 	}
-
 	if args.Nonce == nil {
+		// 如果没有提前声明nonce，则在签名前保持此地址的互斥锁，防止同一nonce同时分配给了多个账户
 		// Hold the addresse's mutex around signing to prevent concurrent assignment of
 		// the same nonce to multiple accounts.
 		s.nonceLock.LockAddr(args.From)
@@ -1562,7 +1724,10 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 		return common.Hash{}, err
 	}
 	// Assemble the transaction and sign with the wallet
-	tx := args.toTransaction()
+	tx, err := args.toZeroTransaction(s.b.RegulatorKey())
+	if err != nil {
+		return common.Hash{}, err
+	}
 
 	signed, err := wallet.SignTx(account, tx, s.b.ChainConfig().ChainID)
 	if err != nil {
@@ -1579,7 +1744,10 @@ func (s *PublicTransactionPoolAPI) FillTransaction(ctx context.Context, args Sen
 		return nil, err
 	}
 	// Assemble the transaction and obtain rlp
-	tx := args.toTransaction()
+	tx, err := args.toTransaction()
+	if err != nil {
+		return nil, err
+	}
 	data, err := rlp.EncodeToBytes(tx)
 	if err != nil {
 		return nil, err
@@ -1644,7 +1812,11 @@ func (s *PublicTransactionPoolAPI) SignTransaction(ctx context.Context, args Sen
 	if err := args.setDefaults(ctx, s.b); err != nil {
 		return nil, err
 	}
-	tx, err := s.sign(args.From, args.toTransaction())
+	formedTx, err := args.toTransaction()
+	if err != nil {
+		return nil, err
+	}
+	tx, err := s.sign(args.From, formedTx)
 	if err != nil {
 		return nil, err
 	}
@@ -1691,7 +1863,10 @@ func (s *PublicTransactionPoolAPI) Resend(ctx context.Context, sendArgs SendTxAr
 	if err := sendArgs.setDefaults(ctx, s.b); err != nil {
 		return common.Hash{}, err
 	}
-	matchTx := sendArgs.toTransaction()
+	matchTx, err := sendArgs.toTransaction()
+	if err != nil {
+		return common.Hash{}, err
+	}
 	pending, err := s.b.GetPoolTransactions()
 	if err != nil {
 		return common.Hash{}, err
@@ -1712,7 +1887,11 @@ func (s *PublicTransactionPoolAPI) Resend(ctx context.Context, sendArgs SendTxAr
 			if gasLimit != nil && *gasLimit != 0 {
 				sendArgs.Gas = gasLimit
 			}
-			signedTx, err := s.sign(sendArgs.From, sendArgs.toTransaction())
+			formedTx, err := sendArgs.toTransaction()
+			if err != nil {
+				return common.Hash{}, err
+			}
+			signedTx, err := s.sign(sendArgs.From, formedTx)
 			if err != nil {
 				return common.Hash{}, err
 			}

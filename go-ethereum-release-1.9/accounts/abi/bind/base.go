@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum"
@@ -56,32 +57,52 @@ type TransactOpts struct {
 	Context context.Context // Network context to support cancellation and timeouts (nil = no timeout)
 
 	//新增交易字段
-	SnO   uint64 //代币序列号
-	rR1   uint64 //随机数，交易时对交易金额v_r进行加密
-	CmSpk uint64 //发送方公钥的承诺
-	CmRpk uint64 //接收方公钥的承诺
-	CmO   uint64 //原始金额承诺
-	CmS   uint64 //消费金额承诺
-	CmR   uint64 //找零金额承诺
-	EvR   uint64 //E(v_r) = (v_r * G1_R + r_r2 * H_R, r_r2 * G2_R)
-	EvR0  uint64 //EvR 的后64位
-	EvR_  uint64 //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
-	EvR_0 uint64 //EvR_ 的后64位
-
-	//新增购币字段
-	ID       uint64   //购币标识
-	Sig      string   //发行者签名
-	CmV      uint64   //购币承诺
-	EpkV     uint64   //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
-	CFormat  *big.Int //格式正确证明字段1/3
-	Z1       *big.Int //格式正确证明字段2/3
-	Z2       *big.Int //格式正确证明字段3/3
-	CBalance *big.Int //会计平衡证明字段1/6
-	Rv       *big.Int //会计平衡证明字段2/6
-	Rr       *big.Int //会计平衡证明字段3/6
-	Sv       *big.Int //会计平衡证明字段4/6
-	Sr       *big.Int //会计平衡证明字段5/6
-	Sor      *big.Int //会计平衡证明字段6/6
+	ID       uint64
+	ErpkC1   *hexutil.Bytes
+	ErpkC2   *hexutil.Bytes
+	EspkC1   *hexutil.Bytes
+	EspkC2   *hexutil.Bytes
+	CMRpk    *hexutil.Bytes
+	CMSpk    *hexutil.Bytes
+	ErpkEPs0 *hexutil.Bytes
+	ErpkEPs1 *hexutil.Bytes
+	ErpkEPs2 *hexutil.Bytes
+	ErpkEPs3 *hexutil.Bytes
+	ErpkEPt  *hexutil.Bytes
+	EspkEPs0 *hexutil.Bytes
+	EspkEPs1 *hexutil.Bytes
+	EspkEPs2 *hexutil.Bytes
+	EspkEPs3 *hexutil.Bytes
+	EspkEPt  *hexutil.Bytes
+	EvSC1    *hexutil.Bytes
+	EvSC2    *hexutil.Bytes
+	EvRC1    *hexutil.Bytes
+	EvRC2    *hexutil.Bytes
+	CmS      *hexutil.Bytes
+	CmR      *hexutil.Bytes
+	CMsFPC   *hexutil.Bytes
+	CMsFPZ1  *hexutil.Bytes
+	CMsFPZ2  *hexutil.Bytes
+	CMrFPC   *hexutil.Bytes
+	CMrFPZ1  *hexutil.Bytes
+	CMrFPZ2  *hexutil.Bytes
+	EvsBsC1  *hexutil.Bytes
+	EvsBsC2  *hexutil.Bytes
+	EvOC1    *hexutil.Bytes
+	EvOC2    *hexutil.Bytes
+	CmO      *hexutil.Bytes
+	EvOEPs0  *hexutil.Bytes
+	EvOEPs1  *hexutil.Bytes
+	EvOEPs2  *hexutil.Bytes
+	EvOEPs3  *hexutil.Bytes
+	EvOEPt   *hexutil.Bytes
+	BPC      *hexutil.Bytes
+	BPRV     *hexutil.Bytes
+	BPRR     *hexutil.Bytes
+	BPSV     *hexutil.Bytes
+	BPSR     *hexutil.Bytes
+	BPSOr    *hexutil.Bytes
+	Sig      string
 }
 
 // FilterOpts is the collection of options to fine tune filtering for events
@@ -255,9 +276,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	// Create the transaction, sign it and schedule it for execution
 	var rawTx *types.Transaction
 	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.ID, opts.Sig, opts.CmV, opts.EpkV, opts.CFormat, opts.Z1, opts.Z2, opts.CBalance, opts.Rv, opts.Rr, opts.Sv, opts.Sr, opts.Sor)
+		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.ID, opts.ErpkC1, opts.ErpkC2, opts.EspkC1, opts.EspkC2, opts.CMRpk, opts.CMSpk, opts.ErpkEPs0, opts.ErpkEPs1, opts.ErpkEPs2, opts.ErpkEPs3, opts.ErpkEPt, opts.EspkEPs0, opts.EspkEPs1, opts.EspkEPs2, opts.EspkEPs3, opts.EspkEPt, opts.EvSC1, opts.EvSC2, opts.EvRC1, opts.EvRC2, opts.CmS, opts.CmR, opts.CMsFPC, opts.CMsFPZ1, opts.CMsFPZ2, opts.CMrFPC, opts.CMrFPZ1, opts.CMrFPZ2, opts.EvsBsC1, opts.EvsBsC2, opts.EvOC1, opts.EvOC2, opts.CmO, opts.EvOEPs0, opts.EvOEPs1, opts.EvOEPs2, opts.EvOEPs3, opts.EvOEPt, opts.BPC, opts.BPRV, opts.BPRR, opts.BPSV, opts.BPSR, opts.BPSOr, opts.Sig)
 	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.SnO, opts.rR1, opts.CmSpk, opts.CmRpk, opts.CmO, opts.CmS, opts.CmR, opts.EvR, opts.EvR0, opts.EvR_, opts.EvR_0, opts.ID, opts.Sig, opts.CmV, opts.EpkV, opts.CFormat, opts.Z1, opts.Z2, opts.CBalance, opts.Rv, opts.Rr, opts.Sv, opts.Sr, opts.Sor)
+		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.ID, opts.ErpkC1, opts.ErpkC2, opts.EspkC1, opts.EspkC2, opts.CMRpk, opts.CMSpk, opts.ErpkEPs0, opts.ErpkEPs1, opts.ErpkEPs2, opts.ErpkEPs3, opts.ErpkEPt, opts.EspkEPs0, opts.EspkEPs1, opts.EspkEPs2, opts.EspkEPs3, opts.EspkEPt, opts.EvSC1, opts.EvSC2, opts.EvRC1, opts.EvRC2, opts.CmS, opts.CmR, opts.CMsFPC, opts.CMsFPZ1, opts.CMsFPZ2, opts.CMrFPC, opts.CMrFPZ1, opts.CMrFPZ2, opts.EvsBsC1, opts.EvsBsC2, opts.EvOC1, opts.EvOC2, opts.CmO, opts.EvOEPs0, opts.EvOEPs1, opts.EvOEPs2, opts.EvOEPs3, opts.EvOEPt, opts.BPC, opts.BPRV, opts.BPRR, opts.BPSV, opts.BPSR, opts.BPSOr, opts.Sig)
 	}
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")

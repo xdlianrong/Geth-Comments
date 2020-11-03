@@ -65,12 +65,14 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	}
 	//@author mzliu 20200918
 	//sign CM_v and ID and assign Sig
-		//first add cmv and id
-	i := tx.CmV()+tx.ID()
+	//first add cmv and id
+	// TODO:刘明哲改，20201103
+	//i := tx.CmV()+tx.ID()
+	i := uint64(1)
 	//next transfer msg into []byte
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
-		//then sign msg
+	//then sign msg
 	Sig, err := crypto.Sign(msg, prv)
 	tx.data.Sig = hexutil.Encode(Sig)
 	return tx.WithSignature(s, sig)

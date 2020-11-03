@@ -1179,7 +1179,7 @@ func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 		cfg.DiscoveryV5 = false
 	}
 }
-func setRegulator(ctx *cli.Context, cfg *node.Config) {
+func setRegulator(ctx *cli.Context, cfg *eth.Config) {
 	cfg.Regulator.IP = ctx.GlobalString("regulatorip")
 	cfg.Regulator.Port = ctx.GlobalInt("regulatorport")
 	//做网络请求获取监管者公钥
@@ -1212,7 +1212,6 @@ func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	setNodeUserIdent(ctx, cfg)
 	setDataDir(ctx, cfg)
 	setSmartCard(ctx, cfg)
-	setRegulator(ctx, cfg) //设置监管者
 
 	if ctx.GlobalIsSet(ExternalSignerFlag.Name) {
 		cfg.ExternalSigner = ctx.GlobalString(ExternalSignerFlag.Name)
@@ -1468,7 +1467,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setMiner(ctx, &cfg.Miner)
 	setWhitelist(ctx, cfg)
 	setLes(ctx, cfg)
-
+	setRegulator(ctx, cfg)
 	if ctx.GlobalIsSet(SyncModeFlag.Name) {
 		cfg.SyncMode = *GlobalTextMarshaler(ctx, SyncModeFlag.Name).(*downloader.SyncMode)
 	}

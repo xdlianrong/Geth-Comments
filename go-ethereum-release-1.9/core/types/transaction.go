@@ -44,36 +44,69 @@ type Transaction struct {
 }
 
 type txdata struct {
-	AccountNonce uint64          `json:"nonce"    gencodec:"required"` //由交易发送者发出的的交易的数量，由 Tn 表示
-	Price        *big.Int        `json:"gasPrice" gencodec:"required"` //为执行这个交易所需要进行的计算步骤消 耗的每单位 gas 的价格，以 Wei 为单位，由 Tp 表 示。
-	GasLimit     uint64          `json:"gas"      gencodec:"required"` //用于执行这个交易的最大 gas 数量。这个值须在交易开始前设置，且设定后不能再增加，由Tg 表示。
-	Recipient    *common.Address `json:"to"       rlp:"nil"`           // nil means contract creation 160 位的消息调用接收者地址；对与合约创建交易，用 ∅ 表示 B0 的唯一成员。此字段由 Tt 表示
-	Amount       *big.Int        `json:"value"    gencodec:"required"` //转移到接收者账户的 Wei 的数量；对于合约 创建，则代表给新建合约地址的初始捐款。由 Tv 表示。
-	Payload      []byte          `json:"input"    gencodec:"required"` //如果目标账户包含代码，该代码会执行，payload就是输入数据。如果目标账户是零账户（账户地址是0），交易将创建一个新合约。这个合约地址不是零地址，而是由合约创建者的地址和该地址发出过的交易数量（被称为nonce）计算得到。创建合约交易的payload被当作EVM字节码执行。执行的输出做为合约代码被永久存储。这意味着，为了创建一个合约，你不需要向合约发送真正的合约代码，而是发送能够返回真正代码的代码。
-	SnO          uint64          `json:"SnO"      gencodec:"required"` //代币序列号
-	Rr1          uint64          `json:"Rr1"      gencodec:"required"` //随机数，交易时对交易金额v_r进行加密
-	CmSpk        uint64          `json:"CmSpk"    gencodec:"required"` //发送方公钥的承诺
-	CmRpk        uint64          `json:"CmRpk"    gencodec:"required"` //接收方公钥的承诺
-	CmO          uint64          `json:"CmO"      gencodec:"required"` //原始金额承诺
-	CmS          uint64          `json:"CmS"      gencodec:"required"` //消费金额承诺
-	CmR          uint64          `json:"CmR"      gencodec:"required"` //找零金额承诺
-	EvR          uint64          `json:"EvR"      gencodec:"required"` //E(v_r) = (v_r * G1_R + r_r2 * H_R, r_r2 * G2_R)
-	EvR0         uint64          `json:"EvR0"     gencodec:"required"` //EvR 的后64位
-	EvR_         uint64          `json:"EvR_"     gencodec:"required"` //E(v_r)’ = (v_r * G1 + r_r3 * H, r_r3 * G2；S_pk * G1 + r_spk * H，r_spk * G2；R_pk * G1 + r_rpk * H，r_rpk * G2)
-	EvR_0        uint64          `json:"EvR_0"    gencodec:"required"` //EvR_ 的后64位
-	ID           uint64          `json:"ID"       gencodec:"required"` //购币标识
-	Sig          string          `json:"Sig"      gencodec:"required"` //发行者签名
-	CmV          uint64          `json:"CmV"      gencodec:"required"` //购币承诺
-	EpkV         uint64          `json:"EpkV"     gencodec:"required"` //E(pk,v),监管者公钥对购币用户公钥和购币金额的加密
-	CFormat      *big.Int        `json:"CFormat"  gencodec:"required"` //格式正确证明字段1/3
-	Z1           *big.Int        `json:"Z1"       gencodec:"required"` //格式正确证明字段2/3
-	Z2           *big.Int        `json:"Z2"       gencodec:"required"` //格式正确证明字段3/3
-	CBalance     *big.Int        `json:"CBalance" gencodec:"required"` //会计平衡证明字段1/6
-	Rv           *big.Int        `json:"Rv"      gencodec:"required"`  //会计平衡证明字段2/6
-	Rr           *big.Int        `json:"Rr"      gencodec:"required"`  //会计平衡证明字段3/6
-	Sv           *big.Int        `json:"Sv"      gencodec:"required"`  //会计平衡证明字段4/6
-	Sr           *big.Int        `json:"Sr"      gencodec:"required"`  //会计平衡证明字段5/6
-	Sor          *big.Int        `json:"Sor"     gencodec:"required"`  //会计平衡证明字段6/6
+	// *hexutil.Bytes
+	// ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1,
+	// EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, _CmS, _CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1,
+	// CMrFPZ2, EvsC1, EvsC2, EvOC1, EvOC2, _CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV,
+	// BPSR, BPSOr
+	//
+	// erpkc1, erpkc2, espkc1, espkc2, cmrpk, cmspk, erpkeps0, erpkeps1, erpkeps2, erpkeps3, erpkept, espkeps0, espkeps1,
+	// espkeps2, espkeps3, espkept, evsc1, evsc2, evrc1, evrc2, _cms, _cmr, cmsfpc, cmsfpz1, cmsfpz2, cmrfpc, cmrfpz1,
+	// cmrfpz2, evsc1, evsc2, evoc1, evoc2, _cmo, evoeps0, evoeps1, evoeps2, evoeps3, evoept, bpc, bprv, bprr, bpsv,
+	// bpsr, bpsor
+	AccountNonce uint64          `json:"nonce"          gencodec:"required"` //由交易发送者发出的的交易的数量，由 Tn 表示
+	Price        *big.Int        `json:"gasPrice"       gencodec:"required"` //为执行这个交易所需要进行的计算步骤消 耗的每单位 gas 的价格，以 Wei 为单位，由 Tp 表 示。
+	GasLimit     uint64          `json:"gas"            gencodec:"required"` //用于执行这个交易的最大 gas 数量。这个值须在交易开始前设置，且设定后不能再增加，由Tg 表示。
+	Recipient    *common.Address `json:"to"             rlp:"nil"`           // nil means contract creation 160 位的消息调用接收者地址；对与合约创建交易，用 ∅ 表示 B0 的唯一成员。此字段由 Tt 表示
+	Amount       *big.Int        `json:"value"          gencodec:"required"` //转移到接收者账户的 Wei 的数量；对于合约 创建，则代表给新建合约地址的初始捐款。由 Tv 表示。
+	Payload      []byte          `json:"input"          gencodec:"required"` //如果目标账户包含代码，该代码会执行，payload就是输入数据。如果目标账户是零账户（账户地址是0），交易将创建一个新合约。这个合约地址不是零地址，而是由合约创建者的地址和该地址发出过的交易数量（被称为nonce）计算得到。创建合约交易的payload被当作EVM字节码执行。执行的输出做为合约代码被永久存储。这意味着，为了创建一个合约，你不需要向合约发送真正的合约代码，而是发送能够返回真正代码的代码。
+	ID           uint64          `json:"ID"             gencodec:"required"` //交易标识
+	ErpkC1       *hexutil.Bytes  `json:"erpkc1"         gencodec:"required"` //接收方地址公钥加密字段C1
+	ErpkC2       *hexutil.Bytes  `json:" erpkc2"        gencodec:"required"` //接收方地址公钥加密字段C2
+	EspkC1       *hexutil.Bytes  `json:" espkc1"        gencodec:"required"` //发送方地址公钥加密字段C1
+	EspkC2       *hexutil.Bytes  `json:" espkc2"        gencodec:"required"` //发送方地址公钥加密字段C2
+	CMRpk        *hexutil.Bytes  `json:" cmrpk"         gencodec:"required"` //接收方地址公钥承诺
+	CMSpk        *hexutil.Bytes  `json:" cmspk"         gencodec:"required"` //发送方地址公钥承诺
+	ErpkEPs0     *hexutil.Bytes  `json:" erpkeps0"      gencodec:"required"` //接收方地址公钥相等证明字段s0
+	ErpkEPs1     *hexutil.Bytes  `json:" erpkeps1"      gencodec:"required"` //接收方地址公钥相等证明字段s1
+	ErpkEPs2     *hexutil.Bytes  `json:" erpkeps2"      gencodec:"required"` //接收方地址公钥相等证明字段s2
+	ErpkEPs3     *hexutil.Bytes  `json:" erpkeps3"      gencodec:"required"` //接收方地址公钥相等证明字段s3
+	ErpkEPt      *hexutil.Bytes  `json:" erpkept"       gencodec:"required"` //接收方地址公钥相等证明字段t
+	EspkEPs0     *hexutil.Bytes  `json:" espkeps0"      gencodec:"required"` //发送方地址公钥相等证明字段s0
+	EspkEPs1     *hexutil.Bytes  `json:" espkeps1"      gencodec:"required"` //发送方地址公钥相等证明字段s1
+	EspkEPs2     *hexutil.Bytes  `json:" espkeps2"      gencodec:"required"` //发送方地址公钥相等证明字段s2
+	EspkEPs3     *hexutil.Bytes  `json:" espkeps3"      gencodec:"required"` //发送方地址公钥相等证明字段s3
+	EspkEPt      *hexutil.Bytes  `json:" espkept"       gencodec:"required"` //发送方地址公钥相等证明字段t
+	EvSC1        *hexutil.Bytes  `json:" evsc1"         gencodec:"required"` //发送金额加密字段C1
+	EvSC2        *hexutil.Bytes  `json:" evsc2"         gencodec:"required"` //发送金额加密字段C2
+	EvRC1        *hexutil.Bytes  `json:" evrc1"         gencodec:"required"` //接收金额加密字段C1
+	EvRC2        *hexutil.Bytes  `json:" evrc2"         gencodec:"required"` //接收金额加密字段C2
+	CmS          *hexutil.Bytes  `json:" cms"           gencodec:"required"` //发送金额承诺
+	CmR          *hexutil.Bytes  `json:" cmr"           gencodec:"required"` //返还（找零）金额承诺
+	CMsFPC       *hexutil.Bytes  `json:" cmsfpc"        gencodec:"required"` //发送金额承诺格式证明字段C
+	CMsFPZ1      *hexutil.Bytes  `json:" cmsfpz1"       gencodec:"required"` //发送金额承诺格式证明字段Z1
+	CMsFPZ2      *hexutil.Bytes  `json:" cmsfpz2"       gencodec:"required"` //发送金额承诺格式证明字段Z2
+	CMrFPC       *hexutil.Bytes  `json:" cmrfpc"        gencodec:"required"` //接收金额承诺格式证明字段C
+	CMrFPZ1      *hexutil.Bytes  `json:" cmrfpz1"       gencodec:"required"` //接收金额承诺格式证明字段Z1
+	CMrFPZ2      *hexutil.Bytes  `json:" cmrfpz2"       gencodec:"required"` //接收金额承诺格式证明字段Z2
+	EvsBsC1      *hexutil.Bytes  `json:" evsbsc1"       gencodec:"required"` //接收方公钥加密的发送金额字段C1
+	EvsBsC2      *hexutil.Bytes  `json:" evsbsc2"       gencodec:"required"` //接收方公钥加密的发送金额字段C2
+	EvOC1        *hexutil.Bytes  `json:" evoc1"         gencodec:"required"` //被花费承诺加密字段C1
+	EvOC2        *hexutil.Bytes  `json:" evoc2"         gencodec:"required"` //被花费承诺加密字段C2
+	CmO          *hexutil.Bytes  `json:" cmo"           gencodec:"required"` //被花费承诺
+	EvOEPs0      *hexutil.Bytes  `json:" evoeps0"       gencodec:"required"` //被花费承诺相等证明字段s0
+	EvOEPs1      *hexutil.Bytes  `json:" evoeps1"       gencodec:"required"` //被花费承诺相等证明字段s1
+	EvOEPs2      *hexutil.Bytes  `json:" evoeps2"       gencodec:"required"` //被花费承诺相等证明字段s2
+	EvOEPs3      *hexutil.Bytes  `json:" evoeps3"       gencodec:"required"` //被花费承诺相等证明字段s3
+	EvOEPt       *hexutil.Bytes  `json:" evoept"        gencodec:"required"` //被花费承诺相等证明字段t
+	BPC          *hexutil.Bytes  `json:" bpc"           gencodec:"required"` //会计平衡证明字段C
+	BPRV         *hexutil.Bytes  `json:" bprv"          gencodec:"required"` //会计平衡证明字段RV
+	BPRR         *hexutil.Bytes  `json:" bprr"          gencodec:"required"` //会计平衡证明字段RR
+	BPSV         *hexutil.Bytes  `json:" bpsv"          gencodec:"required"` //会计平衡证明字段SV
+	BPSR         *hexutil.Bytes  `json:" bpsr"          gencodec:"required"` //会计平衡证明字段SR
+	BPSOr        *hexutil.Bytes  `json:" bpsor "        gencodec:"required"` //会计平衡证明字段SOr
+	Sig          string          `json:"Sig"            gencodec:"required"` //发行者签名
+
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"` //v, r, s: 与交易签名相符的若干数值，用于确定交易的发送者，由 Tw，Tr 和 Ts 表示。
 	R *big.Int `json:"r" gencodec:"required"`
@@ -94,18 +127,15 @@ type txdataMarshaling struct {
 	S            *hexutil.Big
 }
 
-func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, ID uint64, Sig string, CmV uint64, EpkV uint64, CFormat *big.Int, Z1 *big.Int, Z2 *big.Int, CBalance *big.Int, Rv *big.Int, Rr *big.Int, Sv *big.Int, Sr *big.Int, Sor *big.Int) *Transaction {
-	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, ID, Sig, CmV, EpkV, CFormat, Z1, Z2, CBalance, Rv, Rr, Sv, Sr, Sor)
+func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, ID uint64, ErpkC1 *hexutil.Bytes, ErpkC2 *hexutil.Bytes, EspkC1 *hexutil.Bytes, EspkC2 *hexutil.Bytes, CMRpk *hexutil.Bytes, CMSpk *hexutil.Bytes, ErpkEPs0 *hexutil.Bytes, ErpkEPs1 *hexutil.Bytes, ErpkEPs2 *hexutil.Bytes, ErpkEPs3 *hexutil.Bytes, ErpkEPt *hexutil.Bytes, EspkEPs0 *hexutil.Bytes, EspkEPs1 *hexutil.Bytes, EspkEPs2 *hexutil.Bytes, EspkEPs3 *hexutil.Bytes, EspkEPt *hexutil.Bytes, EvSC1 *hexutil.Bytes, EvSC2 *hexutil.Bytes, EvRC1 *hexutil.Bytes, EvRC2 *hexutil.Bytes, CmS *hexutil.Bytes, CmR *hexutil.Bytes, CMsFPC *hexutil.Bytes, CMsFPZ1 *hexutil.Bytes, CMsFPZ2 *hexutil.Bytes, CMrFPC *hexutil.Bytes, CMrFPZ1 *hexutil.Bytes, CMrFPZ2 *hexutil.Bytes, EvsBsC1 *hexutil.Bytes, EvsBsC2 *hexutil.Bytes, EvOC1 *hexutil.Bytes, EvOC2 *hexutil.Bytes, CmO *hexutil.Bytes, EvOEPs0 *hexutil.Bytes, EvOEPs1 *hexutil.Bytes, EvOEPs2 *hexutil.Bytes, EvOEPs3 *hexutil.Bytes, EvOEPt *hexutil.Bytes, BPC *hexutil.Bytes, BPRV *hexutil.Bytes, BPRR *hexutil.Bytes, BPSV *hexutil.Bytes, BPSR *hexutil.Bytes, BPSOr *hexutil.Bytes, Sig string) *Transaction {
+	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, ID, ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, CmS, CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr, Sig)
 }
 
-func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, ID uint64, Sig string, CmV uint64, EpkV uint64, CFormat *big.Int, Z1 *big.Int, Z2 *big.Int, CBalance *big.Int, Rv *big.Int, Rr *big.Int, Sv *big.Int, Sr *big.Int, Sor *big.Int) *Transaction {
-	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, SnO, rR1, CmSpk, CmRpk, CmO, CmS, CmR, EvR, EvR0, EvR_, EvR_0, ID, Sig, CmV, EpkV, CFormat, Z1, Z2, CBalance, Rv, Rr, Sv, Sr, Sor)
+func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, ID uint64, ErpkC1 *hexutil.Bytes, ErpkC2 *hexutil.Bytes, EspkC1 *hexutil.Bytes, EspkC2 *hexutil.Bytes, CMRpk *hexutil.Bytes, CMSpk *hexutil.Bytes, ErpkEPs0 *hexutil.Bytes, ErpkEPs1 *hexutil.Bytes, ErpkEPs2 *hexutil.Bytes, ErpkEPs3 *hexutil.Bytes, ErpkEPt *hexutil.Bytes, EspkEPs0 *hexutil.Bytes, EspkEPs1 *hexutil.Bytes, EspkEPs2 *hexutil.Bytes, EspkEPs3 *hexutil.Bytes, EspkEPt *hexutil.Bytes, EvSC1 *hexutil.Bytes, EvSC2 *hexutil.Bytes, EvRC1 *hexutil.Bytes, EvRC2 *hexutil.Bytes, CmS *hexutil.Bytes, CmR *hexutil.Bytes, CMsFPC *hexutil.Bytes, CMsFPZ1 *hexutil.Bytes, CMsFPZ2 *hexutil.Bytes, CMrFPC *hexutil.Bytes, CMrFPZ1 *hexutil.Bytes, CMrFPZ2 *hexutil.Bytes, EvsBsC1 *hexutil.Bytes, EvsBsC2 *hexutil.Bytes, EvOC1 *hexutil.Bytes, EvOC2 *hexutil.Bytes, CmO *hexutil.Bytes, EvOEPs0 *hexutil.Bytes, EvOEPs1 *hexutil.Bytes, EvOEPs2 *hexutil.Bytes, EvOEPs3 *hexutil.Bytes, EvOEPt *hexutil.Bytes, BPC *hexutil.Bytes, BPRV *hexutil.Bytes, BPRR *hexutil.Bytes, BPSV *hexutil.Bytes, BPSR *hexutil.Bytes, BPSOr *hexutil.Bytes, Sig string) *Transaction {
+	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, ID, ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, CmS, CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr, Sig)
 }
 
-func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, SnO uint64, rR1 uint64, CmSpk uint64, CmRpk uint64, CmO uint64,
-	CmS uint64, CmR uint64, EvR uint64, EvR0 uint64, EvR_ uint64, EvR_0 uint64, ID uint64, Sig string, CmV uint64, EpkV uint64, CFormat *big.Int, Z1 *big.Int, Z2 *big.Int, CBalance *big.Int, Rv *big.Int, Rr *big.Int, Sv *big.Int, Sr *big.Int, Sor *big.Int) *Transaction {
+func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, ID uint64, ErpkC1 *hexutil.Bytes, ErpkC2 *hexutil.Bytes, EspkC1 *hexutil.Bytes, EspkC2 *hexutil.Bytes, CMRpk *hexutil.Bytes, CMSpk *hexutil.Bytes, ErpkEPs0 *hexutil.Bytes, ErpkEPs1 *hexutil.Bytes, ErpkEPs2 *hexutil.Bytes, ErpkEPs3 *hexutil.Bytes, ErpkEPt *hexutil.Bytes, EspkEPs0 *hexutil.Bytes, EspkEPs1 *hexutil.Bytes, EspkEPs2 *hexutil.Bytes, EspkEPs3 *hexutil.Bytes, EspkEPt *hexutil.Bytes, EvSC1 *hexutil.Bytes, EvSC2 *hexutil.Bytes, EvRC1 *hexutil.Bytes, EvRC2 *hexutil.Bytes, CmS *hexutil.Bytes, CmR *hexutil.Bytes, CMsFPC *hexutil.Bytes, CMsFPZ1 *hexutil.Bytes, CMsFPZ2 *hexutil.Bytes, CMrFPC *hexutil.Bytes, CMrFPZ1 *hexutil.Bytes, CMrFPZ2 *hexutil.Bytes, EvsBsC1 *hexutil.Bytes, EvsBsC2 *hexutil.Bytes, EvOC1 *hexutil.Bytes, EvOC2 *hexutil.Bytes, CmO *hexutil.Bytes, EvOEPs0 *hexutil.Bytes, EvOEPs1 *hexutil.Bytes, EvOEPs2 *hexutil.Bytes, EvOEPs3 *hexutil.Bytes, EvOEPt *hexutil.Bytes, BPC *hexutil.Bytes, BPRV *hexutil.Bytes, BPRR *hexutil.Bytes, BPSV *hexutil.Bytes, BPSR *hexutil.Bytes, BPSOr *hexutil.Bytes, Sig string) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -119,30 +149,52 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		V:            new(big.Int),
 		R:            new(big.Int),
 		S:            new(big.Int),
-		SnO:          SnO,
-		Rr1:          rR1,
-		CmSpk:        CmSpk,
-		CmRpk:        CmRpk,
-		CmO:          CmO,
+		ID:           ID,
+		ErpkC1:       ErpkC1,
+		ErpkC2:       ErpkC2,
+		EspkC1:       EspkC1,
+		EspkC2:       EspkC2,
+		CMRpk:        CMRpk,
+		CMSpk:        CMSpk,
+		ErpkEPs0:     ErpkEPs0,
+		ErpkEPs1:     ErpkEPs1,
+		ErpkEPs2:     ErpkEPs2,
+		ErpkEPs3:     ErpkEPs3,
+		ErpkEPt:      ErpkEPt,
+		EspkEPs0:     EspkEPs0,
+		EspkEPs1:     EspkEPs1,
+		EspkEPs2:     EspkEPs2,
+		EspkEPs3:     EspkEPs3,
+		EspkEPt:      EspkEPt,
+		EvSC1:        EvSC1,
+		EvSC2:        EvSC2,
+		EvRC1:        EvRC1,
+		EvRC2:        EvRC2,
 		CmS:          CmS,
 		CmR:          CmR,
-		EvR:          EvR,
-		EvR0:         EvR0,
-		EvR_:         EvR_,
-		EvR_0:        EvR_0,
-		ID:           ID,
+		CMsFPC:       CMsFPC,
+		CMsFPZ1:      CMsFPZ1,
+		CMsFPZ2:      CMsFPZ2,
+		CMrFPC:       CMrFPC,
+		CMrFPZ1:      CMrFPZ1,
+		CMrFPZ2:      CMrFPZ2,
+		EvsBsC1:      EvsBsC1,
+		EvsBsC2:      EvsBsC2,
+		EvOC1:        EvOC1,
+		EvOC2:        EvOC2,
+		CmO:          CmO,
+		EvOEPs0:      EvOEPs0,
+		EvOEPs1:      EvOEPs1,
+		EvOEPs2:      EvOEPs2,
+		EvOEPs3:      EvOEPs3,
+		EvOEPt:       EvOEPt,
+		BPC:          BPC,
+		BPRV:         BPRV,
+		BPRR:         BPRR,
+		BPSV:         BPSV,
+		BPSR:         BPSR,
+		BPSOr:        BPSOr,
 		Sig:          Sig,
-		CmV:          CmV,
-		EpkV:         EpkV,
-		CFormat:      CFormat,
-		Z1:           Z1,
-		Z2:           Z2,
-		CBalance:     CBalance,
-		Rv:           Rv,
-		Rr:           Rr,
-		Sv:           Sv,
-		Sr:           Sr,
-		Sor:          Sor,
 	}
 	if amount != nil {
 		d.Amount.Set(amount)
@@ -150,7 +202,6 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 	if gasPrice != nil {
 		d.Price.Set(gasPrice)
 	}
-
 	return &Transaction{data: d}
 }
 
@@ -221,36 +272,58 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	*tx = Transaction{data: dec}
 	return nil
 }
-func (tx *Transaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
-func (tx *Transaction) Gas() uint64        { return tx.data.GasLimit }
-func (tx *Transaction) SnO() uint64        { return tx.data.SnO }
-func (tx *Transaction) CmSpk() uint64      { return tx.data.CmSpk }
-func (tx *Transaction) CmRpk() uint64      { return tx.data.CmRpk }
-func (tx *Transaction) Rr1() uint64        { return tx.data.Rr1 }
-func (tx *Transaction) CmO() uint64        { return tx.data.CmO }
-func (tx *Transaction) CmS() uint64        { return tx.data.CmS }
-func (tx *Transaction) CmR() uint64        { return tx.data.CmR }
-func (tx *Transaction) EvR() uint64        { return tx.data.EvR }
-func (tx *Transaction) EvR0() uint64       { return tx.data.EvR0 }
-func (tx *Transaction) EvR_() uint64       { return tx.data.EvR_ }
-func (tx *Transaction) EvR_0() uint64      { return tx.data.EvR_0 }
-func (tx *Transaction) ID() uint64         { return tx.data.ID }
-func (tx *Transaction) Sig() string        { return tx.data.Sig }
-func (tx *Transaction) CmV() uint64        { return tx.data.CmV }
-func (tx *Transaction) EpkV() uint64       { return tx.data.EpkV }
-func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
-func (tx *Transaction) CFormat() *big.Int  { return new(big.Int).Set(tx.data.CFormat) }
-func (tx *Transaction) Z1() *big.Int       { return new(big.Int).Set(tx.data.Z1) }
-func (tx *Transaction) Z2() *big.Int       { return new(big.Int).Set(tx.data.Z2) }
-func (tx *Transaction) CBalance() *big.Int { return new(big.Int).Set(tx.data.CBalance) }
-func (tx *Transaction) Rv() *big.Int       { return new(big.Int).Set(tx.data.Rv) }
-func (tx *Transaction) Rr() *big.Int       { return new(big.Int).Set(tx.data.Rr) }
-func (tx *Transaction) Sv() *big.Int       { return new(big.Int).Set(tx.data.Sv) }
-func (tx *Transaction) Sr() *big.Int       { return new(big.Int).Set(tx.data.Sr) }
-func (tx *Transaction) Sor() *big.Int      { return new(big.Int).Set(tx.data.Sor) }
-func (tx *Transaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amount) }
-func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
-func (tx *Transaction) CheckNonce() bool   { return true }
+func (tx *Transaction) Data() []byte             { return common.CopyBytes(tx.data.Payload) }
+func (tx *Transaction) Gas() uint64              { return tx.data.GasLimit }
+func (tx *Transaction) GasPrice() *big.Int       { return new(big.Int).Set(tx.data.Price) }
+func (tx *Transaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
+func (tx *Transaction) Nonce() uint64            { return tx.data.AccountNonce }
+func (tx *Transaction) ID() uint64               { return tx.data.ID }
+func (tx *Transaction) ErpkC1() *hexutil.Bytes   { return tx.data.ErpkC1 }
+func (tx *Transaction) ErpkC2() *hexutil.Bytes   { return tx.data.ErpkC2 }
+func (tx *Transaction) EspkC1() *hexutil.Bytes   { return tx.data.EspkC1 }
+func (tx *Transaction) EspkC2() *hexutil.Bytes   { return tx.data.EspkC2 }
+func (tx *Transaction) CMRpk() *hexutil.Bytes    { return tx.data.CMRpk }
+func (tx *Transaction) CMSpk() *hexutil.Bytes    { return tx.data.CMSpk }
+func (tx *Transaction) ErpkEPs0() *hexutil.Bytes { return tx.data.ErpkEPs0 }
+func (tx *Transaction) ErpkEPs1() *hexutil.Bytes { return tx.data.ErpkEPs1 }
+func (tx *Transaction) ErpkEPs2() *hexutil.Bytes { return tx.data.ErpkEPs2 }
+func (tx *Transaction) ErpkEPs3() *hexutil.Bytes { return tx.data.ErpkEPs3 }
+func (tx *Transaction) ErpkEPt() *hexutil.Bytes  { return tx.data.ErpkEPt }
+func (tx *Transaction) EspkEPs0() *hexutil.Bytes { return tx.data.EspkEPs0 }
+func (tx *Transaction) EspkEPs1() *hexutil.Bytes { return tx.data.EspkEPs1 }
+func (tx *Transaction) EspkEPs2() *hexutil.Bytes { return tx.data.EspkEPs2 }
+func (tx *Transaction) EspkEPs3() *hexutil.Bytes { return tx.data.EspkEPs3 }
+func (tx *Transaction) EspkEPt() *hexutil.Bytes  { return tx.data.EspkEPt }
+func (tx *Transaction) EvSC1() *hexutil.Bytes    { return tx.data.EvSC1 }
+func (tx *Transaction) EvSC2() *hexutil.Bytes    { return tx.data.EvSC2 }
+func (tx *Transaction) EvRC1() *hexutil.Bytes    { return tx.data.EvRC1 }
+func (tx *Transaction) EvRC2() *hexutil.Bytes    { return tx.data.EvRC2 }
+func (tx *Transaction) CmS() *hexutil.Bytes      { return tx.data.CmS }
+func (tx *Transaction) CmR() *hexutil.Bytes      { return tx.data.CmR }
+func (tx *Transaction) CMsFPC() *hexutil.Bytes   { return tx.data.CMsFPC }
+func (tx *Transaction) CMsFPZ1() *hexutil.Bytes  { return tx.data.CMsFPZ1 }
+func (tx *Transaction) CMsFPZ2() *hexutil.Bytes  { return tx.data.CMsFPZ2 }
+func (tx *Transaction) CMrFPC() *hexutil.Bytes   { return tx.data.CMrFPC }
+func (tx *Transaction) CMrFPZ1() *hexutil.Bytes  { return tx.data.CMrFPZ1 }
+func (tx *Transaction) CMrFPZ2() *hexutil.Bytes  { return tx.data.CMrFPZ2 }
+func (tx *Transaction) EvsBsC1() *hexutil.Bytes  { return tx.data.EvsBsC1 }
+func (tx *Transaction) EvsBsC2() *hexutil.Bytes  { return tx.data.EvsBsC2 }
+func (tx *Transaction) EvOC1() *hexutil.Bytes    { return tx.data.EvOC1 }
+func (tx *Transaction) EvOC2() *hexutil.Bytes    { return tx.data.EvOC2 }
+func (tx *Transaction) CmO() *hexutil.Bytes      { return tx.data.CmO }
+func (tx *Transaction) EvOEPs0() *hexutil.Bytes  { return tx.data.EvOEPs0 }
+func (tx *Transaction) EvOEPs1() *hexutil.Bytes  { return tx.data.EvOEPs1 }
+func (tx *Transaction) EvOEPs2() *hexutil.Bytes  { return tx.data.EvOEPs2 }
+func (tx *Transaction) EvOEPs3() *hexutil.Bytes  { return tx.data.EvOEPs3 }
+func (tx *Transaction) EvOEPt() *hexutil.Bytes   { return tx.data.EvOEPt }
+func (tx *Transaction) BPC() *hexutil.Bytes      { return tx.data.BPC }
+func (tx *Transaction) BPRV() *hexutil.Bytes     { return tx.data.BPRV }
+func (tx *Transaction) BPRR() *hexutil.Bytes     { return tx.data.BPRR }
+func (tx *Transaction) BPSV() *hexutil.Bytes     { return tx.data.BPSV }
+func (tx *Transaction) BPSR() *hexutil.Bytes     { return tx.data.BPSR }
+func (tx *Transaction) BPSOr() *hexutil.Bytes    { return tx.data.BPSOr }
+func (tx *Transaction) Sig() string              { return tx.data.Sig }
+func (tx *Transaction) CheckNonce() bool         { return true }
 
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.

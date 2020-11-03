@@ -19,6 +19,7 @@ package les
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 	"math/rand"
 	"sync"
@@ -176,11 +177,12 @@ func (b *benchmarkTxSend) init(h *serverHandler, count int) error {
 	addr := crypto.PubkeyToAddress(key.PublicKey)
 	signer := types.NewEIP155Signer(big.NewInt(18))
 	b.txs = make(types.Transactions, count)
-
+	rnd := hexutil.Bytes("0")
 	for i := range b.txs {
 		data := make([]byte, txSizeCostLimit)
 		rand.Read(data)
-		tx, err := types.SignTx(types.NewTransaction(0, addr, new(big.Int), 0, new(big.Int), data, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "0", 0, 0, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0)), signer, key)
+
+		tx, err := types.SignTx(types.NewTransaction(0, addr, new(big.Int), 0, new(big.Int), data, 0, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, ""), signer, key)
 		if err != nil {
 			panic(err)
 		}

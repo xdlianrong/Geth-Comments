@@ -667,29 +667,31 @@ func DeleteCM(db ethdb.Database, hash common.Hash) {
 }
 
 func WriteAllCM(db ethdb.Database, block *types.Block) {
-	for _, tx := range block.Transactions() {
-		if tx.ID() == 0 {
-			// 购币交易
-			CmV := types.NewDefaultCM(tx.CmV())
-			hashV := CmV.Hash()
-			WriteCM(db, hashV, CmV)
-			log.Info("Succeed to store CMV into CMdb", "CMV", CmV, "hash", hashV)
-		}
-		if tx.ID() == 1 {
-			// 转账交易
-			CmO := types.NewCM(tx.CmO(), true)
-			hashO := CmO.Hash()
-			WriteCM(db, hashO, CmO)
-			log.Info("Succeed to store CMO into CMdb", "CMO", CmO, "hash", hashO)
-			CmS := types.NewDefaultCM(tx.CmS())
-			hashS := CmS.Hash()
-			WriteCM(db, hashS, CmS)
-			log.Info("Succeed to store CMS into CMdb", "CMS", CmS, "hash", hashS)
-			CmR := types.NewDefaultCM(tx.CmR())
-			hashR := CmR.Hash()
-			WriteCM(db, hashR, CmR)
+	// TODO:张锐改，20201103
+	/*
+		for _, tx := range block.Transactions() {
+			if tx.ID() == 0 {
+				// 购币交易
+				CmV := types.NewDefaultCM(tx.CmV())
+				hashV := CmV.Hash()
+				WriteCM(db, hashV, CmV)
+				log.Info("Succeed to store CMV into CMdb", "CMV", CmV, "hash", hashV)
+			}
+			if tx.ID() == 1 {
+				// 转账交易
+				CmO := types.NewCM(tx.CmO(), true)
+				hashO := CmO.Hash()
+				WriteCM(db, hashO, CmO)
+				log.Info("Succeed to store CMO into CMdb", "CMO", CmO, "hash", hashO)
+				CmS := types.NewDefaultCM(tx.CmS())
+				hashS := CmS.Hash()
+				WriteCM(db, hashS, CmS)
+				log.Info("Succeed to store CMS into CMdb", "CMS", CmS, "hash", hashS)
+				CmR := types.NewDefaultCM(tx.CmR())
+				hashR := CmR.Hash()
+				WriteCM(db, hashR, CmR)
 
-			log.Info("Succeed to store CMR into CMdb", "CMR", CmR, "hash", hashR)
-		}
-	}
+				log.Info("Succeed to store CMR into CMdb", "CMR", CmR, "hash", hashR)
+			}
+		}*/
 }

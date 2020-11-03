@@ -84,6 +84,7 @@ type Backend interface {
 
 	ChainConfig() *params.ChainConfig
 	CurrentBlock() *types.Block
+	RegulatorKey() types.Regulator
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {

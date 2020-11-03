@@ -76,30 +76,52 @@ type SendTxArgs struct {
 	// We accept "data" and "input" for backwards-compatibility reasons.
 	Data     *hexutil.Bytes  `json:"data"`
 	Input    *hexutil.Bytes  `json:"input,omitempty"`
-	SnO      *hexutil.Uint64 `json:"SnO"`
-	rR1      *hexutil.Uint64 `json:"rR1"`
-	CmSpk    *hexutil.Uint64 `json:"CmSpk"`
-	CmRpk    *hexutil.Uint64 `json:"CmRpk"`
-	CmO      *hexutil.Uint64 `json:"CmO"`
-	CmS      *hexutil.Uint64 `json:"CmS"`
-	CmR      *hexutil.Uint64 `json:"CmR"`
-	EvR      *hexutil.Uint64 `json:"EvR"`
-	EvR0     *hexutil.Uint64 `json:"EvR0"`
-	EvR_     *hexutil.Uint64 `json:"EvR_"`
-	EvR_0    *hexutil.Uint64 `json:"EvR_0"`
 	ID       *hexutil.Uint64 `json:"ID"`
-	Sig      *string         `json:"Sig"`
-	CmV      *hexutil.Uint64 `json:"CmV"`
-	EpkV     *hexutil.Uint64 `json:"EpkV"`
-	CFormat  *hexutil.Big    `json:"CFormat"`  //格式正确证明字段1/3
-	Z1       *hexutil.Big    `json:"Z1"`       //格式正确证明字段2/3
-	Z2       *hexutil.Big    `json:"Z2"`       //格式正确证明字段3/3
-	CBalance *hexutil.Big    `json:"CBalance"` //会计平衡证明字段1/6
-	Rv       *hexutil.Big    `json:"Rv"`       //会计平衡证明字段2/6
-	Rr       *hexutil.Big    `json:"Rr"`       //会计平衡证明字段3/6
-	Sv       *hexutil.Big    `json:"Sv"`       //会计平衡证明字段4/6
-	Sr       *hexutil.Big    `json:"Sr"`       //会计平衡证明字段5/6
-	Sor      *hexutil.Big    `json:"Sor"`      //会计平衡证明字段6/6
+	Sig      string          `json:"Sig"`
+	ErpkC1   *hexutil.Bytes  `json:"erpkc1"`
+	ErpkC2   *hexutil.Bytes  `json:" erpkc2"`
+	EspkC1   *hexutil.Bytes  `json:" espkc1"`
+	EspkC2   *hexutil.Bytes  `json:" espkc2"`
+	CMRpk    *hexutil.Bytes  `json:" cmrpk"`
+	CMSpk    *hexutil.Bytes  `json:" cmspk"`
+	ErpkEPs0 *hexutil.Bytes  `json:" erpkeps0"`
+	ErpkEPs1 *hexutil.Bytes  `json:" erpkeps1"`
+	ErpkEPs2 *hexutil.Bytes  `json:" erpkeps2"`
+	ErpkEPs3 *hexutil.Bytes  `json:" erpkeps3"`
+	ErpkEPt  *hexutil.Bytes  `json:" erpkept"`
+	EspkEPs0 *hexutil.Bytes  `json:" espkeps0"`
+	EspkEPs1 *hexutil.Bytes  `json:" espkeps1"`
+	EspkEPs2 *hexutil.Bytes  `json:" espkeps2"`
+	EspkEPs3 *hexutil.Bytes  `json:" espkeps3"`
+	EspkEPt  *hexutil.Bytes  `json:" espkept"`
+	EvSC1    *hexutil.Bytes  `json:" evsc1"`
+	EvSC2    *hexutil.Bytes  `json:" evsc2"`
+	EvRC1    *hexutil.Bytes  `json:" evrc1"`
+	EvRC2    *hexutil.Bytes  `json:" evrc2"`
+	CmS      *hexutil.Bytes  `json:" cms"`
+	CmR      *hexutil.Bytes  `json:" cmr"`
+	CMsFPC   *hexutil.Bytes  `json:" cmsfpc"`
+	CMsFPZ1  *hexutil.Bytes  `json:" cmsfpz1"`
+	CMsFPZ2  *hexutil.Bytes  `json:" cmsfpz2"`
+	CMrFPC   *hexutil.Bytes  `json:" cmrfpc"`
+	CMrFPZ1  *hexutil.Bytes  `json:" cmrfpz1"`
+	CMrFPZ2  *hexutil.Bytes  `json:" cmrfpz2"`
+	EvsBsC1  *hexutil.Bytes  `json:" evsbsc1"`
+	EvsBsC2  *hexutil.Bytes  `json:" evsbsc2"`
+	EvOC1    *hexutil.Bytes  `json:" evoc1"`
+	EvOC2    *hexutil.Bytes  `json:" evoc2"`
+	CmO      *hexutil.Bytes  `json:" cmo"`
+	EvOEPs0  *hexutil.Bytes  `json:" evoeps0"`
+	EvOEPs1  *hexutil.Bytes  `json:" evoeps1"`
+	EvOEPs2  *hexutil.Bytes  `json:" evoeps2"`
+	EvOEPs3  *hexutil.Bytes  `json:" evoeps3"`
+	EvOEPt   *hexutil.Bytes  `json:" evoept"`
+	BPC      *hexutil.Bytes  `json:" bpc"`
+	BPRV     *hexutil.Bytes  `json:" bprv"`
+	BPRR     *hexutil.Bytes  `json:" bprr"`
+	BPSV     *hexutil.Bytes  `json:" bpsv"`
+	BPSR     *hexutil.Bytes  `json:" bpsr"`
+	BPSOr    *hexutil.Bytes  `json:" bpsor "`
 }
 
 func (args SendTxArgs) String() string {
@@ -118,7 +140,7 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Input
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV), (*big.Int)(args.CFormat), (*big.Int)(args.Z1), (*big.Int)(args.Z2), (*big.Int)(args.CBalance), (*big.Int)(args.Rv), (*big.Int)(args.Rr), (*big.Int)(args.Sv), (*big.Int)(args.Sr), (*big.Int)(args.Sor))
+		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.Sig)
 	}
-	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.SnO), uint64(*args.rR1), uint64(*args.CmSpk), uint64(*args.CmRpk), uint64(*args.CmO), uint64(*args.CmS), uint64(*args.CmR), uint64(*args.EvR), uint64(*args.EvR0), uint64(*args.EvR_), uint64(*args.EvR_0), uint64(*args.ID), *args.Sig, uint64(*args.CmV), uint64(*args.EpkV), (*big.Int)(args.CFormat), (*big.Int)(args.Z1), (*big.Int)(args.Z2), (*big.Int)(args.CBalance), (*big.Int)(args.Rv), (*big.Int)(args.Rr), (*big.Int)(args.Sv), (*big.Int)(args.Sr), (*big.Int)(args.Sor))
+	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.Sig)
 }

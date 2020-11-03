@@ -17,6 +17,7 @@
 package eth
 
 import (
+	"github.com/ethereum/go-ethereum/core/types"
 	"math/big"
 	"os"
 	"os/user"
@@ -164,4 +165,7 @@ type Config struct {
 
 	// MuirGlacier block override (TODO: remove after the fork)
 	OverrideMuirGlacier *big.Int `toml:",omitempty"`
+
+	//监管者
+	Regulator types.Regulator
 }

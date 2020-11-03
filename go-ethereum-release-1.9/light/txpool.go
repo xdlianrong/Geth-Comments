@@ -344,11 +344,12 @@ func (pool *TxPool) Stats() (pending int) {
 	return
 }
 
-
 // author mzliu 20200925
 // validate Sign using tx : sig and CMV+ID
 func (pool *TxPool) validateSign(tx *types.Transaction) error {
-	i := tx.CmV() + tx.ID()
+	//TODO:刘明哲改，20201103
+	//i := tx.CmV() + tx.ID()
+	i := uint64(1)
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
 	// sig to []bytes
