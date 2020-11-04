@@ -102,7 +102,15 @@ type TransactOpts struct {
 	BPSV     *hexutil.Bytes
 	BPSR     *hexutil.Bytes
 	BPSOr    *hexutil.Bytes
-	Sig      string
+	EpkrC1   *hexutil.Bytes
+	EpkrC2   *hexutil.Bytes
+	EpkpC1   *hexutil.Bytes
+	EpkpC2   *hexutil.Bytes
+	SigM     *hexutil.Bytes
+	SigMHash *hexutil.Bytes
+	SigR     *hexutil.Bytes
+	SigS     *hexutil.Bytes
+	CmV      *hexutil.Bytes
 }
 
 // FilterOpts is the collection of options to fine tune filtering for events
@@ -276,9 +284,9 @@ func (c *BoundContract) transact(opts *TransactOpts, contract *common.Address, i
 	// Create the transaction, sign it and schedule it for execution
 	var rawTx *types.Transaction
 	if contract == nil {
-		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.ID, opts.ErpkC1, opts.ErpkC2, opts.EspkC1, opts.EspkC2, opts.CMRpk, opts.CMSpk, opts.ErpkEPs0, opts.ErpkEPs1, opts.ErpkEPs2, opts.ErpkEPs3, opts.ErpkEPt, opts.EspkEPs0, opts.EspkEPs1, opts.EspkEPs2, opts.EspkEPs3, opts.EspkEPt, opts.EvSC1, opts.EvSC2, opts.EvRC1, opts.EvRC2, opts.CmS, opts.CmR, opts.CMsFPC, opts.CMsFPZ1, opts.CMsFPZ2, opts.CMrFPC, opts.CMrFPZ1, opts.CMrFPZ2, opts.EvsBsC1, opts.EvsBsC2, opts.EvOC1, opts.EvOC2, opts.CmO, opts.EvOEPs0, opts.EvOEPs1, opts.EvOEPs2, opts.EvOEPs3, opts.EvOEPt, opts.BPC, opts.BPRV, opts.BPRR, opts.BPSV, opts.BPSR, opts.BPSOr, opts.Sig)
+		rawTx = types.NewContractCreation(nonce, value, gasLimit, gasPrice, input, opts.ID, opts.ErpkC1, opts.ErpkC2, opts.EspkC1, opts.EspkC2, opts.CMRpk, opts.CMSpk, opts.ErpkEPs0, opts.ErpkEPs1, opts.ErpkEPs2, opts.ErpkEPs3, opts.ErpkEPt, opts.EspkEPs0, opts.EspkEPs1, opts.EspkEPs2, opts.EspkEPs3, opts.EspkEPt, opts.EvSC1, opts.EvSC2, opts.EvRC1, opts.EvRC2, opts.CmS, opts.CmR, opts.CMsFPC, opts.CMsFPZ1, opts.CMsFPZ2, opts.CMrFPC, opts.CMrFPZ1, opts.CMrFPZ2, opts.EvsBsC1, opts.EvsBsC2, opts.EvOC1, opts.EvOC2, opts.CmO, opts.EvOEPs0, opts.EvOEPs1, opts.EvOEPs2, opts.EvOEPs3, opts.EvOEPt, opts.BPC, opts.BPRV, opts.BPRR, opts.BPSV, opts.BPSR, opts.BPSOr, opts.EpkrC1, opts.EpkrC2, opts.EpkpC1, opts.EpkpC2, opts.SigM, opts.SigMHash, opts.SigR, opts.SigS, opts.CmV)
 	} else {
-		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.ID, opts.ErpkC1, opts.ErpkC2, opts.EspkC1, opts.EspkC2, opts.CMRpk, opts.CMSpk, opts.ErpkEPs0, opts.ErpkEPs1, opts.ErpkEPs2, opts.ErpkEPs3, opts.ErpkEPt, opts.EspkEPs0, opts.EspkEPs1, opts.EspkEPs2, opts.EspkEPs3, opts.EspkEPt, opts.EvSC1, opts.EvSC2, opts.EvRC1, opts.EvRC2, opts.CmS, opts.CmR, opts.CMsFPC, opts.CMsFPZ1, opts.CMsFPZ2, opts.CMrFPC, opts.CMrFPZ1, opts.CMrFPZ2, opts.EvsBsC1, opts.EvsBsC2, opts.EvOC1, opts.EvOC2, opts.CmO, opts.EvOEPs0, opts.EvOEPs1, opts.EvOEPs2, opts.EvOEPs3, opts.EvOEPt, opts.BPC, opts.BPRV, opts.BPRR, opts.BPSV, opts.BPSR, opts.BPSOr, opts.Sig)
+		rawTx = types.NewTransaction(nonce, c.address, value, gasLimit, gasPrice, input, opts.ID, opts.ErpkC1, opts.ErpkC2, opts.EspkC1, opts.EspkC2, opts.CMRpk, opts.CMSpk, opts.ErpkEPs0, opts.ErpkEPs1, opts.ErpkEPs2, opts.ErpkEPs3, opts.ErpkEPt, opts.EspkEPs0, opts.EspkEPs1, opts.EspkEPs2, opts.EspkEPs3, opts.EspkEPt, opts.EvSC1, opts.EvSC2, opts.EvRC1, opts.EvRC2, opts.CmS, opts.CmR, opts.CMsFPC, opts.CMsFPZ1, opts.CMsFPZ2, opts.CMrFPC, opts.CMrFPZ1, opts.CMrFPZ2, opts.EvsBsC1, opts.EvsBsC2, opts.EvOC1, opts.EvOC2, opts.CmO, opts.EvOEPs0, opts.EvOEPs1, opts.EvOEPs2, opts.EvOEPs3, opts.EvOEPt, opts.BPC, opts.BPRV, opts.BPRR, opts.BPSV, opts.BPSR, opts.BPSOr, opts.EpkrC1, opts.EpkrC2, opts.EpkpC1, opts.EpkpC2, opts.SigM, opts.SigMHash, opts.SigR, opts.SigS, opts.CmV)
 	}
 	if opts.Signer == nil {
 		return nil, errors.New("no signer to authorize the transaction with")

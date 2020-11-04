@@ -23,21 +23,38 @@
 - gasPrice: QUANTITY - gas价格，可选，默认值：待定(To-Be-Determined)
 - value: QUANTITY - 交易发送的金额，可选整数
 - data: DATA - 合约的编译带啊或被调用方法的签名及编码参数
+- id: QUANTITY - 交易类型，可选0或1，0代表是转账交易，1代表是购币交易
 - nonce: QUANTITY - nonce，可选。可以使用同一个nonce来实现挂起的交易的重写
-- spk: DATA - 发送方公钥
-- rpk: DATA - 接收方公钥
-- s: QUANTITY - 发送金额
-- r: QUANTITY - 返还（找零）金额
-- vor: QUANTITY - 被花费货币的承诺随机数
-- cmo: QUANTITY - 被花费货币的承诺
+- id==0时
+  - spk: DATA - 发送方公钥
+  - rpk: DATA - 接收方公钥
+  - s: QUANTITY - 发送金额
+  - r: QUANTITY - 返还（找零）金额
+  - vor: QUANTITY - 被花费货币的承诺随机数
+  - cmo: QUANTITY - 被花费货币的承诺
+- id==1时
+  - epkrc1: DATA - 用户公钥加密随机数r后的字段C1
+  - epkrc2: DATA - 用户公钥加密随机数r后的字段C2
+  - epkpc1: DATA - 利用监管者公钥加密publickey+amount的结果C1
+  - epkpc2: DATA - 利用监管者公钥加密publickey+amount的结果C2
+  - sigm: DATA - 发行者签名的明文信息
+  - sigmhash: DATA - 发行者签名明文的hash值
+  - sigr: DATA - 发行者签名的密文r
+  - sigs: DATA - 发行者签名的密文s
+  - cmv: DATA - 监管者公钥生成的本次购币的承诺
 
 ```json
-params: [{
-  "from": "0x362de6cfc9ed13bbf207d8a243a95451883a1af2",
+{
+    "jsonrpc": "2.0",
+    "method": "eth_sendTransaction",
+    "params": [
+        {
+            "from": "0x362de6cfc9ed13bbf207d8a243a95451883a1af2",
             "to": "0x8203599e641af59593e7dbf576dfd195eb86ff28",
             "gas": "0x76c0",
             "gasPrice": "0x9184e72a000",
             "value": "0x1",
+            "id":"0x0",
             "data": "0xd46e8dd67c5d32be8d46e8dd67c5d32be8058bb8eb970870f072445675058bb8eb970870f072445675",
             "spk": "234b7f8dcdec50b47127a9ba7f03d629bd751b571ff07ac8879c4ca0a91b146205e72bd1ac5e39bcf34cbbbcf48a13edc865f862a85ce69866be24e078a3942a33333f914834ced561c145797d9b5782719dbd1b43a668d4b01151f9c0e67d9f1569899100a4ce41de3c549b649ff72d5d7c9fe8983c244cc28f2ce84b2a758c",
             "rpk": "234b7f8dcdec50b47127a9ba7f03d629bd751b571ff07ac8879c4ca0a91b146205e72bd1ac5e39bcf34cbbbcf48a13edc865f862a85ce69866be24e078a3942a33333f914834ced561c145797d9b5782719dbd1b43a668d4b01151f9c0e67d9f1569899100a4ce41de3c549b649ff72d5d7c9fe8983c244cc28f2ce84b2a758c",
@@ -45,7 +62,10 @@ params: [{
             "r": "0x2",
             "vor":"0x0c21ccfaaa23f4562094fa71c16bbfeb1db461c2f96dc72c3a70b8cd266bd37c",
             "cmo":"0x145efb9d48584450198d2fb30a1ba7e9396eb08e0b5c662dd9414d9d8fa1abe4"
-}]
+        }
+    ],
+    "id": 67
+}
 ```
 
 ### 返回值

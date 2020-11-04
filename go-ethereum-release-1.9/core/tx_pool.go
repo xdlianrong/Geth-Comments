@@ -17,10 +17,7 @@
 package core
 
 import (
-	"encoding/binary"
 	"errors"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"math"
 	"math/big"
@@ -592,7 +589,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 // validate Sign using tx : sig and CMV+ID
 func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
 	// TODO:刘明哲改，20201103
-	//i := tx.CmV() + tx.ID()
+	/*i := tx.CmV() + tx.ID()
 	i := uint64(1)
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
@@ -607,7 +604,7 @@ func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
 	verified := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
 	if !verified {
 		return ErrVerifySignatureFailed
-	}
+	}*/
 	return nil
 }
 

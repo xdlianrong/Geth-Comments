@@ -77,51 +77,59 @@ type SendTxArgs struct {
 	Data     *hexutil.Bytes  `json:"data"`
 	Input    *hexutil.Bytes  `json:"input,omitempty"`
 	ID       *hexutil.Uint64 `json:"ID"`
-	Sig      string          `json:"Sig"`
 	ErpkC1   *hexutil.Bytes  `json:"erpkc1"`
-	ErpkC2   *hexutil.Bytes  `json:" erpkc2"`
-	EspkC1   *hexutil.Bytes  `json:" espkc1"`
-	EspkC2   *hexutil.Bytes  `json:" espkc2"`
-	CMRpk    *hexutil.Bytes  `json:" cmrpk"`
-	CMSpk    *hexutil.Bytes  `json:" cmspk"`
-	ErpkEPs0 *hexutil.Bytes  `json:" erpkeps0"`
-	ErpkEPs1 *hexutil.Bytes  `json:" erpkeps1"`
-	ErpkEPs2 *hexutil.Bytes  `json:" erpkeps2"`
-	ErpkEPs3 *hexutil.Bytes  `json:" erpkeps3"`
-	ErpkEPt  *hexutil.Bytes  `json:" erpkept"`
-	EspkEPs0 *hexutil.Bytes  `json:" espkeps0"`
-	EspkEPs1 *hexutil.Bytes  `json:" espkeps1"`
-	EspkEPs2 *hexutil.Bytes  `json:" espkeps2"`
-	EspkEPs3 *hexutil.Bytes  `json:" espkeps3"`
-	EspkEPt  *hexutil.Bytes  `json:" espkept"`
-	EvSC1    *hexutil.Bytes  `json:" evsc1"`
-	EvSC2    *hexutil.Bytes  `json:" evsc2"`
-	EvRC1    *hexutil.Bytes  `json:" evrc1"`
-	EvRC2    *hexutil.Bytes  `json:" evrc2"`
-	CmS      *hexutil.Bytes  `json:" cms"`
-	CmR      *hexutil.Bytes  `json:" cmr"`
-	CMsFPC   *hexutil.Bytes  `json:" cmsfpc"`
-	CMsFPZ1  *hexutil.Bytes  `json:" cmsfpz1"`
-	CMsFPZ2  *hexutil.Bytes  `json:" cmsfpz2"`
-	CMrFPC   *hexutil.Bytes  `json:" cmrfpc"`
-	CMrFPZ1  *hexutil.Bytes  `json:" cmrfpz1"`
-	CMrFPZ2  *hexutil.Bytes  `json:" cmrfpz2"`
-	EvsBsC1  *hexutil.Bytes  `json:" evsbsc1"`
-	EvsBsC2  *hexutil.Bytes  `json:" evsbsc2"`
-	EvOC1    *hexutil.Bytes  `json:" evoc1"`
-	EvOC2    *hexutil.Bytes  `json:" evoc2"`
-	CmO      *hexutil.Bytes  `json:" cmo"`
-	EvOEPs0  *hexutil.Bytes  `json:" evoeps0"`
-	EvOEPs1  *hexutil.Bytes  `json:" evoeps1"`
-	EvOEPs2  *hexutil.Bytes  `json:" evoeps2"`
-	EvOEPs3  *hexutil.Bytes  `json:" evoeps3"`
-	EvOEPt   *hexutil.Bytes  `json:" evoept"`
-	BPC      *hexutil.Bytes  `json:" bpc"`
-	BPRV     *hexutil.Bytes  `json:" bprv"`
-	BPRR     *hexutil.Bytes  `json:" bprr"`
-	BPSV     *hexutil.Bytes  `json:" bpsv"`
-	BPSR     *hexutil.Bytes  `json:" bpsr"`
-	BPSOr    *hexutil.Bytes  `json:" bpsor "`
+	ErpkC2   *hexutil.Bytes  `json:"erpkc2"`
+	EspkC1   *hexutil.Bytes  `json:"espkc1"`
+	EspkC2   *hexutil.Bytes  `json:"espkc2"`
+	CMRpk    *hexutil.Bytes  `json:"cmrpk"`
+	CMSpk    *hexutil.Bytes  `json:"cmspk"`
+	ErpkEPs0 *hexutil.Bytes  `json:"erpkeps0"`
+	ErpkEPs1 *hexutil.Bytes  `json:"erpkeps1"`
+	ErpkEPs2 *hexutil.Bytes  `json:"erpkeps2"`
+	ErpkEPs3 *hexutil.Bytes  `json:"erpkeps3"`
+	ErpkEPt  *hexutil.Bytes  `json:"erpkept"`
+	EspkEPs0 *hexutil.Bytes  `json:"espkeps0"`
+	EspkEPs1 *hexutil.Bytes  `json:"espkeps1"`
+	EspkEPs2 *hexutil.Bytes  `json:"espkeps2"`
+	EspkEPs3 *hexutil.Bytes  `json:"espkeps3"`
+	EspkEPt  *hexutil.Bytes  `json:"espkept"`
+	EvSC1    *hexutil.Bytes  `json:"evsc1"`
+	EvSC2    *hexutil.Bytes  `json:"evsc2"`
+	EvRC1    *hexutil.Bytes  `json:"evrc1"`
+	EvRC2    *hexutil.Bytes  `json:"evrc2"`
+	CmS      *hexutil.Bytes  `json:"cms"`
+	CmR      *hexutil.Bytes  `json:"cmr"`
+	CMsFPC   *hexutil.Bytes  `json:"cmsfpc"`
+	CMsFPZ1  *hexutil.Bytes  `json:"cmsfpz1"`
+	CMsFPZ2  *hexutil.Bytes  `json:"cmsfpz2"`
+	CMrFPC   *hexutil.Bytes  `json:"cmrfpc"`
+	CMrFPZ1  *hexutil.Bytes  `json:"cmrfpz1"`
+	CMrFPZ2  *hexutil.Bytes  `json:"cmrfpz2"`
+	EvsBsC1  *hexutil.Bytes  `json:"evsbsc1"`
+	EvsBsC2  *hexutil.Bytes  `json:"evsbsc2"`
+	EvOC1    *hexutil.Bytes  `json:"evoc1"`
+	EvOC2    *hexutil.Bytes  `json:"evoc2"`
+	CmO      *hexutil.Bytes  `json:"cmo"`
+	EvOEPs0  *hexutil.Bytes  `json:"evoeps0"`
+	EvOEPs1  *hexutil.Bytes  `json:"evoeps1"`
+	EvOEPs2  *hexutil.Bytes  `json:"evoeps2"`
+	EvOEPs3  *hexutil.Bytes  `json:"evoeps3"`
+	EvOEPt   *hexutil.Bytes  `json:"evoept"`
+	BPC      *hexutil.Bytes  `json:"bpc"`
+	BPRV     *hexutil.Bytes  `json:"bprv"`
+	BPRR     *hexutil.Bytes  `json:"bprr"`
+	BPSV     *hexutil.Bytes  `json:"bpsv"`
+	BPSR     *hexutil.Bytes  `json:"bpsr"`
+	BPSOr    *hexutil.Bytes  `json:"bpsor"`
+	EpkrC1   *hexutil.Bytes  `json:"epkrc1"`
+	EpkrC2   *hexutil.Bytes  `json:"epkrc2"`
+	EpkpC1   *hexutil.Bytes  `json:"epkpc1"`
+	EpkpC2   *hexutil.Bytes  `json:"epkpc2"`
+	SigM     *hexutil.Bytes  `json:"sigm"`
+	SigMHash *hexutil.Bytes  `json:"sigmhash"`
+	SigR     *hexutil.Bytes  `json:"sigr"`
+	SigS     *hexutil.Bytes  `json:"sigs"`
+	CmV      *hexutil.Bytes  `json:"cmv"`
 }
 
 func (args SendTxArgs) String() string {
@@ -140,7 +148,7 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Input
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.Sig)
+		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV)
 	}
-	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.Sig)
+	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV)
 }

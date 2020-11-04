@@ -18,10 +18,7 @@ package light
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"sync"
 	"time"
@@ -348,7 +345,7 @@ func (pool *TxPool) Stats() (pending int) {
 // validate Sign using tx : sig and CMV+ID
 func (pool *TxPool) validateSign(tx *types.Transaction) error {
 	//TODO:刘明哲改，20201103
-	//i := tx.CmV() + tx.ID()
+	/*i := tx.CmV() + tx.ID()
 	i := uint64(1)
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
@@ -366,7 +363,7 @@ func (pool *TxPool) validateSign(tx *types.Transaction) error {
 
 	if !verified {
 		return core.ErrVerifySignatureFailed
-	}
+	}*/
 	return nil
 }
 

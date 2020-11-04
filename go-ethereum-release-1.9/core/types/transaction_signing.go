@@ -21,7 +21,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -72,9 +71,10 @@ func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, err
 	//next transfer msg into []byte
 	msg := make([]byte, 32)
 	binary.BigEndian.PutUint64(msg, i)
+	// TODO:刘明哲改，20201103
 	//then sign msg
-	Sig, err := crypto.Sign(msg, prv)
-	tx.data.Sig = hexutil.Encode(Sig)
+	//Sig, err := crypto.Sign(msg, prv)
+	//tx.data.Sig = hexutil.Encode(Sig)
 	return tx.WithSignature(s, sig)
 }
 
