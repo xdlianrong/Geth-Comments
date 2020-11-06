@@ -18,6 +18,7 @@ package core
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"math"
 	"math/big"
@@ -613,39 +614,36 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	// 1、购币交易的购币承诺已存在于CMdb中
 	// 2、转账交易的CmO 不存在 或 存在但已使用
 	// 3、交易ID既不为0也不为1,暂未知类型交易
-	// TODO:张锐改，20201103
-	/*
-		CMdb := pool.chain.GetCMdb()
-		if tx.ID() == 0 {
-			// 购币交易
-			CmV := types.NewDefaultCM(tx.CmV())
-			hash := CmV.Hash()
-			if rawdb.HasCM(CMdb, hash) {
-				return ErrExistedCM
-			}
+
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 0 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hash := CmV.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
 		}
-		if tx.ID() == 1 {
-			// 转账交易
-			CmO := types.NewDefaultCM(tx.CmO())
-			hash := CmO.Hash()
-			CmO_ := rawdb.ReadCM(CMdb, hash)
-			if CmO_ == nil || CmO_.Spent == true {
-				return ErrInvalidCM
-			}
-			CmS := types.NewDefaultCM(tx.CmS())
-			hash = CmS.Hash()
-			if rawdb.HasCM(CMdb, hash) {
-				return ErrExistedCM
-			}
-			CmR := types.NewDefaultCM(tx.CmR())
-			hash = CmR.Hash()
-			if rawdb.HasCM(CMdb, hash) {
-				return ErrExistedCM
-			}
+	}
+	if tx.ID() == 1 {
+		// 转账交易
+		CmO := types.NewDefaultCM(tx.CmO())
+		hash := CmO.Hash()
+		CmO_ := rawdb.ReadCM(CMdb, hash)
+		if CmO_ == nil || CmO_.Spent == true {
+			return ErrInvalidCM
 		}
-		return ErrID
-	*/
-	return nil
+		CmS := types.NewDefaultCM(tx.CmS())
+		hash = CmS.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+		CmR := types.NewDefaultCM(tx.CmR())
+		hash = CmR.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+	}
+	return ErrID
 }
 
 // add validates a transaction and inserts it into the non-executable queue for later
