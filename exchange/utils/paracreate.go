@@ -23,13 +23,14 @@ func CreateCM_v(regpub crypto.PublicKey, amount string) (CM crypto.Commitment) {
 
 // create elgamal result
 func CreateElgamalC(regpub crypto.PublicKey, amount string, publickey string) (C crypto.CypherText) {
-	M := amount + publickey
-	C  = crypto.Encrypt(regpub, []byte(M))
+	M := publickey + amount
+		C  = crypto.Encrypt(regpub, []byte(M))
 	return
 }
 
 // create sign result
 func CreateSign(privpub crypto.PrivateKey, amount string) (sig crypto.Signature) {
-	sig = crypto.Sign(privpub, []byte(amount))
+	ID := "1"
+	sig = crypto.Sign(privpub, []byte(ID + amount))
 	return
 }

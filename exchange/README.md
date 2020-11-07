@@ -56,9 +56,11 @@
 
 调用加密算法Sign
 
-输入：发行者私钥，用户发来的amount
+输入：发行者私钥，用户amount与ID的拼接字符串作为签名明文
 
 输出：Signature
+
+```注：购币交易中的ID为1```
 
 #### 8 sendTranscation
 
