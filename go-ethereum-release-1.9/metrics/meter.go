@@ -72,10 +72,10 @@ func NewMeterForced() Meter {
 	return m
 }
 
-// NewRegisteredMeter constructs and registers a new StandardMeter
-// and launches a goroutine.
-// Be sure to unregister the meter from the registry once it is of no use to
-// allow for garbage collection.
+//NewRegisteredMeter constructs and registers a new StandardMeter
+//and launches a goroutine.
+//Be sure to unregister the meter from the registry once it is of no use to
+//allow for garbage collection.
 func NewRegisteredMeter(name string, r Registry) Meter {
 	c := NewMeter()
 	if nil == r {
