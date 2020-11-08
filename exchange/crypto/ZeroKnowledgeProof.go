@@ -10,7 +10,7 @@ import (
 )
 
 type Commitment struct {
-	commitment, r []byte
+	Commitment, R []byte
 }
 
 type FormatProof struct {
@@ -91,8 +91,8 @@ func (priv PrivateKey) CommitByBytes(b []byte, rnd []byte) Commitment{
 }
 
 func (pub PublicKey) VerifyCommitment(commit Commitment) uint64{
-	R := new(big.Int).SetBytes(commit.r[:])
-	Commit := new(big.Int).SetBytes(commit.commitment[:])
+	R := new(big.Int).SetBytes(commit.R[:])
+	Commit := new(big.Int).SetBytes(commit.Commitment[:])
 	for i := 1;true;i++{
 		I := new(big.Int).SetInt64(int64(i))
 		v_g1 := new(big.Int).Exp(pub.G1, I, pub.P)
@@ -111,8 +111,8 @@ func (pub PublicKey) VerifyCommitment(commit Commitment) uint64{
 }
 
 func (priv PrivateKey) VerifyCommitment(commit Commitment) uint64{
-	R := new(big.Int).SetBytes(commit.r[:])
-	Commit := new(big.Int).SetBytes(commit.commitment[:])
+	R := new(big.Int).SetBytes(commit.R[:])
+	Commit := new(big.Int).SetBytes(commit.Commitment[:])
 	for i := 1;true;i++{
 		I := new(big.Int).SetInt64(int64(i))
 		v_g1 := new(big.Int).Exp(priv.G1, I, priv.P)
@@ -162,7 +162,7 @@ func EncryptValue(pub PublicKey, M uint64) (C CypherText, commit Commitment, err
 	commit= pub.Commit(m, rnd)
 
 
-	C = CypherText{c1,commit.commitment}
+	C = CypherText{c1,commit.Commitment}
 	return
 }
 

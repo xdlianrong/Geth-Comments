@@ -18,11 +18,13 @@ var (
 		utils.EthAccountFlag,
 		utils.EthKeyFlag,
 	}
+	ethaccount       string
 	publisherpub   = crypto.PublicKey{}
 	publisherpriv  = crypto.PrivateKey{}
 	regulatorpub   = crypto.PublicKey{}
 	cm_and_r       = crypto.Commitment{}
-	elgamal        = crypto.CypherText{}
+	elgamal_info   = crypto.CypherText{}
+	elgamal_r      = crypto.CypherText{}
 	signature      = crypto.Signature{}
 )
 
@@ -45,9 +47,10 @@ func main() {
 }
 
 func exchange(ctx *cli.Context)  {
-	gk := ctx.String("generatekey")
-	ea := ctx.String("ethaccount")
-	ek := ctx.String("ethkey")
+	gk 		  := ctx.String("generatekey")
+	ea        := ctx.String("ethaccount")
+	ek        := ctx.String("ethkey")
+	ethaccount = ctx.String("ethaccount")
 	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
 	regulatorpub, _ = utils.GenerateRegKey()
 	if(utils.UnlockAccount(ea, ek) == true) {
@@ -86,12 +89,19 @@ func buy(c echo.Context) error {
 		return c.JSON(http.StatusCreated, "error publickey, please check again or registe now")
 	}else{
 		cm_and_r        = utils.CreateCM_v(regulatorpub, amount)
-		elgamal         = utils.CreateElgamalC(regulatorpub, amount, publickey)
+		elgamal_info    = utils.CreateElgamalInfo(regulatorpub, amount, publickey)
+		elgamal_r       = utils.CreateElgamalR(regulatorpub, cm_and_r.R)
 		signature       = utils.CreateSign(publisherpriv, amount)
 		//TODO: sendTranscation
+		if(utils.SendTransaction(elgamal_info, elgamal_r, signature, cm_and_r, ethaccount) == true){
+			result := utils.Toreceipt(cm_and_r.Commitment, elgamal_r.C1, elgamal_r.C2)
+			return c.JSON(http.StatusCreated, result)
+		}else{
+			return c.JSON(http.StatusCreated, "err send transaction")
+		}
 	}
 
-	return c.JSON(http.StatusCreated, publickey)
+
 }
 
 func pubpub(c echo.Context) error {

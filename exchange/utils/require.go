@@ -4,21 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"exchange/crypto"
+	"exchange/params"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 )
 
-// require url
-var(
-	verifyurl = "http://39.99.227.43:1423/verify"
-	getpuburl = "http://39.99.227.43:1423/regkey?chainID=1"
-	ethurl    = "http://localhost:8545"
-)
-
 // unlock publisher eth_account struct
-type unlock struct {
+type toETH struct {
 	Jsonrpc	 string			`json:"jsonrpc"`
 	Method	 string	    	`json:"method"`
 	Params   []interface{}  `json:"params"`
@@ -32,12 +26,30 @@ type unlockget struct {
 	Result   bool           `json:"result"`
 }
 
+type SendTx struct {
+	From     string  `json:"from"`
+	To       string  `json:"to"`
+	Gas      string  `json:"gas"`
+	GasPrice string `json:"gasPrice"`
+	Value    string `json:"value"`
+	ID       string  `json:"id"`
+	EpkrC1   string  `json:"epkrc1"`
+	EpkrC2   string  `json:"epkrc2"`
+	EpkpC1   string  `json:"epkpc1"`
+	EpkpC2   string  `json:"epkpc2"`
+	SigM     string  `json:"sigm"`
+	SigMHash string  `json:"sigmhash"`
+	SigR     string  `json:"sigr"`
+	SigS     string  `json:"sigs"`
+	CmV      string  `json:"cmv"`
+}
+
 // verify the publickey of usr to regulator
 func Verify(publickey string) bool {
 	data := make(url.Values)
 	data["Hashky"] = []string{publickey}
 
-	resp, err := http.PostForm(verifyurl, data)
+	resp, err := http.PostForm(params.Verifyurl, data)
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -54,7 +66,7 @@ func Verify(publickey string) bool {
 
 // get ragulator publickey--struct
 func GetRegPub() crypto.PublicKey {
-	resp, _ := http.Get(getpuburl)
+	resp, _ := http.Get(params.Getpuburl)
 	defer resp.Body.Close()
 	reqBody := crypto.PublicKey{}
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -68,19 +80,19 @@ func GetRegPub() crypto.PublicKey {
 
 // unlock publisher eth_account
 func UnlockAccount(ethaccount string, ethkey string) bool{
-	params := make([]interface{}, 3)
-	params[0] = ethaccount
-	params[1] = ethkey
-	params[2] = 30000
+	paramsul := make([]interface{}, 3)
+	paramsul[0] = ethaccount
+	paramsul[1] = ethkey
+	paramsul[2] = 30000
 
-	data := unlock{"2.0", "personal_unlockAccount", params,67}
+	data := toETH{"2.0", "personal_unlockAccount", paramsul,67}
 
 	datapost, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	req, err := http.NewRequest("POST", ethurl, bytes.NewBuffer(datapost))
+	req, err := http.NewRequest("POST", params.Ethurl, bytes.NewBuffer(datapost))
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -101,6 +113,37 @@ func UnlockAccount(ethaccount string, ethkey string) bool{
 	}
 }
 
-func SendTransaction() {
-
+func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, sig crypto.Signature, cm crypto.Commitment, ethaccount string) bool {
+	paramstx   := make([]interface{}, 1)
+	epkrc1   := byteto0xstring(elgamalr.C1)
+	epkrc2   := byteto0xstring(elgamalr.C2)
+	epkpc1   := byteto0xstring(elgamalinfo.C1)
+	epkpc2   := byteto0xstring(elgamalinfo.C2)
+	sigm     := byteto0xstring(sig.M)
+	sigmhash := byteto0xstring(sig.M_hash)
+	sigr     := byteto0xstring(sig.R)
+	sigs     := byteto0xstring(sig.S)
+	cmv      := byteto0xstring(cm.Commitment)
+	//epkrc1 = strings.TrimLeft(epkrc1, "0x")
+	//fmt.Println(hex.DecodeString(epkrc1))
+	paramstx[0] = SendTx{ethaccount, params.Ethto, "0x0", "0x0", "0x0", "0x1", epkrc1, epkrc2, epkpc1, epkpc2, sigm,sigmhash,sigr, sigs, cmv}
+	data := toETH{"2.0", "eth_sendTransaction", paramstx,67}
+	fmt.Println(data)
+	datapost, err := json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	req, err := http.NewRequest("POST", params.Ethurl, bytes.NewBuffer(datapost))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil{
+		fmt.Println(err)
+		return false
+	}
+	defer resp.Body.Close()
+	bodyC, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(bodyC))
+	return true
 }

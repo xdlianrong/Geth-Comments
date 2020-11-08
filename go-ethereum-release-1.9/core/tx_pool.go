@@ -644,6 +644,7 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 		if rawdb.HasCM(CMdb, hash) {
 			return ErrExistedCM
 		}
+		return nil
 	}
 	return ErrID
 }

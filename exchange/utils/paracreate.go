@@ -6,12 +6,6 @@ import (
 	"strconv"
 )
 
-// the struct from user post
-type Purchase struct {
-	Publickey  string `json:"publickey" xml:"publickey" form:"publickey" query:"publickey"`
-	Amount     string `json:"amount"    xml:"amount"    form:"amount"    query:"amount"`
-}
-
 // create commit_v
 func CreateCM_v(regpub crypto.PublicKey, amount string) (CM crypto.Commitment) {
 	amounts, _ := strconv.Atoi(amount)
@@ -22,9 +16,14 @@ func CreateCM_v(regpub crypto.PublicKey, amount string) (CM crypto.Commitment) {
 }
 
 // create elgamal result
-func CreateElgamalC(regpub crypto.PublicKey, amount string, publickey string) (C crypto.CypherText) {
+func CreateElgamalInfo(regpub crypto.PublicKey, amount string, publickey string) (C crypto.CypherText) {
 	M := publickey + amount
-		C  = crypto.Encrypt(regpub, []byte(M))
+	C  = crypto.Encrypt(regpub, []byte(M))
+	return
+}
+
+func CreateElgamalR(regpub crypto.PublicKey, r []byte) (C crypto.CypherText) {
+	C  = crypto.Encrypt(regpub, r)
 	return
 }
 

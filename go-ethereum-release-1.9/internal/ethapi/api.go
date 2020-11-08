@@ -1700,6 +1700,63 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
 }
 
+func (args *SendTxArgs) toExTransaction(regulator types.Regulator) (*types.Transaction, error) {
+	var input []byte
+	if args.Input != nil {
+		input = *args.Input
+	} else if args.Data != nil {
+		input = *args.Data
+	}
+	ErpkC1    := hexutil.Bytes(nil)
+	ErpkC2    := hexutil.Bytes(nil)
+	EspkC1    := hexutil.Bytes(nil)
+	EspkC2    := hexutil.Bytes(nil)
+	CMRpk     := hexutil.Bytes(nil)
+	CMSpk     := hexutil.Bytes(nil)
+	ErpkEPs0  := hexutil.Bytes(nil)
+	ErpkEPs1  := hexutil.Bytes(nil)
+	ErpkEPs2  := hexutil.Bytes(nil)
+	ErpkEPs3  := hexutil.Bytes(nil)
+	ErpkEPt   := hexutil.Bytes(nil)
+	EspkEPs0  := hexutil.Bytes(nil)
+	EspkEPs1  := hexutil.Bytes(nil)
+	EspkEPs2  := hexutil.Bytes(nil)
+	EspkEPs3  := hexutil.Bytes(nil)
+	EspkEPt   := hexutil.Bytes(nil)
+	EvSC1     := hexutil.Bytes(nil)
+	EvSC2     := hexutil.Bytes(nil)
+	EvRC1     := hexutil.Bytes(nil)
+	EvRC2     := hexutil.Bytes(nil)
+	_CmS      := hexutil.Bytes(nil)
+	_CmR      := hexutil.Bytes(nil)
+	CMsFPC    := hexutil.Bytes(nil)
+	CMsFPZ1   := hexutil.Bytes(nil)
+	CMsFPZ2   := hexutil.Bytes(nil)
+	CMrFPC    := hexutil.Bytes(nil)
+	CMrFPZ1   := hexutil.Bytes(nil)
+	CMrFPZ2   := hexutil.Bytes(nil)
+	EvsBsC1   := hexutil.Bytes(nil)
+	EvsBsC2   := hexutil.Bytes(nil)
+	EvOC1     := hexutil.Bytes(nil)
+	EvOC2     := hexutil.Bytes(nil)
+	_CmO      := hexutil.Bytes(nil)
+	EvOEPs0   := hexutil.Bytes(nil)
+	EvOEPs1   := hexutil.Bytes(nil)
+	EvOEPs2   := hexutil.Bytes(nil)
+	EvOEPs3   := hexutil.Bytes(nil)
+	EvOEPt    := hexutil.Bytes(nil)
+	BPC       := hexutil.Bytes(nil)
+	BPRV      := hexutil.Bytes(nil)
+	BPRR      := hexutil.Bytes(nil)
+	BPSV      := hexutil.Bytes(nil)
+	BPSR      := hexutil.Bytes(nil)
+	BPSOr     := hexutil.Bytes(nil)
+	if args.To == nil {
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
+	}
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
+}
+
 func (args *SendTxArgs) toTransaction() (*types.Transaction, error) {
 	/*rpk, err := paraPK(*args.Rpk)
 	if err != nil {
@@ -1778,15 +1835,29 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 		return common.Hash{}, err
 	}
 	// Assemble the transaction and sign with the wallet
-	tx, err := args.toZeroTransaction(s.b.RegulatorKey())
-	if err != nil {
+	if(*args.ID == 0x0) {
+		tx, err := args.toZeroTransaction(s.b.RegulatorKey())
+		if err != nil {
+			return common.Hash{}, err
+		}
+		signed, err := wallet.SignTx(account, tx, s.b.ChainConfig().ChainID)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		return SubmitTransaction(ctx, s.b, signed)
+	}else if(*args.ID == 0x1){
+		tx, err := args.toExTransaction(s.b.RegulatorKey())
+		if err != nil {
+			return common.Hash{}, err
+		}
+		signed, err := wallet.SignTx(account, tx, s.b.ChainConfig().ChainID)
+		if err != nil {
+			return common.Hash{}, err
+		}
+		return SubmitTransaction(ctx, s.b, signed)
+	}else{
 		return common.Hash{}, err
 	}
-	signed, err := wallet.SignTx(account, tx, s.b.ChainConfig().ChainID)
-	if err != nil {
-		return common.Hash{}, err
-	}
-	return SubmitTransaction(ctx, s.b, signed)
 }
 
 // FillTransaction fills the defaults (nonce, gas, gasPrice) on a given unsigned transaction,
