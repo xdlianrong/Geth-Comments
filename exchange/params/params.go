@@ -2,10 +2,10 @@ package params
 
 //url
 var(
-	//verifyurl = "http://39.99.227.43:1423/verify"
-	//getpuburl = "http://39.99.227.43:1423/regkey?chainID=1"
-	Verifyurl = "http://localhost:1423/verify"
-	Getpuburl = "http://localhost:1423/regkey?chainID=1"
+	Verifyurl = "http://39.99.227.43:1423/verify"
+	Getpuburl = "http://39.99.227.43:1423/regkey?chainID=1"
+	//Verifyurl = "http://localhost:1423/verify"
+	//Getpuburl = "http://localhost:1423/regkey?chainID=1"
 	Ethurl    = "http://localhost:8545"
 )
 

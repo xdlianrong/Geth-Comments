@@ -33,3 +33,11 @@ func CreateSign(privpub crypto.PrivateKey, amount string) (sig crypto.Signature)
 	sig = crypto.Sign(privpub, []byte(ID + amount))
 	return
 }
+
+func CreateUsrPub(g1 string, g2 string , p string, h string)(usrpub crypto.PublicKey){
+	usrpub.G1 = stringtobig(g1)
+	usrpub.G2 = stringtobig(g2)
+	usrpub.P  = stringtobig(p)
+	usrpub.H  = stringtobig(h)
+	return
+}

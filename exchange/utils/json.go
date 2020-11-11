@@ -1,6 +1,9 @@
 package utils
 
-import "encoding/hex"
+import (
+	"encoding/hex"
+	"math/big"
+)
 
 // the struct receipt to user
 type Receipt struct {
@@ -11,8 +14,11 @@ type Receipt struct {
 
 // the struct from user post
 type Purchase struct {
-	Publickey  string `json:"publickey" xml:"publickey" form:"publickey" query:"publickey"`
-	Amount     string `json:"amount"    xml:"amount"    form:"amount"    query:"amount"`
+	G1          string `json:"g1"        xml:"g1"        form:"g1"        query:"g1"`
+	G2			string `json:"g2"        xml:"g2"        form:"g2"        query:"g2"`
+	P           string `json:"p"         xml:"p"         form:"p"         query:"p"`
+	H			string `json:"h"         xml:"h"         form:"h"         query:"h"`
+	Amount      string `json:"amount"    xml:"amount"    form:"amount"    query:"amount"`
 }
 
 func byteto0xstring(b []byte) (s string){
@@ -24,5 +30,11 @@ func Toreceipt(cmv []byte, rc1 []byte, rc2 []byte) (re Receipt){
 	re.Cmv    = byteto0xstring(cmv)
 	re.Epkrc1 = byteto0xstring(rc1)
 	re.Epkrc2 = byteto0xstring(rc2)
+	return
+}
+
+func stringtobig(s string)(b *big.Int){
+	b    = new(big.Int)
+	b, _ = b.SetString(s, 10)
 	return
 }

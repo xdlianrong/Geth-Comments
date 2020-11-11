@@ -19,6 +19,7 @@ var (
 		utils.EthKeyFlag,
 	}
 	ethaccount       string
+	usrpub         = crypto.PublicKey{}
 	publisherpub   = crypto.PublicKey{}
 	publisherpriv  = crypto.PrivateKey{}
 	regulatorpub   = crypto.PublicKey{}
@@ -81,18 +82,18 @@ func buy(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-
-	publickey := c.FormValue("publickey")
-	amount    := c.FormValue("amount")
-
-	if(utils.Verify(publickey) == false){
-		return c.JSON(http.StatusCreated, "error publickey, please check again or registe now")
+	if(u.G1 == "" || u.G2 == ""  || u.P == "" || u.H == "" || u.Amount == "") {
+		return c.JSON(http.StatusCreated, "err params lack")
+	}
+	if(utils.Verify(u.H) == false){
+		return c.JSON(http.StatusCreated, "err publickey, please check again or registe now")
 	}else{
-		cm_and_r        = utils.CreateCM_v(regulatorpub, amount)
-		elgamal_info    = utils.CreateElgamalInfo(regulatorpub, amount, publickey)
-		elgamal_r       = utils.CreateElgamalR(regulatorpub, cm_and_r.R)
-		signature       = utils.CreateSign(publisherpriv, amount)
-		//TODO: sendTranscation
+		usrpub          = utils.CreateUsrPub(u.G1, u.G2, u.P, u.H)
+		cm_and_r        = utils.CreateCM_v(regulatorpub, u.Amount)
+		elgamal_info    = utils.CreateElgamalInfo(regulatorpub, u.Amount, u.H)
+		elgamal_r       = utils.CreateElgamalR(usrpub, cm_and_r.R)
+		signature       = utils.CreateSign(publisherpriv, u.Amount)
+
 		if(utils.SendTransaction(elgamal_info, elgamal_r, signature, cm_and_r, ethaccount) == true){
 			result := utils.Toreceipt(cm_and_r.Commitment, elgamal_r.C1, elgamal_r.C2)
 			return c.JSON(http.StatusCreated, result)

@@ -6,7 +6,7 @@
 
 ## 功能流程：
 
-![](./img/1.png)
+![](./img/process.png)
 
 ##### 其中和以前方案的冲突：
 
@@ -16,7 +16,7 @@
 
 #### 1 初始化
 
-通过输入端口号初始化程序（缺省1323），发行者输入任意字符串用来初始化公私钥
+通过输入端口号初始化程序（缺省1323），发行者输入任意字符串用来初始化公私钥（该公私钥已配置好，无需再次输入），发行者输入自己在链上的账户和密码进行账户解锁。
 
 #### 2 发行者生成公私钥
 
@@ -30,11 +30,11 @@
 
 设置监听端口，接收用户发来的publickey和amount判断publickey合法
 
-将publickey发送http请求至监管者服务器（:1423/verify）,若返回false跳出程序，返回ture进入下一步
+将publickey发送至监管者服务器（:1423/verify）,若返回false跳出程序，返回ture进入下一步
 
 #### 4 请求获得监管者公钥
 
-调用/regkey获取监管者公钥，存储在本地json文件中
+调用/regkey获取监管者公钥，存储在本地文件中
 
 #### 5 承诺生成
 
@@ -44,15 +44,23 @@
 
 输出：CM_v，规范后的r
 
-#### 6 ElGamal加密
+#### 6 加密购币交易信息
 
-调用加密算法Encrypt
+调用ELGamal加密算法
 
 输入：监管者公钥struct，用户publickey与amount的拼接字符串作为明文
 
-输出：交易所服务器E( pk , v )。(C1，C2)
+输出：购币交易信息密文(C1，C2)
 
-#### 7 发行者签名
+#### 7 加密随机数r
+
+调用ELGamal加密算法
+
+输入：用户公钥struct，承诺生成过程中产生的随机数r作为明文
+
+输出：r的密文(C1，C2)
+
+#### 8 发行者签名
 
 调用加密算法Sign
 
@@ -62,28 +70,27 @@
 
 ```注：购币交易中的ID为1```
 
-#### 8 sendTranscation
+#### 9 sendTranscation
 
 将交易信息打包通过rpc方式发送上链。
 
-如果上链成功。
+如果上链成功，返回用户交易回执（CM_v，r）；
 
-返回用户交易回执（CM_v，r）
-
-##### RPC接口：
-
-todo：链上交易结构修改
+如果上链失败，返回错误。
 
 ## 监听接口
 
 服务器端口号：缺省1323
 
-1.路由```/buy``` [POST]暴露给用户，用户输入json样例如下
+1.路由```/buy``` [POST]暴露给用户，用户输入样例如下
 
 ```json
 {
-    "publickey" : "0x3576abcdef8345643646453432",
-    "amount" : "423412"
+	"g1"    :"9434010866557883432899515512338590271408819035691331775356172679296704297442",
+	"g2"    :"16699476090444326034784401952324371377720017398258844087346247796127238764048",
+	"p"     :"22462061785371779578762224547786669348890858038353012248859154063999614739741",
+	"h"     :"1041504820361995665122100729363779110602830339300272239819296520183869996060",
+	"amount": "123"
 }
 ```
 
@@ -91,16 +98,21 @@ todo：链上交易结构修改
 
 ## 启动命令
 
+启动参数如下：
+
 GLOBAL OPTIONS:
-   --port value, -p value           the port of this server (default: "1323")
-   --generatekey value, --gk value  the string that you generate your pub/pri key
-   --help, -h                       show help
+   --port value, -p value                    the port of this server (default: "1323")
+   --generatekey value, --gk value   the string that you generate your pub/pri key
+   --ethaccount value, --ea value     the eth_account of you
+   --ethkey value, --ek value             the key that you unlock your eth_account
+   --help, -h                                         show help
 
 ## 使用方法
 
+```
 go build 
-
-./exchange -p 指定端口 --gk 指定字符串
+./exchange -ea 0x75e36ea49f49d6f6619eb23904e8a8cab3a3dda2 -ek 1
+```
 
 
 

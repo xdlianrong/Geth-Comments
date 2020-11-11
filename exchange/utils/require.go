@@ -113,6 +113,7 @@ func UnlockAccount(ethaccount string, ethkey string) bool{
 	}
 }
 
+// send exchange tx to eth
 func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, sig crypto.Signature, cm crypto.Commitment, ethaccount string) bool {
 	paramstx   := make([]interface{}, 1)
 	epkrc1   := byteto0xstring(elgamalr.C1)
