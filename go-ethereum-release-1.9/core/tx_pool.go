@@ -623,6 +623,8 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 		}
 	}
 	if tx.ID() == 0 {
+		// used to debug
+		return nil
 		// 转账交易
 		CmO := types.NewDefaultCM(tx.CmO())
 		hash := CmO.Hash()

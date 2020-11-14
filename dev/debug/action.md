@@ -4,9 +4,9 @@
 
 私链初始化参数：
 
---datadir "/home/test/音乐/privchain" --regulatorip 39.99.227.43 init "/home/test/音乐/genesis.json"
+--datadir "/home/test/音乐/privchain" --regulatorip 39.99.227.43 --exchangeurl "127.0.0.1:1323/pubpub"  init "/home/test/音乐/genesis.json"
 
-私链启动参数：--regulatorip 39.99.227.43  --identity "666" --rpc  --rpccorsdomain '*' --rpcport "8545" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir "/home/test/音乐/privchain" --port "3303" --nodiscover --allow-insecure-unlock console   
+私链启动参数：--regulatorip 39.99.227.43 --exchangeurl "127.0.0.1:1323/pubpub"  --identity "666" --rpc  --rpccorsdomain '*' --rpcport "8545" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir "/home/test/音乐/privchain" --port "3303" --nodiscover --allow-insecure-unlock console   
 
 
 

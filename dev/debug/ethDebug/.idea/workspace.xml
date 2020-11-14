@@ -19,31 +19,7 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ad1e87cd-3ce8-436e-b9cb-c11c8ba24441" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/exchange.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/getTx.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/post.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sendTransaction.json" beforeDir="false" afterPath="$PROJECT_DIR$/sendTransaction.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/unlockAccount.json" beforeDir="false" afterPath="$PROJECT_DIR$/unlockAccount.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../exchange/exchange" beforeDir="false" afterPath="$PROJECT_DIR$/../../../exchange/exchange" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/cmd/geth/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/cmd/geth/main.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/cmd/utils/flags.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/cmd/utils/flags.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/common/hexutil/json.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/common/hexutil/json.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/core/tx_pool.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/core/tx_pool.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/core/types/regulator.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/core/types/regulator.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/crypto/zkp/Elgamal.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/crypto/zkp/Elgamal.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/crypto/zkp/commit.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/crypto/zkp/commit.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/eth/api_backend.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/eth/api_backend.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/eth/backend.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/eth/backend.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/eth/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/eth/config.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/internal/ethapi/api.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/internal/ethapi/api.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/les/api_backend.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/les/api_backend.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/node/config.go" beforeDir="false" afterPath="$PROJECT_DIR$/../../../go-ethereum-release-1.9/node/config.go" afterDir="false" />
-    </list>
+    <list default="true" id="ad1e87cd-3ce8-436e-b9cb-c11c8ba24441" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
