@@ -19,6 +19,7 @@ package core
 import (
 	"errors"
 	"github.com/ethereum/go-ethereum/core/rawdb"
+	"github.com/ethereum/go-ethereum/crypto/zkp"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"math"
 	"math/big"
@@ -96,8 +97,8 @@ var (
 
 	// @author mzliu 20200918
 	// ErrVerifySignatureFailed is returned if CMV and ID of a transaction
-	//cannot be verified using the given signature
-	ErrVerifySignatureFailed = errors.New("verify signature failed")
+	// cannot be verified using the given signature
+	ErrVerifySignatureFailed = errors.New("verify puchase signature failed")
 
 	ErrExistedCM = errors.New("existed commitment to purchase coins")
 
@@ -171,7 +172,7 @@ type TxPoolConfig struct {
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
-
+	Exchange types.Exchange // @xzliu exchange
 	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
 }
 
@@ -247,6 +248,7 @@ type TxPool struct {
 	scope       event.SubscriptionScope
 	signer      types.Signer
 	mu          sync.RWMutex
+	Exchange  	types.Exchange
 
 	istanbul bool // Fork indicator whether we are in the istanbul stage.
 
@@ -539,7 +541,6 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
-// TODO
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	// Reject transactions over defined size to prevent DOS attacks
 	if uint64(tx.Size()) > txMaxSize {
@@ -561,13 +562,15 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 	// Drop non-local transactions under our own minimal accepted gas price
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
-	if !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {
-		return ErrUnderpriced
-	}
+	//@mzliu 11/14 abandon mit of gasPrice
+	//if !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {
+	//	return ErrUnderpriced
+	//}
 	// Ensure the transaction adheres to nonce ordering
 	if pool.currentState.GetNonce(from) > tx.Nonce() {
 		return ErrNonceTooLow
 	}
+
 	// Transactor should have enough funds to cover the costs
 	// cost == V + GP * GL
 	// @xiezy
@@ -586,28 +589,21 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	return nil
 }
 
-// author mzliu 20200918
-// validate Sign using tx : sig and CMV+ID
-func (pool *TxPool) validateSign(tx *types.Transaction, local bool) error {
-	// TODO:刘明哲改，20201103
-	/*i := tx.CmV() + tx.ID()
-	i := uint64(1)
-	msg := make([]byte, 32)
-	binary.BigEndian.PutUint64(msg, i)
-	// sig to []bytes
-	sig := hexutil.MustDecode(tx.Sig())
-	// recover pubKey
-	recoveredPub, err := crypto.Ecrecover(msg, sig)
-	if err != nil {
-		log.Trace("ECRecover error: %s", err)
-	}
-	// verify
-	verified := crypto.VerifySignature(recoveredPub, msg, sig[:len(sig)-1])
-	if !verified {
+// @mzliu 11/14 verify that thing, you know
+func (pool *TxPool) validateSign(tx *types.Transaction) error {
+	sig := zkp.Signature{}
+	sig.M = tx.SigM().Btob()
+	sig.M_hash = tx.SigMHash().Btob()
+	sig.R = tx.SigR().Btob()
+	sig.S = tx.SigS().Btob()
+	v :=  zkp.Verify(zkp.PublicKey(pool.config.Exchange.PubKey),sig)
+	if v == false{
 		return ErrVerifySignatureFailed
-	}*/
-	return nil
+	} else {
+		return nil
+	}
 }
+
 
 func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	// 三种情况报错：
@@ -616,7 +612,7 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	// 3、交易ID既不为0也不为1,暂未知类型交易
 
 	CMdb := pool.chain.GetCMdb()
-	if tx.ID() == 0 {
+	if tx.ID() == 1 {
 		// 购币交易
 		CmV := types.NewDefaultCM(tx.CmV())
 		hash := CmV.Hash()
@@ -626,7 +622,7 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 			return nil
 		}
 	}
-	if tx.ID() == 1 {
+	if tx.ID() == 0 {
 		// 转账交易
 		CmO := types.NewDefaultCM(tx.CmO())
 		hash := CmO.Hash()
@@ -673,7 +669,17 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		invalidTxMeter.Mark(1)
 		return false, err
 	}
-	// If the transaction fails basic validation, discard it
+	// purchase sig verify
+	if tx.ID() == 1 {
+		// sig fail abondon
+		if err := pool.validateSign(tx); err != nil {
+			log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+			invalidTxMeter.Mark(1)
+			return false, err
+		}
+	}
+
+	// If the transaction fails basic validationdiscard it
 	// 若交易有效性检验未通过，丢弃
 	if err := pool.validateTx(tx, local); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
@@ -681,12 +687,6 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		return false, err
 	}
 
-	// @autohr mzliu 20200918
-	// validate Sig, you know
-	if err := pool.validateSign(tx, local); err != nil {
-		log.Trace("Sig verify failed", "hash", hash)
-		return false, err
-	}
 	// If the transaction pool is full, discard underpriced transactions
 	// 若交易池满了，丢弃低价的交易
 	if uint64(pool.all.Count()) >= pool.config.GlobalSlots+pool.config.GlobalQueue {

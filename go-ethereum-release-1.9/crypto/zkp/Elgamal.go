@@ -1,6 +1,8 @@
 package zkp
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"math/big"
 	"math/rand"
 	"time"
@@ -15,6 +17,11 @@ type PublicKey struct {
 type PrivateKey struct {
 	PublicKey
 	X *big.Int
+}
+
+// 签名
+type Signature struct {
+	M, M_hash, R, S []byte
 }
 
 func Encrypt(pub PublicKey, M []byte) (C CypherText) {
@@ -71,4 +78,32 @@ func Encrypt(pub PublicKey, M []byte) (C CypherText) {
 	// 合并 C1,C2
 	C = CypherText{C1, C2}
 	return
+}
+
+func Verify(pub PublicKey, sig Signature) bool {
+	// 验签算法[1，验证sig.M是否为M的哈希，2.验证签名是否正确]
+	// 1.验证哈希是否正确
+	hash_m := sha256.Sum256(sig.M)
+	hash_m_fix := hash_m[:]
+	if len(hash_m_fix) != len(sig.M_hash) {
+		return false
+	}
+	for i:=0;i<len(sig.M_hash);i++{
+		if hash_m_fix[i] != sig.M_hash[i] {
+			fmt.Println("\n消息哈希错误！")
+			return false
+		}
+	}
+
+	// 2.验证签名是否正确
+	m_0 := new(big.Int).SetBytes(sig.M_hash)
+	m := new(big.Int).Mod(m_0, pub.P)
+	r := new(big.Int).SetBytes(sig.R)
+	s := new(big.Int).SetBytes(sig.S)
+	hr := new(big.Int).Exp(pub.H, r, pub.P)
+	rs := new(big.Int).Exp(r, s, pub.P)
+	gm := new(big.Int).Exp(pub.G2, m, pub.P)
+	hr.Mul(hr, rs)
+	hr.Mod(hr, pub.P)
+	return hr.Cmp(gm) == 0
 }

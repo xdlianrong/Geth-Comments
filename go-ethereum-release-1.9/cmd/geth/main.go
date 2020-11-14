@@ -195,6 +195,10 @@ var (
 		utils.RegulatorIPFlag,
 		utils.RegulatorPortFlag,
 	}
+
+	exchangeFlags = []cli.Flag{
+		utils.ExchangeFlag,
+	}
 )
 
 func init() {
@@ -240,6 +244,7 @@ func init() {
 	app.Flags = append(app.Flags, whisperFlags...)
 	app.Flags = append(app.Flags, metricsFlags...)
 	app.Flags = append(app.Flags, regulatorFlags...)
+	app.Flags = append(app.Flags, exchangeFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		return debug.Setup(ctx)

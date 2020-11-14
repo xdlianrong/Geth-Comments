@@ -765,6 +765,11 @@ var (
 		Usage: "regulator server port",
 		Value: 1423,
 	}
+	ExchangeFlag = cli.StringFlag{
+		Name: "exchangeurl",
+		Usage: "exchange server url",
+		Value: "127.0.0.1:1323/pubpub",
+	}
 )
 
 // MakeDataDir retrieves the currently requested data directory, terminating
@@ -1202,6 +1207,21 @@ func setRegulator(ctx *cli.Context, cfg *eth.Config) {
 	}
 }
 
+//@mzliu 11/14 set echange url
+func setExchange(ctx *cli.Context, cfg *eth.Config) {
+	cfg.Exchange.URL = ctx.GlobalString("exchangeurl")
+	//做网络请求获取exchange公钥
+	client := &http.Client{}
+	resp, err := client.Get("http://"+cfg.Exchange.URL)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	json.Unmarshal(body,&cfg.Exchange.PubKey)
+	log.Info("Secceed to obain Exchange PubKey", "publicKey", cfg.Exchange.PubKey)
+}
+
 // SetNodeConfig applies node-related command line flags to the config.
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	SetP2PConfig(ctx, &cfg.P2P)
@@ -1468,6 +1488,7 @@ func SetEthConfig(ctx *cli.Context, stack *node.Node, cfg *eth.Config) {
 	setWhitelist(ctx, cfg)
 	setLes(ctx, cfg)
 	setRegulator(ctx, cfg)
+	setExchange(ctx, cfg)
 	if ctx.GlobalIsSet(SyncModeFlag.Name) {
 		cfg.SyncMode = *GlobalTextMarshaler(ctx, SyncModeFlag.Name).(*downloader.SyncMode)
 	}

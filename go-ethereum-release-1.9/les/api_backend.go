@@ -281,3 +281,7 @@ func (b *LesApiBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 func (b *LesApiBackend) RegulatorKey() types.Regulator {
 	return b.eth.config.Regulator
 }
+
+func (b *LesApiBackend) Exchange() types.Exchange {
+	return b.eth.config.Exchange
+}

@@ -220,6 +220,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		eth.blockchain.SetHead(compat.RewindTo)
 		rawdb.WriteChainConfig(chainDb, genesisHash, chainConfig)
 	}
+
 	// 启动bloomIndexer
 	eth.bloomIndexer.Start(eth.blockchain)
 
@@ -227,6 +228,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
 	}
 	// 初始化eth 区块链的交易池，存储本地生产的和P2P网络同步过来的交易。
+	config.TxPool.Exchange = config.Exchange
 	eth.txPool = core.NewTxPool(config.TxPool, chainConfig, eth.blockchain)
 
 	// Permit the downloader to use the trie cache allowance during fast sync

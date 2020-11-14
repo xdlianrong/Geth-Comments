@@ -36,6 +36,10 @@ var (
 // The empty slice marshals as "0x".
 type Bytes []byte
 
+func (b Bytes) Btob() []byte {
+	return b
+}
+
 // MarshalText implements encoding.TextMarshaler
 func (b Bytes) MarshalText() ([]byte, error) {
 	result := make([]byte, len(b)*2+2)

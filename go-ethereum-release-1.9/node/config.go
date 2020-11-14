@@ -191,6 +191,7 @@ type Config struct {
 
 	//监管者配置
 	Regulator              types.Regulator
+	Exchange 			   types.Exchange
 	staticNodesWarning     bool
 	trustedNodesWarning    bool
 	oldGethResourceWarning bool

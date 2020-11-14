@@ -168,4 +168,7 @@ type Config struct {
 
 	//监管者
 	Regulator types.Regulator
+
+	//the handsome exchange
+	Exchange types.Exchange
 }

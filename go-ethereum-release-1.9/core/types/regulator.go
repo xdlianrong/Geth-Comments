@@ -16,3 +16,7 @@ type PubKey struct {
 	P  *big.Int
 	H  *big.Int
 }
+type Exchange struct {
+	PubKey PubKey
+	URL string
+}

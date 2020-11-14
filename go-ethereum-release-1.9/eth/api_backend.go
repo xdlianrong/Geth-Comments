@@ -309,3 +309,7 @@ func (b *EthAPIBackend) ServiceFilter(ctx context.Context, session *bloombits.Ma
 func (b *EthAPIBackend) RegulatorKey() types.Regulator {
 	return b.eth.config.Regulator
 }
+
+func (b *EthAPIBackend) ExchangeKey() types.Exchange{
+	return b.eth.config.Exchange
+}

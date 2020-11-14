@@ -16,10 +16,7 @@ type CypherText struct {
 	C1, C2 []byte
 }
 
-// 签名
-type Signature struct {
-	M, M_hash, R, S []byte
-}
+
 
 func (pub PublicKey) Commit(v *big.Int, rnd []byte) Commitment {
 	// 通过 big int 生成承诺
