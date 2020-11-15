@@ -197,7 +197,8 @@ var (
 	}
 
 	exchangeFlags = []cli.Flag{
-		utils.ExchangeFlag,
+		utils.ExchangeIPFlag,
+		utils.ExchangePortFlag,
 	}
 )
 
