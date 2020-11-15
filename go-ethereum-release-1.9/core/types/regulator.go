@@ -18,5 +18,6 @@ type PubKey struct {
 }
 type Exchange struct {
 	PubKey PubKey
-	URL string
+	IP     string
+	Port   int
 }

@@ -13,35 +13,35 @@ import (
 
 // unlock publisher eth_account struct
 type toETH struct {
-	Jsonrpc	 string			`json:"jsonrpc"`
-	Method	 string	    	`json:"method"`
-	Params   []interface{}  `json:"params"`
-	Id       int			`json:"id"`
+	Jsonrpc string        `json:"jsonrpc"`
+	Method  string        `json:"method"`
+	Params  []interface{} `json:"params"`
+	Id      int           `json:"id"`
 }
 
 // get result from unlock to ethereum
 type unlockget struct {
-	Jsonrpc	 string			`json:"jsonrpc"`
-	Id       int			`json:"id"`
-	Result   bool           `json:"result"`
+	Jsonrpc string `json:"jsonrpc"`
+	Id      int    `json:"id"`
+	Result  bool   `json:"result"`
 }
 
 type SendTx struct {
-	From     string  `json:"from"`
-	To       string  `json:"to"`
-	Gas      string  `json:"gas"`
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Gas      string `json:"gas"`
 	GasPrice string `json:"gasPrice"`
 	Value    string `json:"value"`
-	ID       string  `json:"id"`
-	EpkrC1   string  `json:"epkrc1"`
-	EpkrC2   string  `json:"epkrc2"`
-	EpkpC1   string  `json:"epkpc1"`
-	EpkpC2   string  `json:"epkpc2"`
-	SigM     string  `json:"sigm"`
-	SigMHash string  `json:"sigmhash"`
-	SigR     string  `json:"sigr"`
-	SigS     string  `json:"sigs"`
-	CmV      string  `json:"cmv"`
+	ID       string `json:"id"`
+	EpkrC1   string `json:"epkrc1"`
+	EpkrC2   string `json:"epkrc2"`
+	EpkpC1   string `json:"epkpc1"`
+	EpkpC2   string `json:"epkpc2"`
+	SigM     string `json:"sigm"`
+	SigMHash string `json:"sigmhash"`
+	SigR     string `json:"sigr"`
+	SigS     string `json:"sigs"`
+	CmV      string `json:"cmv"`
 }
 
 // verify the publickey of usr to regulator
@@ -57,9 +57,9 @@ func Verify(publickey string) bool {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(body) + ": check publickey right")
-	if(string(body) == "True" ){
+	if string(body) == "True" {
 		return true
-	}else{
+	} else {
 		return false
 	}
 }
@@ -79,13 +79,13 @@ func GetRegPub() crypto.PublicKey {
 }
 
 // unlock publisher eth_account
-func UnlockAccount(ethaccount string, ethkey string) bool{
+func UnlockAccount(ethaccount string, ethkey string) bool {
 	paramsul := make([]interface{}, 3)
 	paramsul[0] = ethaccount
 	paramsul[1] = ethkey
 	paramsul[2] = 30000
 
-	data := toETH{"2.0", "personal_unlockAccount", paramsul,67}
+	data := toETH{"2.0", "personal_unlockAccount", paramsul, 67}
 
 	datapost, err := json.Marshal(data)
 	if err != nil {
@@ -96,7 +96,7 @@ func UnlockAccount(ethaccount string, ethkey string) bool{
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return false
 	}
@@ -104,31 +104,31 @@ func UnlockAccount(ethaccount string, ethkey string) bool{
 
 	bodyC, _ := ioutil.ReadAll(resp.Body)
 	fmt.Println(string(bodyC))
-	var s unlockget;
+	var s unlockget
 	json.Unmarshal([]byte(bodyC), &s)
-	if(s.Result == true){
+	if s.Result == true {
 		return true
-	}else{
+	} else {
 		return false
 	}
 }
 
 // send exchange tx to eth
 func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, sig crypto.Signature, cm crypto.Commitment, ethaccount string) bool {
-	paramstx   := make([]interface{}, 1)
-	epkrc1   := byteto0xstring(elgamalr.C1)
-	epkrc2   := byteto0xstring(elgamalr.C2)
-	epkpc1   := byteto0xstring(elgamalinfo.C1)
-	epkpc2   := byteto0xstring(elgamalinfo.C2)
-	sigm     := byteto0xstring(sig.M)
+	paramstx := make([]interface{}, 1)
+	epkrc1 := byteto0xstring(elgamalr.C1)
+	epkrc2 := byteto0xstring(elgamalr.C2)
+	epkpc1 := byteto0xstring(elgamalinfo.C1)
+	epkpc2 := byteto0xstring(elgamalinfo.C2)
+	sigm := byteto0xstring(sig.M)
 	sigmhash := byteto0xstring(sig.M_hash)
-	sigr     := byteto0xstring(sig.R)
-	sigs     := byteto0xstring(sig.S)
-	cmv      := byteto0xstring(cm.Commitment)
+	sigr := byteto0xstring(sig.R)
+	sigs := byteto0xstring(sig.S)
+	cmv := byteto0xstring(cm.Commitment)
 	//epkrc1 = strings.TrimLeft(epkrc1, "0x")
 	//fmt.Println(hex.DecodeString(epkrc1))
-	paramstx[0] = SendTx{ethaccount, params.Ethto, "0x0", "0x0", "0x0", "0x1", epkrc1, epkrc2, epkpc1, epkpc2, sigm,sigmhash,sigr, sigs, cmv}
-	data := toETH{"2.0", "eth_sendTransaction", paramstx,67}
+	paramstx[0] = SendTx{ethaccount, params.Ethto, "0x0", "0x0", "0x0", "0x1", epkrc1, epkrc2, epkpc1, epkpc2, sigm, sigmhash, sigr, sigs, cmv}
+	data := toETH{"2.0", "eth_sendTransaction", paramstx, 67}
 	fmt.Println(data)
 	datapost, err := json.Marshal(data)
 	if err != nil {
@@ -139,7 +139,7 @@ func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, 
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		return false
 	}

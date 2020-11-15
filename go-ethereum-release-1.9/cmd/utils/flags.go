@@ -765,10 +765,15 @@ var (
 		Usage: "regulator server port",
 		Value: 1423,
 	}
-	ExchangeFlag = cli.StringFlag{
-		Name: "exchangeurl",
-		Usage: "exchange server url",
-		Value: "127.0.0.1:1323/pubpub",
+	ExchangeIPFlag = cli.StringFlag{
+		Name:  "exchangeip",
+		Usage: "exchange IP address",
+		Value: "127.0.0.1",
+	}
+	ExchangePortFlag = cli.IntFlag{
+		Name:  "exchangeport",
+		Usage: "exchange server port",
+		Value: 1323,
 	}
 )
 
@@ -1209,16 +1214,18 @@ func setRegulator(ctx *cli.Context, cfg *eth.Config) {
 
 //@mzliu 11/14 set echange url
 func setExchange(ctx *cli.Context, cfg *eth.Config) {
-	cfg.Exchange.URL = ctx.GlobalString("exchangeurl")
+	cfg.Exchange.IP = ctx.GlobalString("exchangeip")
+	cfg.Exchange.Port = ctx.GlobalInt("exchangeport")
 	//做网络请求获取exchange公钥
 	client := &http.Client{}
-	resp, err := client.Get("http://"+cfg.Exchange.URL)
+	url := fmt.Sprintf("http://%s:%d/pubpub", cfg.Exchange.IP, cfg.Exchange.Port)
+	resp, err := client.Get(url)
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err)
 	}
-	json.Unmarshal(body,&cfg.Exchange.PubKey)
+	json.Unmarshal(body, &cfg.Exchange.PubKey)
 	log.Info("Secceed to obain Exchange PubKey", "publicKey", cfg.Exchange.PubKey)
 }
 

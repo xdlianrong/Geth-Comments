@@ -80,7 +80,7 @@ func startNetwork(port string) {
 	e.POST("/register", register)
 	e.POST("/verify", verify)
 	e.GET("/regkey", regkey)
-	//TODO:写一个post路由decrypto，接收参数监管者私钥X和需要解密的数据，如果X正确就返回解密后的明文数据
+	// TODO:写一个post路由decrypto，接收参数监管者私钥X和需要解密的数据，如果X正确就返回解密后的明文数据
 	// Start server
 	e.Logger.Fatal(e.Start(":" + port))
 }
@@ -122,7 +122,7 @@ func regkey(c echo.Context) error {
 	}
 	if regdb.Get(regDb, "chainConfig").(*regdb.Identity).ID == chainID {
 		key := regdb.Get(regDb, "key").(*ElGamal.PrivateKey)
-		fmt.Println(key)
+		// fmt.Println(key)
 		return c.JSON(http.StatusCreated, key.PublicKey)
 	} else {
 		return c.String(http.StatusOK, "chainID错误")
