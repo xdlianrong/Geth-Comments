@@ -173,6 +173,7 @@ type TxPoolConfig struct {
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
 	Exchange types.Exchange // @xzliu exchange
+	Regulator types.Regulator //regulator
 	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
 }
 
@@ -249,6 +250,7 @@ type TxPool struct {
 	signer      types.Signer
 	mu          sync.RWMutex
 	Exchange  	types.Exchange
+	Regulator   types.Regulator
 
 	istanbul bool // Fork indicator whether we are in the istanbul stage.
 

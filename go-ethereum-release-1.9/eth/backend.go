@@ -229,6 +229,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	}
 	// 初始化eth 区块链的交易池，存储本地生产的和P2P网络同步过来的交易。
 	config.TxPool.Exchange = config.Exchange
+	config.TxPool.Regulator = config.Regulator
 	eth.txPool = core.NewTxPool(config.TxPool, chainConfig, eth.blockchain)
 
 	// Permit the downloader to use the trie cache allowance during fast sync

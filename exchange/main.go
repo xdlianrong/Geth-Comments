@@ -9,6 +9,7 @@ import (
 	"github.com/urfave/cli"
 	"net/http"
 	"os"
+	"time"
 )
 
 var (
@@ -103,11 +104,16 @@ func buy(c echo.Context) error {
 }
 
 func pubpub(c echo.Context) error {
-	if cmp ==1{
-		publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
-		regulatorpub, _ = utils.GenerateRegKey()
-		utils.UnlockAccount(ea, ek)
-		cmp = 0
+
+	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
+	regulatorpub, _ = utils.GenerateRegKey()
+	if cmp == 1{
+		go unlock()
 	}
 	return c.JSON(http.StatusCreated, publisherpub)
+}
+func unlock(){
+	time.Sleep(3*time.Second)
+	utils.UnlockAccount(ea, ek)
+	cmp = 0
 }
