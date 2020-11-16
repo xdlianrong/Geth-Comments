@@ -12,6 +12,7 @@ import (
 )
 
 var (
+	cmp = 1
 	app       = cli.NewApp()
 	baseFlags = []cli.Flag{
 		utils.PortFlag,
@@ -27,6 +28,9 @@ var (
 	elgamal_info  = crypto.CypherText{}
 	elgamal_r     = crypto.CypherText{}
 	signature     = crypto.Signature{}
+	ea string
+	ek string
+	gk string
 )
 
 func init() {
@@ -45,18 +49,16 @@ func main() {
 }
 
 func exchange(ctx *cli.Context) {
-	gk := ctx.String("generatekey")
-	ea := ctx.String("ethaccount")
-	ek := ctx.String("ethkey")
+	gk = ctx.String("generatekey")
+	ea = ctx.String("ethaccount")
+	ek = ctx.String("ethkey")
 	ethaccount = ctx.String("ethaccount")
-	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
-	regulatorpub, _ = utils.GenerateRegKey()
-	if utils.UnlockAccount(ea, ek) == true {
+	//if utils.UnlockAccount(ea, ek) == true {
 		startNetwork(ctx)
-	} else {
-		fmt.Println("erro unlock exchanger eth_account")
-		return
-	}
+	//} else {
+	//	fmt.Println("erro unlock exchanger eth_account")
+	//	return
+	//}
 }
 
 func startNetwork(ctx *cli.Context) error {
@@ -101,5 +103,11 @@ func buy(c echo.Context) error {
 }
 
 func pubpub(c echo.Context) error {
+	if cmp ==1{
+		publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
+		regulatorpub, _ = utils.GenerateRegKey()
+		utils.UnlockAccount(ea, ek)
+		cmp = 0
+	}
 	return c.JSON(http.StatusCreated, publisherpub)
 }

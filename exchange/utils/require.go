@@ -7,6 +7,7 @@ import (
 	"exchange/params"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 )
@@ -103,7 +104,8 @@ func UnlockAccount(ethaccount string, ethkey string) bool {
 	defer resp.Body.Close()
 
 	bodyC, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(bodyC))
+	log.SetPrefix("【AccountCenter】")
+	log.Println(string(bodyC),"Succeed to unlock account")
 	var s unlockget
 	json.Unmarshal([]byte(bodyC), &s)
 	if s.Result == true {
