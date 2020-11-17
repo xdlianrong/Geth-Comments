@@ -1656,38 +1656,54 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 	CMrFPC, CMrFPZ1, CMrFPZ2 := hexutil.Bytes(CMrFP.C), hexutil.Bytes(CMrFP.Z1), hexutil.Bytes(CMrFP.Z2)
 	EvsBsC1, EvsBsC2 := hexutil.Bytes(Evs.C1), hexutil.Bytes(Evs.C2)
 	EvOC1, EvOC2 := hexutil.Bytes(EvO.C1), hexutil.Bytes(EvO.C2)
-	_CmO := hexutil.Bytes(CMo.Commitment)
+	_CmO := hexutil.Bytes(CmO)
 	EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt := hexutil.Bytes(EvoEP.LinearEquationProof.S[0]), hexutil.Bytes(EvoEP.LinearEquationProof.S[1]), hexutil.Bytes(EvoEP.LinearEquationProof.S[2]), hexutil.Bytes(EvoEP.LinearEquationProof.S[3]), hexutil.Bytes(EvoEP.LinearEquationProof.T)
 	BPC, BPRV, BPRR, BPSV, BPSR, BPSOr := hexutil.Bytes(BP.C), hexutil.Bytes(BP.R_v), hexutil.Bytes(BP.R_r), hexutil.Bytes(BP.S_v), hexutil.Bytes(BP.S_r), hexutil.Bytes(BP.S_or)
 	// TODO:产生签名Sig
 	// fmt.Println(ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, _CmS, _CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, _CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr)
 	// 以上
 
-	/*fmt.Println(Erpk.C1, Erpk.C2, Espk.C1, Espk.C2)            // 4个字节数组
-	fmt.Println(ErpkEP, EspkEP)                                //
-	fmt.Println(addrpk, addspk)                                //
-	fmt.Println(Rpk, Spk)                                      // 不需要编码
-	fmt.Println(VoR)                                           // 字节数组
-	fmt.Println(EvS.C1, EvS.C2, CMsFP.C, CMsFP.Z1, CMsFP.Z2)   // 5个字节数组
-	fmt.Println(Evs.C1, Evs.C2)                                // 2个字节数组
-	fmt.Println(EvR.C1, EvR.C2, CMrFP.C, CMrFP.Z1, CMrFP.Z2)   // 5个字节数组
-	fmt.Println(BP.C, BP.R_r, BP.R_v, BP.S_or, BP.S_r, BP.S_v) // 6个字节数组
-	fmt.Println(EvoEP)                                         // 总额度相等证明
+	//fmt.Println(Erpk.C1, Erpk.C2, Espk.C1, Espk.C2)            // 4个字节数组
+	//fmt.Println(ErpkEP, EspkEP)                                //
+	//fmt.Println(addrpk, addspk)                                //
+	//fmt.Println(Rpk, Spk)                                      // 不需要编码
+	//fmt.Println(VoR)                                           // 字节数组
+	//fmt.Println(EvS.C1, EvS.C2, CMsFP.C, CMsFP.Z1, CMsFP.Z2)   // 5个字节数组
+	//fmt.Println(Evs.C1, Evs.C2)                                // 2个字节数组
+	//fmt.Println(EvR.C1, EvR.C2, CMrFP.C, CMrFP.Z1, CMrFP.Z2)   // 5个字节数组
+	//fmt.Println(BP.C, BP.R_r, BP.R_v, BP.S_or, BP.S_r, BP.S_v) // 6个字节数组
+	//fmt.Println(EvoEP)                                         // 总额度相等证明
 	// 验证
-	verify := zkp.VerifyFormatProof(EvS, regulatorPubk, CMsFP)
-	fmt.Println("花费额承诺，格式正确证明:", verify)
-	verify = zkp.VerifyFormatProof(EvR, regulatorPubk, CMrFP)
-	fmt.Println("找零承诺，格式正确证明:", verify)
-	verify = zkp.VerifyBalanceProof(CmR.Commitment, CmS.Commitment, CmO, regulatorPubk, BP)
-	fmt.Println("会计平衡证明:", verify)
-	verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, EvO, zkp.CypherText{C1: nil, C2: CmO}, EvoEP) //EvO和CmO里面的金额相等
-	fmt.Println("总额度相等证明:", verify)
-	verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Erpk, zkp.CypherText{C1: nil, C2: CMrpk.Commitment}, ErpkEP) //EvO和CmO里面的金额相等
-	fmt.Println("接收方公钥相等证明:", verify)
-	verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Espk, zkp.CypherText{C1: nil, C2: CMspk.Commitment}, EspkEP) //EvO和CmO里面的金额相等
-	fmt.Println("发送方公钥相等证明:", verify)*/
-
+	//verify := zkp.VerifyFormatProof(EvS, regulatorPubk, CMsFP)
+	//fmt.Println("花费额承诺，格式正确证明:", verify,"EVS: ",EvS,"pub: ",regulatorPubk,"CMSFP:",CMsFP)
+	//verify = zkp.VerifyFormatProof(EvR, regulatorPubk, CMrFP)
+	//fmt.Println("找零承诺，格式正确证明:", verify)
+	//verify := zkp.VerifyBalanceProof(CmR.Commitment, CmS.Commitment, CmO, regulatorPubk, BP)
+	//fmt.Println(CmR.Commitment, CmS.Commitment, CmO, regulatorPubk, BP)
+	//fmt.Println("会计平衡证明:", verify)
+	//verify := zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, EvO, zkp.CypherText{C1: nil, C2: CmO}, EvoEP) //EvO和CmO里面的金额相等
+	//fmt.Println(regulatorPubk, regulatorPubk, EvO, zkp.CypherText{C1: nil, C2: CmO}, EvoEP)
+	//fmt.Println("lenS: ",len(EvoEP.S),"lenT: ",len(EvoEP.T))
+	//fmt.Println("总额度相等证明:", verify)
+	//s1 := make([][]byte,4)
+	//t1 := make([]byte,32)
+	//l := zkp.LinearEquationProof{s1,t1}
+	//e := zkp.EqualityProof{l}
 	//
+	//e.LinearEquationProof.S[0] = EvOEPs0.Btob()
+	//e.LinearEquationProof.S[1] = EvOEPs1.Btob()
+	//e.LinearEquationProof.S[2] = EvOEPs2.Btob()
+	//e.LinearEquationProof.S[3] = EvOEPs3.Btob()
+	//e.LinearEquationProof.T= EvOEPt.Btob()
+	//fmt.Println("ten")
+	//verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, EvO, zkp.CypherText{C1: nil, C2: CmO}, e)
+	//fmt.Println("总额度相等证明2:", verify)
+	//verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Erpk, zkp.CypherText{C1: nil, C2: CMrpk.Commitment}, ErpkEP) //EvO和CmO里面的金额相等
+	//fmt.Println("接收方公钥相等证明:", verify)
+	//verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Espk, zkp.CypherText{C1: nil, C2: CMspk.Commitment}, EspkEP) //EvO和CmO里面的金额相等
+	//fmt.Println("发送方公钥相等证明:", verify)
+
+
 	var input []byte
 	if args.Input != nil {
 		input = *args.Input

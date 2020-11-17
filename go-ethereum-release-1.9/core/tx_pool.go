@@ -98,13 +98,27 @@ var (
 	// @author mzliu 20200918
 	// ErrVerifySignatureFailed is returned if CMV and ID of a transaction
 	// cannot be verified using the given signature
-	ErrVerifySignatureFailed = errors.New("verify puchase signature failed")
+	ErrVerifySig = errors.New("verify puchase signature failed")
 
 	ErrExistedCM = errors.New("existed commitment to purchase coins")
 
 	ErrInvalidCM = errors.New("invalid commitment to transfer coins")
 
 	ErrID = errors.New("unsupported ID")
+
+	ErrVerifyEvSFormatProof = errors.New("verify EvS FormatProof failed")
+
+	ErrVerifyEvRFormatProof = errors.New("verify EvR FormatProof failed")
+
+	ErrVerifyBalanceProof = errors.New("verify BalanceProof failed")
+
+	ErrVerifyTotalEqualityProof = errors.New("verify total equality proof failed")
+
+	ErrVerifySpkEqualityProof = errors.New("verify Spk equality proof failed")
+
+	ErrVerifyRpkEqualityProof = errors.New("verify Rpk equality proof failed")
+
+	ErrIDFormat = errors.New("ID is not 1 or 0, or ID format is wrong")
 )
 
 var (
@@ -600,7 +614,7 @@ func (pool *TxPool) validateSign(tx *types.Transaction) error {
 	sig.S = tx.SigS().Btob()
 	v :=  zkp.Verify(zkp.PublicKey(pool.config.Exchange.PubKey),sig)
 	if v == false{
-		return ErrVerifySignatureFailed
+		return ErrVerifySig
 	} else {
 		return nil
 	}
@@ -649,6 +663,43 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	return ErrID
 }
 
+func (pool *TxPool) verifyzkp(tx *types.Transaction) error{
+	verify1 := zkp.VerifyFormatProof(tx.EVS(), zkp.PublicKey(pool.config.Regulator.PubK), tx.CMsFP())
+	if verify1 == false{
+		return ErrVerifyEvSFormatProof
+	}
+	//log.Trace("txhash:",tx.Hash(),"花费额承诺，格式正确证明:", erify1)
+	verify2 := zkp.VerifyFormatProof(tx.EVR(), zkp.PublicKey(pool.config.Regulator.PubK), tx.CMrFP())
+	if verify2 == false{
+		return ErrVerifyEvRFormatProof
+	}
+	//fmt.Println("txhash:",tx.Hash(),"找零承诺，格式正确证明:", verify2)
+	verify3 := zkp.VerifyBalanceProof(tx.CmR().Btob(), tx.CmS().Btob(), tx.CmO().Btob() , zkp.PublicKey(pool.config.Regulator.PubK), tx.BP())
+	//fmt.Println("txhash:",tx.Hash(),"会计平衡证明txpool:", verify3)
+	if verify3 == false{
+		return ErrVerifyBalanceProof
+	}
+	verify4 := zkp.VerifyEqualityProof(zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.EVO(), zkp.CypherText{C1: nil, C2: tx.CmO().Btob()}, tx.EvoEP())
+	//fmt.Println("txpool ",zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.EVO(), zkp.CypherText{C1: nil, C2: tx.CmO().Btob()},tx.EvoEP())
+	//fmt.Println("txhash:",tx.Hash(),"总额度相等证明:", verify4)
+	if verify4 == false{
+		return ErrVerifyTotalEqualityProof
+	}
+	verify5 := zkp.VerifyEqualityProof(zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.ERPK(), zkp.CypherText{C1: nil, C2: tx.CMRpk().Btob()}, tx.ErpkEP())
+	//fmt.Println("txhash:",tx.Hash(),"接收方公钥相等证明:", verify5)
+	if verify5 == false{
+		return ErrVerifyRpkEqualityProof
+	}
+	verify6 := zkp.VerifyEqualityProof(zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.ESPK(), zkp.CypherText{C1: nil, C2: tx.CMSpk().Btob()}, tx.EspkEP())
+	//fmt.Println("txhash:",tx.Hash(),"发送方公钥相等证明:", verify6)
+	if verify6 == false{
+		return ErrVerifySpkEqualityProof
+	}
+	log.Info("All zero knowledge proofs passed","fullhash",tx.Hash().Hex())
+	return nil
+}
+
+
 // add validates a transaction and inserts it into the non-executable queue for later
 // pending promotion and execution. If the transaction is a replacement for an already
 // pending or queued one, it overwrites the previous transaction if its price is higher.
@@ -681,6 +732,18 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 			invalidTxMeter.Mark(1)
 			return false, err
 		}
+	} else if tx.ID()==0 {
+		//verify zkp
+		if err := pool.verifyzkp(tx); err != nil {
+			log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+			invalidTxMeter.Mark(1)
+			return false, err
+		}
+	} else {
+			err := ErrID
+			log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+			invalidTxMeter.Mark(1)
+			return false, err
 	}
 
 	// If the transaction fails basic validationdiscard it

@@ -21,6 +21,20 @@ const url = "http://localhost:8545"
 const buyurl = "http://localhost:1323/buy"
 const puburl = "http://localhost:1323/pubpub"
 
+func init(){
+	path := "unlockAccount.json"
+	data,_ := ioutil.ReadFile(path)
+	resp, err := http.Post(url,
+		"application/json",
+		bytes.NewBuffer(data))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(body))
+}
+
 func postData() bool {
 	path := "getTx.json"
 	data,_ := ioutil.ReadFile(path)
@@ -82,7 +96,7 @@ func sendTransaction() bool{
 }
 
 func main()  {
-	sendTransaction()
+	//sendTransaction()
 	//postData()
 	//getData()
 	exchange()

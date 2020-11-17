@@ -19,6 +19,7 @@ package types
 import (
 	"container/heap"
 	"errors"
+	"github.com/ethereum/go-ethereum/crypto/zkp"
 	"io"
 	"math/big"
 	"sync/atomic"
@@ -352,6 +353,96 @@ func (tx *Transaction) SigS() *hexutil.Bytes     { return tx.data.SigS }
 func (tx *Transaction) CmV() *hexutil.Bytes      { return tx.data.CmV }
 func (tx *Transaction) CheckNonce() bool         { return true }
 
+func (tx *Transaction) EVS() zkp.CypherText{
+	c := zkp.CypherText{}
+	c.C1 = tx.EvSC1().Btob()
+	c.C2 = tx.EvSC2().Btob()
+	return c
+}
+func (tx *Transaction) EVR() zkp.CypherText{
+	c := zkp.CypherText{}
+	c.C1 = tx.EvRC1().Btob()
+	c.C2 = tx.EvRC2().Btob()
+	return c
+}
+func (tx *Transaction) CMsFP() zkp.FormatProof{
+	f := zkp.FormatProof{}
+	f.C = tx.CMsFPC().Btob()
+	f.Z1 = tx.CMsFPZ1().Btob()
+	f.Z2 = tx.CMsFPZ2().Btob()
+	return f
+}
+func (tx *Transaction) CMrFP() zkp.FormatProof{
+	f := zkp.FormatProof{}
+	f.C = tx.CMrFPC().Btob()
+	f.Z1 = tx.CMrFPZ1().Btob()
+	f.Z2 = tx.CMrFPZ2().Btob()
+	return f
+}
+func (tx *Transaction) BP() zkp.BalanceProof{
+	b := zkp.BalanceProof{}
+	b.C = tx.BPC().Btob()
+	b.R_r = tx.BPRR().Btob()
+	b.R_v = tx.BPRV().Btob()
+	b.S_or = tx.BPSOr().Btob()
+	b.S_r = tx.BPSR().Btob()
+	b.S_v = tx.BPSV().Btob()
+	return b
+}
+func (tx *Transaction) EVO() zkp.CypherText{
+	c := zkp.CypherText{}
+	c.C1 = tx.EvOC1().Btob()
+	c.C2 = tx.EvOC2().Btob()
+	return c
+}
+func (tx *Transaction) ERPK() zkp.CypherText{
+	c := zkp.CypherText{}
+	c.C1 = tx.ErpkC1().Btob()
+	c.C2 = tx.ErpkC2().Btob()
+	return c
+}
+func (tx *Transaction) ESPK() zkp.CypherText{
+	c := zkp.CypherText{}
+	c.C1 = tx.EspkC1().Btob()
+	c.C2 = tx.EspkC2().Btob()
+	return c
+}
+func (tx *Transaction) EvoEP() zkp.EqualityProof{
+	s1 := make([][]byte,4)
+	t1 := make([]byte,32)
+	l := zkp.LinearEquationProof{s1,t1}
+	e := zkp.EqualityProof{l}
+	e.LinearEquationProof.S[0] = tx.EvOEPs0().Btob()
+	e.LinearEquationProof.S[1] = tx.EvOEPs1().Btob()
+	e.LinearEquationProof.S[2] = tx.EvOEPs2().Btob()
+	e.LinearEquationProof.S[3] = tx.EvOEPs3().Btob()
+	e.LinearEquationProof.T= tx.EvOEPt().Btob()
+	return e
+}
+func (tx *Transaction) ErpkEP() zkp.EqualityProof{
+	s1 := make([][]byte,4)
+	t1 := make([]byte,32)
+	l := zkp.LinearEquationProof{s1,t1}
+	e := zkp.EqualityProof{l}
+	e.LinearEquationProof.S[0] = tx.ErpkEPs0().Btob()
+	e.LinearEquationProof.S[1] = tx.ErpkEPs1().Btob()
+	e.LinearEquationProof.S[2] = tx.ErpkEPs2().Btob()
+	e.LinearEquationProof.S[3] = tx.ErpkEPs3().Btob()
+	e.LinearEquationProof.T= tx.ErpkEPt().Btob()
+	return e
+}
+func (tx *Transaction) EspkEP() zkp.EqualityProof{
+	s1 := make([][]byte,4)
+	t1 := make([]byte,32)
+	l := zkp.LinearEquationProof{s1,t1}
+	e := zkp.EqualityProof{l}
+	e.LinearEquationProof.S[0] = tx.EspkEPs0().Btob()
+	e.LinearEquationProof.S[1] = tx.EspkEPs1().Btob()
+	e.LinearEquationProof.S[2] = tx.EspkEPs2().Btob()
+	e.LinearEquationProof.S[3] = tx.EspkEPs3().Btob()
+	e.T= tx.EspkEPt().Btob()
+	return e
+}
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.
 func (tx *Transaction) To() *common.Address {
