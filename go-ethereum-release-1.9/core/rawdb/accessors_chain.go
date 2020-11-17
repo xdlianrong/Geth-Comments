@@ -670,14 +670,14 @@ func WriteAllCM(db ethdb.Database, block *types.Block) {
 	// TODO:张锐改，20201103
 
 	for _, tx := range block.Transactions() {
-		if tx.ID() == 0 {
+		if tx.ID() == 1 {
 			// 购币交易
 			CmV := types.NewDefaultCM(tx.CmV())
 			hashV := CmV.Hash()
 			WriteCM(db, hashV, CmV)
 			log.Info("Succeed to store CMV into CMdb", "CMV", CmV, "hash", hashV)
 		}
-		if tx.ID() == 1 {
+		if tx.ID() == 0 {
 			// 转账交易
 			CmO := types.NewCM(tx.CmO(), true)
 			hashO := CmO.Hash()

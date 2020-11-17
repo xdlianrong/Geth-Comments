@@ -182,13 +182,13 @@ type TxPoolConfig struct {
 	PriceLimit uint64 // Minimum gas price to enforce for acceptance into the pool
 	PriceBump  uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
 
-	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
-	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
-	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
-	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
-	Exchange types.Exchange // @xzliu exchange
-	Regulator types.Regulator //regulator
-	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
+	AccountSlots uint64          // Number of executable transaction slots guaranteed per account
+	GlobalSlots  uint64          // Maximum number of executable transaction slots for all accounts
+	AccountQueue uint64          // Maximum number of non-executable transaction slots permitted per account
+	GlobalQueue  uint64          // Maximum number of non-executable transaction slots for all accounts
+	Exchange     types.Exchange  // @xzliu exchange
+	Regulator    types.Regulator //regulator
+	Lifetime     time.Duration   // Maximum amount of time non-executable transaction are queued
 }
 
 // DefaultTxPoolConfig contains the default configurations for the transaction
@@ -263,7 +263,7 @@ type TxPool struct {
 	scope       event.SubscriptionScope
 	signer      types.Signer
 	mu          sync.RWMutex
-	Exchange  	types.Exchange
+	Exchange    types.Exchange
 	Regulator   types.Regulator
 
 	istanbul bool // Fork indicator whether we are in the istanbul stage.
@@ -612,15 +612,15 @@ func (pool *TxPool) validateSign(tx *types.Transaction) error {
 	sig.M_hash = tx.SigMHash().Btob()
 	sig.R = tx.SigR().Btob()
 	sig.S = tx.SigS().Btob()
-	v :=  zkp.Verify(zkp.PublicKey(pool.config.Exchange.PubKey),sig)
-	if v == false{
+	v := zkp.Verify(zkp.PublicKey(pool.config.Exchange.PubKey), sig)
+	if v == false {
 		return ErrVerifySig
 	} else {
 		return nil
 	}
 }
 
-
+// validateCM 验证CM的有效性
 func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	// 三种情况报错：
 	// 1、购币交易的购币承诺已存在于CMdb中
@@ -663,42 +663,93 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	return ErrID
 }
 
-func (pool *TxPool) verifyzkp(tx *types.Transaction) error{
+func (pool *TxPool) processCM(tx *types.Transaction) {
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hashV := CmV.Hash()
+		rawdb.WriteCM(CMdb, hashV, CmV)
+		log.Info("Succeed to store CMV into CMdb", "CMV", CmV, "hash", hashV)
+	}
+	if tx.ID() == 0 {
+		// 转账交易
+		CmO := types.NewCM(tx.CmO(), true)
+		hashO := CmO.Hash()
+		rawdb.WriteCM(CMdb, hashO, CmO)
+		log.Info("Succeed to store CMO into CMdb", "CMO", CmO, "hash", hashO)
+		CmS := types.NewDefaultCM(tx.CmS())
+		hashS := CmS.Hash()
+		rawdb.WriteCM(CMdb, hashS, CmS)
+		log.Info("Succeed to store CMS into CMdb", "CMS", CmS, "hash", hashS)
+		CmR := types.NewDefaultCM(tx.CmR())
+		hashR := CmR.Hash()
+		rawdb.WriteCM(CMdb, hashR, CmR)
+		log.Info("Succeed to store CMR into CMdb", "CMR", CmR, "hash", hashR)
+	}
+}
+
+func (pool *TxPool) reorgCM(tx *types.Transaction) {
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hashV := CmV.Hash()
+		rawdb.DeleteCM(CMdb, hashV)
+		log.Info("Succeed to delete CMV from CMdb", "CMV", CmV, "hash", hashV)
+	}
+	if tx.ID() == 0 {
+		// 转账交易
+		CmO := types.NewCM(tx.CmO(), false)
+		hashO := CmO.Hash()
+		rawdb.WriteCM(CMdb, hashO, CmO)
+		log.Info("Succeed to modify CMO from CMdb", "CMO", CmO, "hash", hashO)
+		CmS := types.NewDefaultCM(tx.CmS())
+		hashS := CmS.Hash()
+		rawdb.DeleteCM(CMdb, hashS)
+		log.Info("Succeed to delete CMS from CMdb", "CMS", CmS, "hash", hashS)
+		CmR := types.NewDefaultCM(tx.CmR())
+		hashR := CmR.Hash()
+		rawdb.DeleteCM(CMdb, hashR)
+		log.Info("Succeed to delete CMR from CMdb", "CMR", CmR, "hash", hashR)
+	}
+}
+
+func (pool *TxPool) verifyzkp(tx *types.Transaction) error {
 	verify1 := zkp.VerifyFormatProof(tx.EVS(), zkp.PublicKey(pool.config.Regulator.PubK), tx.CMsFP())
-	if verify1 == false{
+	if verify1 == false {
 		return ErrVerifyEvSFormatProof
 	}
 	//log.Trace("txhash:",tx.Hash(),"花费额承诺，格式正确证明:", erify1)
 	verify2 := zkp.VerifyFormatProof(tx.EVR(), zkp.PublicKey(pool.config.Regulator.PubK), tx.CMrFP())
-	if verify2 == false{
+	if verify2 == false {
 		return ErrVerifyEvRFormatProof
 	}
 	//fmt.Println("txhash:",tx.Hash(),"找零承诺，格式正确证明:", verify2)
-	verify3 := zkp.VerifyBalanceProof(tx.CmR().Btob(), tx.CmS().Btob(), tx.CmO().Btob() , zkp.PublicKey(pool.config.Regulator.PubK), tx.BP())
+	verify3 := zkp.VerifyBalanceProof(tx.CmR().Btob(), tx.CmS().Btob(), tx.CmO().Btob(), zkp.PublicKey(pool.config.Regulator.PubK), tx.BP())
 	//fmt.Println("txhash:",tx.Hash(),"会计平衡证明txpool:", verify3)
-	if verify3 == false{
+	if verify3 == false {
 		return ErrVerifyBalanceProof
 	}
 	verify4 := zkp.VerifyEqualityProof(zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.EVO(), zkp.CypherText{C1: nil, C2: tx.CmO().Btob()}, tx.EvoEP())
 	//fmt.Println("txpool ",zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.EVO(), zkp.CypherText{C1: nil, C2: tx.CmO().Btob()},tx.EvoEP())
 	//fmt.Println("txhash:",tx.Hash(),"总额度相等证明:", verify4)
-	if verify4 == false{
+	if verify4 == false {
 		return ErrVerifyTotalEqualityProof
 	}
 	verify5 := zkp.VerifyEqualityProof(zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.ERPK(), zkp.CypherText{C1: nil, C2: tx.CMRpk().Btob()}, tx.ErpkEP())
 	//fmt.Println("txhash:",tx.Hash(),"接收方公钥相等证明:", verify5)
-	if verify5 == false{
+	if verify5 == false {
 		return ErrVerifyRpkEqualityProof
 	}
 	verify6 := zkp.VerifyEqualityProof(zkp.PublicKey(pool.config.Regulator.PubK), zkp.PublicKey(pool.config.Regulator.PubK), tx.ESPK(), zkp.CypherText{C1: nil, C2: tx.CMSpk().Btob()}, tx.EspkEP())
 	//fmt.Println("txhash:",tx.Hash(),"发送方公钥相等证明:", verify6)
-	if verify6 == false{
+	if verify6 == false {
 		return ErrVerifySpkEqualityProof
 	}
-	log.Info("All zero knowledge proofs passed","fullhash",tx.Hash().Hex())
+	log.Info("All zero knowledge proofs passed", "fullhash", tx.Hash().Hex())
 	return nil
 }
-
 
 // add validates a transaction and inserts it into the non-executable queue for later
 // pending promotion and execution. If the transaction is a replacement for an already
@@ -732,7 +783,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 			invalidTxMeter.Mark(1)
 			return false, err
 		}
-	} else if tx.ID()==0 {
+	} else if tx.ID() == 0 {
 		//verify zkp
 		if err := pool.verifyzkp(tx); err != nil {
 			log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
@@ -740,10 +791,10 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 			return false, err
 		}
 	} else {
-			err := ErrID
-			log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
-			invalidTxMeter.Mark(1)
-			return false, err
+		err := ErrID
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		invalidTxMeter.Mark(1)
+		return false, err
 	}
 
 	// If the transaction fails basic validationdiscard it
@@ -784,10 +835,12 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		}
 		// New transaction is better, replace old one
 		if old != nil {
+			pool.reorgCM(old)
 			pool.all.Remove(old.Hash())
 			pool.priced.Removed(1)
 			pendingReplaceMeter.Mark(1)
 		}
+		pool.processCM(tx)
 		pool.all.Add(tx)
 		pool.priced.Put(tx)
 		pool.journalTx(from, tx)
@@ -833,6 +886,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	}
 	// Discard any previous transaction and mark this
 	if old != nil {
+		pool.reorgCM(old)
 		pool.all.Remove(old.Hash())
 		pool.priced.Removed(1)
 		queuedReplaceMeter.Mark(1)
@@ -841,6 +895,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 		queuedGauge.Inc(1)
 	}
 	if pool.all.Get(hash) == nil {
+		pool.processCM(tx)
 		pool.all.Add(tx)
 		pool.priced.Put(tx)
 	}
@@ -873,6 +928,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	inserted, old := list.Add(tx, pool.config.PriceBump)
 	if !inserted {
 		// An older transaction was better, discard this
+		pool.reorgCM(tx)
 		pool.all.Remove(hash)
 		pool.priced.Removed(1)
 
@@ -881,6 +937,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	// Otherwise discard any previous transaction and mark this
 	if old != nil {
+		pool.reorgCM(old)
 		pool.all.Remove(old.Hash())
 		pool.priced.Removed(1)
 
@@ -891,6 +948,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all.Get(hash) == nil {
+		pool.processCM(tx)
 		pool.all.Add(tx)
 		pool.priced.Put(tx)
 	}
@@ -1053,6 +1111,7 @@ func (pool *TxPool) removeTx(hash common.Hash, outofbound bool) {
 	addr, _ := types.Sender(pool.signer, tx) // already validated during insertion
 
 	// Remove it from the list of known transactions
+	pool.reorgCM(tx)
 	pool.all.Remove(hash)
 	if outofbound {
 		pool.priced.Removed(1)
@@ -1360,6 +1419,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 		forwards := list.Forward(pool.currentState.GetNonce(addr))
 		for _, tx := range forwards {
 			hash := tx.Hash()
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed old queued transaction", "hash", hash)
 		}
@@ -1367,6 +1427,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 		drops, _ := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
 		for _, tx := range drops {
 			hash := tx.Hash()
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed unpayable queued transaction", "hash", hash)
 		}
@@ -1389,6 +1450,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 			caps = list.Cap(int(pool.config.AccountQueue))
 			for _, tx := range caps {
 				hash := tx.Hash()
+				pool.reorgCM(tx)
 				pool.all.Remove(hash)
 				log.Trace("Removed cap-exceeding queued transaction", "hash", hash)
 			}
@@ -1450,6 +1512,7 @@ func (pool *TxPool) truncatePending() {
 					for _, tx := range caps {
 						// Drop the transaction from the global pools too
 						hash := tx.Hash()
+						pool.reorgCM(tx)
 						pool.all.Remove(hash)
 
 						// Update the account nonce to the dropped transaction
@@ -1477,6 +1540,7 @@ func (pool *TxPool) truncatePending() {
 				for _, tx := range caps {
 					// Drop the transaction from the global pools too
 					hash := tx.Hash()
+					pool.reorgCM(tx)
 					pool.all.Remove(hash)
 
 					// Update the account nonce to the dropped transaction
@@ -1552,6 +1616,7 @@ func (pool *TxPool) demoteUnexecutables() {
 		olds := list.Forward(nonce)
 		for _, tx := range olds {
 			hash := tx.Hash()
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed old pending transaction", "hash", hash)
 		}
@@ -1560,6 +1625,7 @@ func (pool *TxPool) demoteUnexecutables() {
 		for _, tx := range drops {
 			hash := tx.Hash()
 			log.Trace("Removed unpayable pending transaction", "hash", hash)
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 		}
 		pool.priced.Removed(len(olds) + len(drops))
