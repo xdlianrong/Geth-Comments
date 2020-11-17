@@ -616,6 +616,7 @@ func (pool *TxPool) validateSign(tx *types.Transaction) error {
 	if v == false {
 		return ErrVerifySig
 	} else {
+		log.Info("Succeed to verify purchase sig ", "fullhash", tx.Hash().Hex())
 		return nil
 	}
 }
@@ -791,7 +792,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 			return false, err
 		}
 	} else {
-		err := ErrID
+		err := ErrIDFormat
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
 		invalidTxMeter.Mark(1)
 		return false, err
