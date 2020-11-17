@@ -663,6 +663,7 @@ func (pool *TxPool) validateCM(tx *types.Transaction) error {
 	return ErrID
 }
 
+// processCM 根据ID分别处理交易中的CM
 func (pool *TxPool) processCM(tx *types.Transaction) {
 	CMdb := pool.chain.GetCMdb()
 	if tx.ID() == 1 {
@@ -689,6 +690,7 @@ func (pool *TxPool) processCM(tx *types.Transaction) {
 	}
 }
 
+// reorgCM 回滚因将交易从交易池中舍弃导致的CM状态改变
 func (pool *TxPool) reorgCM(tx *types.Transaction) {
 	CMdb := pool.chain.GetCMdb()
 	if tx.ID() == 1 {

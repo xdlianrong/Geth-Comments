@@ -104,7 +104,7 @@ func WriteCM(db ethdb.KeyValueWriter, hash common.Hash, CM types.CM) {}
 
 输出：无
 
-3、从打包好的区块中取出所有交易，将交易中的承诺进行存储（v1.0 暂仅测试CMV）
+3、从打包好的区块中取出所有交易，将交易中的承诺进行存储（v1.0 暂仅测试CMV） （已舍弃该函数）
 
 ```go
 func WriteAllCM(db ethdb.KeyValueWriter, block *types.Block) {}
@@ -197,6 +197,20 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		return false, err
 	}
     ...
+}
+```
+
+### CM的相关处理
+
+无论是从本地节点得交易还是其他节点或区块同步来得交易，最后都是要调用tx_pool最下面得Add和Remove方法，所以在`pool.all.Add`和`pool.all.Remove`两个方法前分别添加processCM和reorgCM来进行处理
+
+```go
+// processCM 根据ID分别处理交易中的CM
+func (pool *TxPool) processCM(tx *types.Transaction) {
+}
+
+// reorgCM 回滚因将交易从交易池中舍弃导致的CM状态改变
+func (pool *TxPool) reorgCM(tx *types.Transaction) {
 }
 ```
 
