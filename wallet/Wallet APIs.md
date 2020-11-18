@@ -80,9 +80,9 @@ func GenerateKeys(G1, G2, P *big.Int) (pub PublicKey, priv PrivateKey, err error
 	"amount": "123"
 }
 ```
-- g1：user_pubkey，链上所有用户保持相同
-- g2：user_pubkey，链上所有用户保持相同
-- g3：user_pubkey，链上所有用户保持相同
+- g1：pubkey，链上所有用户保持相同
+- g2：pubkey，链上所有用户保持相同
+- g3：pubkey，链上所有用户保持相同
 - h：user_pubkey，后端调用 GenerateKeys 算法生成公钥
 - amount：代表金钱数，即购币金额
 
