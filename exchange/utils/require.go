@@ -105,10 +105,10 @@ func UnlockAccount(ethaccount string, ethkey string) bool {
 
 	bodyC, _ := ioutil.ReadAll(resp.Body)
 	log.SetPrefix("【AccountCenter】")
-	log.Println(string(bodyC),"Succeed to unlock account",ethaccount)
 	var s unlockget
 	json.Unmarshal([]byte(bodyC), &s)
 	if s.Result == true {
+		log.Println(string(bodyC),"Succeed to unlock account",ethaccount)
 		return true
 	} else {
 		return false
