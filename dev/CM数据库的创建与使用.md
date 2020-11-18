@@ -214,3 +214,13 @@ func (pool *TxPool) reorgCM(tx *types.Transaction) {
 }
 ```
 
+### CM统计个数外部调用
+
+```go
+// CountCm 返回有效承诺的个数和无效承诺的个数
+func (s *Ethereum) CountCm() (int, int) {
+	...
+	return valid, invalid
+}
+```
+
