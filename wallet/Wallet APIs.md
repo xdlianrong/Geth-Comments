@@ -43,7 +43,7 @@ var ReFortune []ReScore //用于读取和返还用户本地钱包文件
 ```
 
 ## GenerateKeys 算法
-用户新建钱包时，要从监管者处获取G1, G2, P ，并用此数据生成公私钥，私钥要发给用户让他保存好。调用 `GenerateKeys` 函数，生成 `G1`、`G2`、`P` 公钥文件，计算出用户公钥 `H` 。
+用户新建钱包时，要从监管者处获取G1, G2, P ，并用此数据生成公私钥，私钥要发给用户让他保存好。调用 `GenerateKeys` 函数，生成 `G1`、`G2`、`P` 公钥文件，计算出用户公钥 `H`。
 ```golang
 func GenerateKeys(G1, G2, P *big.Int) (pub PublicKey, priv PrivateKey, err error) {
 	//赋值
