@@ -252,6 +252,15 @@ func (b *LesApiBackend) ChainDb() ethdb.Database {
 	return b.eth.chainDb
 }
 
+// 暂未添加les中的承诺池
+func (b *LesApiBackend) CMDb() ethdb.Database {
+	return b.eth.chainDb
+}
+
+func (b *LesApiBackend) GetCMState() (int, int) {
+	return 0, 0
+}
+
 func (b *LesApiBackend) AccountManager() *accounts.Manager {
 	return b.eth.accountManager
 }

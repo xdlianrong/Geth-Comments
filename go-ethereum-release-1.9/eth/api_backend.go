@@ -279,6 +279,14 @@ func (b *EthAPIBackend) ChainDb() ethdb.Database {
 	return b.eth.ChainDb()
 }
 
+func (b *EthAPIBackend) CMDb() ethdb.Database {
+	return b.eth.CMDb()
+}
+
+func (b *EthAPIBackend) GetCMState() (int, int) {
+	return b.eth.CountCm()
+}
+
 func (b *EthAPIBackend) EventMux() *event.TypeMux {
 	return b.eth.EventMux()
 }
@@ -310,6 +318,6 @@ func (b *EthAPIBackend) RegulatorKey() types.Regulator {
 	return b.eth.config.Regulator
 }
 
-func (b *EthAPIBackend) ExchangeKey() types.Exchange{
+func (b *EthAPIBackend) ExchangeKey() types.Exchange {
 	return b.eth.config.Exchange
 }

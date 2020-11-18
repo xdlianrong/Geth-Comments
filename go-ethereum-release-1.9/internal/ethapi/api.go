@@ -75,6 +75,10 @@ func (s *PublicEthereumAPI) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(s.b.ProtocolVersion())
 }
 
+func (s *PublicEthereumAPI) GetCMState() (int, int) {
+	return s.b.GetCMState()
+}
+
 // Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not
 // yet received the latest block headers from its pears. In case it is synchronizing:
 // - startingBlock: block number this node started to synchronise from
@@ -1703,7 +1707,6 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 	//verify = zkp.VerifyEqualityProof(regulatorPubk, regulatorPubk, Espk, zkp.CypherText{C1: nil, C2: CMspk.Commitment}, EspkEP) //EvO和CmO里面的金额相等
 	//fmt.Println("发送方公钥相等证明:", verify)
 
-
 	var input []byte
 	if args.Input != nil {
 		input = *args.Input
@@ -1723,50 +1726,50 @@ func (args *SendTxArgs) toExTransaction(regulator types.Regulator) (*types.Trans
 	} else if args.Data != nil {
 		input = *args.Data
 	}
-	ErpkC1    := hexutil.Bytes(nil)
-	ErpkC2    := hexutil.Bytes(nil)
-	EspkC1    := hexutil.Bytes(nil)
-	EspkC2    := hexutil.Bytes(nil)
-	CMRpk     := hexutil.Bytes(nil)
-	CMSpk     := hexutil.Bytes(nil)
-	ErpkEPs0  := hexutil.Bytes(nil)
-	ErpkEPs1  := hexutil.Bytes(nil)
-	ErpkEPs2  := hexutil.Bytes(nil)
-	ErpkEPs3  := hexutil.Bytes(nil)
-	ErpkEPt   := hexutil.Bytes(nil)
-	EspkEPs0  := hexutil.Bytes(nil)
-	EspkEPs1  := hexutil.Bytes(nil)
-	EspkEPs2  := hexutil.Bytes(nil)
-	EspkEPs3  := hexutil.Bytes(nil)
-	EspkEPt   := hexutil.Bytes(nil)
-	EvSC1     := hexutil.Bytes(nil)
-	EvSC2     := hexutil.Bytes(nil)
-	EvRC1     := hexutil.Bytes(nil)
-	EvRC2     := hexutil.Bytes(nil)
-	_CmS      := hexutil.Bytes(nil)
-	_CmR      := hexutil.Bytes(nil)
-	CMsFPC    := hexutil.Bytes(nil)
-	CMsFPZ1   := hexutil.Bytes(nil)
-	CMsFPZ2   := hexutil.Bytes(nil)
-	CMrFPC    := hexutil.Bytes(nil)
-	CMrFPZ1   := hexutil.Bytes(nil)
-	CMrFPZ2   := hexutil.Bytes(nil)
-	EvsBsC1   := hexutil.Bytes(nil)
-	EvsBsC2   := hexutil.Bytes(nil)
-	EvOC1     := hexutil.Bytes(nil)
-	EvOC2     := hexutil.Bytes(nil)
-	_CmO      := hexutil.Bytes(nil)
-	EvOEPs0   := hexutil.Bytes(nil)
-	EvOEPs1   := hexutil.Bytes(nil)
-	EvOEPs2   := hexutil.Bytes(nil)
-	EvOEPs3   := hexutil.Bytes(nil)
-	EvOEPt    := hexutil.Bytes(nil)
-	BPC       := hexutil.Bytes(nil)
-	BPRV      := hexutil.Bytes(nil)
-	BPRR      := hexutil.Bytes(nil)
-	BPSV      := hexutil.Bytes(nil)
-	BPSR      := hexutil.Bytes(nil)
-	BPSOr     := hexutil.Bytes(nil)
+	ErpkC1 := hexutil.Bytes(nil)
+	ErpkC2 := hexutil.Bytes(nil)
+	EspkC1 := hexutil.Bytes(nil)
+	EspkC2 := hexutil.Bytes(nil)
+	CMRpk := hexutil.Bytes(nil)
+	CMSpk := hexutil.Bytes(nil)
+	ErpkEPs0 := hexutil.Bytes(nil)
+	ErpkEPs1 := hexutil.Bytes(nil)
+	ErpkEPs2 := hexutil.Bytes(nil)
+	ErpkEPs3 := hexutil.Bytes(nil)
+	ErpkEPt := hexutil.Bytes(nil)
+	EspkEPs0 := hexutil.Bytes(nil)
+	EspkEPs1 := hexutil.Bytes(nil)
+	EspkEPs2 := hexutil.Bytes(nil)
+	EspkEPs3 := hexutil.Bytes(nil)
+	EspkEPt := hexutil.Bytes(nil)
+	EvSC1 := hexutil.Bytes(nil)
+	EvSC2 := hexutil.Bytes(nil)
+	EvRC1 := hexutil.Bytes(nil)
+	EvRC2 := hexutil.Bytes(nil)
+	_CmS := hexutil.Bytes(nil)
+	_CmR := hexutil.Bytes(nil)
+	CMsFPC := hexutil.Bytes(nil)
+	CMsFPZ1 := hexutil.Bytes(nil)
+	CMsFPZ2 := hexutil.Bytes(nil)
+	CMrFPC := hexutil.Bytes(nil)
+	CMrFPZ1 := hexutil.Bytes(nil)
+	CMrFPZ2 := hexutil.Bytes(nil)
+	EvsBsC1 := hexutil.Bytes(nil)
+	EvsBsC2 := hexutil.Bytes(nil)
+	EvOC1 := hexutil.Bytes(nil)
+	EvOC2 := hexutil.Bytes(nil)
+	_CmO := hexutil.Bytes(nil)
+	EvOEPs0 := hexutil.Bytes(nil)
+	EvOEPs1 := hexutil.Bytes(nil)
+	EvOEPs2 := hexutil.Bytes(nil)
+	EvOEPs3 := hexutil.Bytes(nil)
+	EvOEPt := hexutil.Bytes(nil)
+	BPC := hexutil.Bytes(nil)
+	BPRV := hexutil.Bytes(nil)
+	BPRR := hexutil.Bytes(nil)
+	BPSV := hexutil.Bytes(nil)
+	BPSR := hexutil.Bytes(nil)
+	BPSOr := hexutil.Bytes(nil)
 	if args.To == nil {
 		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 1, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
 	}
@@ -1851,7 +1854,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 		return common.Hash{}, err
 	}
 	// Assemble the transaction and sign with the wallet
-	if(*args.ID == 0x0) {
+	if *args.ID == 0x0 {
 		tx, err := args.toZeroTransaction(s.b.RegulatorKey())
 		if err != nil {
 			return common.Hash{}, err
@@ -1861,7 +1864,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 			return common.Hash{}, err
 		}
 		return SubmitTransaction(ctx, s.b, signed)
-	}else if(*args.ID == 0x1){
+	} else if *args.ID == 0x1 {
 		tx, err := args.toExTransaction(s.b.RegulatorKey())
 		if err != nil {
 			return common.Hash{}, err
@@ -1871,7 +1874,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 			return common.Hash{}, err
 		}
 		return SubmitTransaction(ctx, s.b, signed)
-	}else{
+	} else {
 		return common.Hash{}, err
 	}
 }

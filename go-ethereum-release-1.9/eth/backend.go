@@ -18,6 +18,7 @@
 package eth
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math/big"
@@ -536,6 +537,7 @@ func (s *Ethereum) TxPool() *core.TxPool               { return s.txPool }
 func (s *Ethereum) EventMux() *event.TypeMux           { return s.eventMux }
 func (s *Ethereum) Engine() consensus.Engine           { return s.engine }
 func (s *Ethereum) ChainDb() ethdb.Database            { return s.chainDb }
+func (s *Ethereum) CMDb() ethdb.Database               { return s.CMdb }
 func (s *Ethereum) IsListening() bool                  { return true } // Always listening
 func (s *Ethereum) EthVersion() int                    { return int(ProtocolVersions[0]) }
 func (s *Ethereum) NetVersion() uint64                 { return s.networkID }
@@ -608,4 +610,24 @@ func (s *Ethereum) Stop() error {
 	s.CMdb.Close()
 	close(s.shutdownChan)
 	return nil
+}
+
+// CountCm 返回有效承诺的个数和无效承诺的个数
+func (s *Ethereum) CountCm() (int, int) {
+	valid := 0
+	invalid := 0
+	CMdb := s.CMDb()
+	it := CMdb.NewIterator()
+	defer it.Release()
+
+	for it.Next() {
+		CM := new(types.CM)
+		value := it.Value()
+		if _ = rlp.Decode(bytes.NewReader(value), CM); CM.Spent == false {
+			valid += 1
+		} else {
+			invalid += 1
+		}
+	}
+	return valid, invalid
 }
