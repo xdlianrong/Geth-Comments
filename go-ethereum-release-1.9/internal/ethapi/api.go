@@ -75,8 +75,13 @@ func (s *PublicEthereumAPI) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(s.b.ProtocolVersion())
 }
 
-func (s *PublicEthereumAPI) GetCMState() (int, int) {
-	return s.b.GetCMState()
+// ProtocolVersion1 returns the current Ethereum protocol version this node supports
+func (s *PublicEthereumAPI) GetCMState() map[string]hexutil.Uint {
+	valid, invalid := s.b.GetCMState()
+	return map[string]hexutil.Uint{
+		"valid":   hexutil.Uint(valid),
+		"invalid": hexutil.Uint(invalid),
+	}
 }
 
 // Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not

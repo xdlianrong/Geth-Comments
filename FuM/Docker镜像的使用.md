@@ -37,11 +37,11 @@ Docker已经正确安装且运行。
 
 镜像生成之后，首次启动需要初始化创世区块，所以启动容器需要使用如下命令：`docker run -it --rm --name ethereum_zkp -v /path/to/genesis.json:/root/privatechain/genesis.json -v /path/to/privatechain:/root/privatechain --entrypoint /bin/sh xdlianrong/ethereum_zkp:0.0.1`
 
-首次进入容器后初始化创世区块：`geth -datadir /root/privatechain/Data0/ init /root/privatechain/genesis.json`
+首次进入容器后初始化创世区块：`geth -datadir /root/privatechain/data0/ --regulatorip 39.99.227.43 init /root/privatechain/genesis.json`
 
-初始化完成之后，就可以按照正常步骤启动geth，因为上面示例中的数据目录为`/root/privatechain/Data0/`，故启动geth需要声明`--datadir /root/privatechain/Data0/`，下面给出的是我使用的示例：
+初始化完成之后，就可以按照正常步骤启动geth，因为上面示例中的数据目录为`/root/privatechain/data0/`，故启动geth需要声明`--datadir /root/privatechain/data0/`，下面给出的是我使用的示例：
 
-> geth --identity "666" --rpc --rpcport "8545" --rpccorsdomain "http://localhost:8000" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir /root/privatechain/Data0/ --port "30303" --nodiscover --allow-insecure-unlock --regulatorip 39.99.227.43 console
+> geth --identity "666" --rpc --rpcport "8545" --rpccorsdomain "http://localhost:8000" --rpcapi "eth,net,web3,personal,admin,txpool,debug,miner" --datadir /root/privatechain/data0/ --port "30303" --nodiscover --allow-insecure-unlock --regulatorip 39.99.227.43 console
 
 **注意**：如果要修改port，需要在镜像启动时声明端口映射。geth的启动参数要和官方文档要求一致。
 

@@ -1196,12 +1196,14 @@ func setRegulator(ctx *cli.Context, cfg *eth.Config) {
 	client := &http.Client{}
 	//url := fmt.Sprintf("http://%s:%d/regkey?chainID=%s", cfg.Regulator.IP, cfg.Regulator.Port, cfg.UserIdent)
 	url := fmt.Sprintf("http://%s:%d/regkey?chainID=1", cfg.Regulator.IP, cfg.Regulator.Port)
-	resp, err := client.Get(url)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println(err)
+	resp, _ := client.Get(url)
+	if resp != nil {
+		defer resp.Body.Close()
+	} else {
+		log.Warn("Failed to connect to regulator server", "ip", cfg.Regulator.IP, "port", cfg.Regulator.Port)
+		return
 	}
+	body, _ := ioutil.ReadAll(resp.Body)
 	json.Unmarshal(body, &cfg.Regulator.PubK)
 	if cfg.Regulator.PubK.G1 == nil || cfg.Regulator.PubK.G2 == nil || cfg.Regulator.PubK.P == nil || cfg.Regulator.PubK.H == nil {
 		log.Warn("Failed to connect to regulator server", "ip", cfg.Regulator.IP, "port", cfg.Regulator.Port)
@@ -1220,7 +1222,12 @@ func setExchange(ctx *cli.Context, cfg *eth.Config) {
 	client := &http.Client{}
 	url := fmt.Sprintf("http://%s:%d/pubpub", cfg.Exchange.IP, cfg.Exchange.Port)
 	resp, err := client.Get(url)
-	defer resp.Body.Close()
+	if resp != nil {
+		defer resp.Body.Close()
+	} else {
+		log.Warn("Failed to connect to exchange server", "ip", cfg.Exchange.IP, "port", cfg.Exchange.Port)
+		return
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Println(err)

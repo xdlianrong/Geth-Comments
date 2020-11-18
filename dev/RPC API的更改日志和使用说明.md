@@ -7,9 +7,13 @@
 + eth_sendTransaction
 + eth_getTransactionByHash
 
+新增API如下：
+
++ eth_getCMState
+
 ## 用法
 
-### eth_sendTransaction
+## eth_sendTransaction
 
 创建一个新的消息调用交易，如果数据字段中包含代码，则创建一个合约（请不要这么使用）。
 
@@ -92,7 +96,7 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_sendTransaction","params":[{
 }
 ```
 
-### eth_getTransactionByHash
+## eth_getTransactionByHash
 
 返回指定哈希对应的交易。
 
@@ -186,3 +190,40 @@ curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getTransactionByHash","param
     }
 }
 ```
+
+## eth_getCMState
+
+返回当前承诺池内有效承诺和无效承诺的个数。
+
+### 参数
+
+无
+
+### 返回值
+
+`Object` - 承诺池内承诺个数对象
+
++ invalid: QUANTITY - 无效的承诺的个数
++ valid: QUANTITY - 有效的承诺的个数
+
+### 示例代码
+
+请求：
+
+```json
+curl -X POST --data '{"jsonrpc":"2.0","method":"eth_getCMState","id":1}'
+```
+
+响应：
+
+```json
+{
+    "jsonrpc": "2.0",
+    "id": 67,
+    "result": {
+        "invalid": "0x1",
+        "valid": "0x0"
+    }
+}
+```
+
