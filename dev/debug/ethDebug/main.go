@@ -96,8 +96,8 @@ func sendTransaction() bool{
 }
 
 func main()  {
-	//sendTransaction()
+	sendTransaction()
 	//postData()
 	//getData()
-	exchange()
+	//exchange()
 }
