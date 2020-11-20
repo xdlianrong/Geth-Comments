@@ -96,7 +96,6 @@ func buy(c echo.Context) error {
 		elgamal_info    = utils.CreateElgamalInfo(regulatorpub, u.Amount, u.H)
 		elgamal_r       = utils.CreateElgamalR(usrpub, cm_and_r.R)
 		signature       = utils.CreateSign(publisherpriv, u.Amount)
-		//TODO: sendTranscation
 		if utils.SendTransaction(elgamal_info, elgamal_r, signature, cm_and_r, ethaccount) == true {
 			result := utils.Toreceipt(cm_and_r.Commitment, elgamal_r.C1, elgamal_r.C2)
 			return c.JSON(http.StatusCreated, result)

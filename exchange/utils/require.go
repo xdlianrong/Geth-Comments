@@ -45,6 +45,14 @@ type SendTx struct {
 	CmV      string `json:"cmv"`
 }
 
+// get result from send exchangetx to ethereum
+type SendTxget struct {
+	Jsonrpc string   `json:"jsonrpc"`
+	Id      int      `json:"id"`
+	Result  string   `json:"result"`
+	Error   string   `json:"error"`
+}
+
 // verify the publickey of usr to regulator
 func Verify(publickey string) bool {
 	data := make(url.Values)
@@ -111,6 +119,7 @@ func UnlockAccount(ethaccount string, ethkey string) bool {
 		log.Println(string(bodyC),"Succeed to unlock account",ethaccount)
 		return true
 	} else {
+		log.Println(string(bodyC),"Failed to unlock account",ethaccount)
 		return false
 	}
 }
@@ -147,6 +156,13 @@ func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, 
 	}
 	defer resp.Body.Close()
 	bodyC, _ := ioutil.ReadAll(resp.Body)
-	fmt.Println(string(bodyC))
-	return true
+	var s SendTxget
+	json.Unmarshal([]byte(bodyC), &s)
+	if s.Result != "" {
+		log.Println(string(bodyC),"Succeed to send exchangetx",s.Result)
+		return true
+	} else {
+		log.Println(string(bodyC),"Failed to send exchangetx",ethaccount)
+		return false
+	}
 }
