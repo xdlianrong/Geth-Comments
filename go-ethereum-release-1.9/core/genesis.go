@@ -42,25 +42,26 @@ import (
 //go:generate gencodec -type GenesisAccount -field-override genesisAccountMarshaling -out gen_genesis_account.go
 
 var errGenesisNoConfig = errors.New("genesis has no chain configuration")
-
 // Genesis specifies the header fields, state of a genesis block. It also defines hard
 // fork switch-over blocks through the chain configuration.
 type Genesis struct {
 	Config     *params.ChainConfig `json:"config"`
+	Crypto     uint64              `json:"crypto"`
 	Nonce      uint64              `json:"nonce"`
 	Timestamp  uint64              `json:"timestamp"`
 	ExtraData  []byte              `json:"extraData"`
-	GasLimit   uint64              `json:"gasLimit"   gencodec:"required"`
-	Difficulty *big.Int            `json:"difficulty" gencodec:"required"`
+	GasLimit   uint64              `json:"gasLimit"     gencodec:"required"`
+	Difficulty *big.Int            `json:"difficulty"   gencodec:"required"`
 	Mixhash    common.Hash         `json:"mixHash"`
 	Coinbase   common.Address      `json:"coinbase"`
-	Alloc      GenesisAlloc        `json:"alloc"      gencodec:"required"`
+	Alloc      GenesisAlloc        `json:"alloc"        gencodec:"required"`
 
 	// These fields are used for consensus tests. Please don't use them
 	// in actual genesis blocks.
 	Number     uint64      `json:"number"`
 	GasUsed    uint64      `json:"gasUsed"`
 	ParentHash common.Hash `json:"parentHash"`
+
 }
 
 // GenesisAlloc specifies the initial state that is part of the genesis block.
@@ -152,7 +153,18 @@ func (e *GenesisMismatchError) Error() string {
 //
 // The returned chain configuration is never nil.
 func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
-	return SetupGenesisBlockWithOverride(db, genesis, nil, nil)
+	fastConfig, fastHash, fastErr := SetupGenesisBlockWithOverride(db, genesis, nil, nil)
+	//genesisBlock := rawdb.ReadBlock(db, fastHash, 0)
+
+	//if genesisBlock != nil {
+	//	data := genesisBlock.Header().Extra
+	//	params.ParseExtraDataFromGenesis(data)
+	//	GasUsed, IsCoin, KindOfCrypto := data[0], data[1], data[2]
+	//	if err := baseCheck(GasUsed, IsCoin, KindOfCrypto); err != nil {
+	//		return nil, common.Hash{}, err
+	//	}
+	//}
+	return fastConfig, fastHash,fastErr
 }
 
 func SetupGenesisBlockWithOverride(db ethdb.Database, genesis *Genesis, overrideIstanbul, overrideMuirGlacier *big.Int) (*params.ChainConfig, common.Hash, error) {
