@@ -18,7 +18,7 @@ var _ = (*genesisSpecMarshaling)(nil)
 func (g Genesis) MarshalJSON() ([]byte, error) {
 	type Genesis struct {
 		Config     *params.ChainConfig                         `json:"config"`
-		Crypto     uint64                                      `json:"crypto"`
+		Crypto     uint8                                     `json:"crypto"`
 		Nonce      math.HexOrDecimal64                         `json:"nonce"`
 		Timestamp  math.HexOrDecimal64                         `json:"timestamp"`
 		ExtraData  hexutil.Bytes                               `json:"extraData"`
@@ -56,7 +56,7 @@ func (g Genesis) MarshalJSON() ([]byte, error) {
 func (g *Genesis) UnmarshalJSON(input []byte) error {
 	type Genesis struct {
 		Config     *params.ChainConfig                         `json:"config"`
-		Crypto     *uint64                                      `json:"crypto"`
+		Crypto     *uint8                                    `json:"crypto"`
 		Nonce      *math.HexOrDecimal64                        `json:"nonce"`
 		Timestamp  *math.HexOrDecimal64                        `json:"timestamp"`
 		ExtraData  *hexutil.Bytes                              `json:"extraData"`
@@ -77,7 +77,7 @@ func (g *Genesis) UnmarshalJSON(input []byte) error {
 		g.Config = dec.Config
 	}
 	if dec.Crypto != nil {
-		g.Crypto = uint64(*dec.Crypto)
+		g.Crypto = *dec.Crypto
 	}
 	if dec.Nonce != nil {
 		g.Nonce = uint64(*dec.Nonce)

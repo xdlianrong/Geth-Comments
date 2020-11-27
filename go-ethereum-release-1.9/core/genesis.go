@@ -46,7 +46,7 @@ var errGenesisNoConfig = errors.New("genesis has no chain configuration")
 // fork switch-over blocks through the chain configuration.
 type Genesis struct {
 	Config     *params.ChainConfig `json:"config"`
-	Crypto     uint64              `json:"crypto"`
+	Crypto     uint8              `json:"crypto"   gencodec:"required"`
 	Nonce      uint64              `json:"nonce"`
 	Timestamp  uint64              `json:"timestamp"`
 	ExtraData  []byte              `json:"extraData"`
@@ -154,16 +154,14 @@ func (e *GenesisMismatchError) Error() string {
 // The returned chain configuration is never nil.
 func SetupGenesisBlock(db ethdb.Database, genesis *Genesis) (*params.ChainConfig, common.Hash, error) {
 	fastConfig, fastHash, fastErr := SetupGenesisBlockWithOverride(db, genesis, nil, nil)
-	//genesisBlock := rawdb.ReadBlock(db, fastHash, 0)
-
-	//if genesisBlock != nil {
-	//	data := genesisBlock.Header().Extra
-	//	params.ParseExtraDataFromGenesis(data)
-	//	GasUsed, IsCoin, KindOfCrypto := data[0], data[1], data[2]
-	//	if err := baseCheck(GasUsed, IsCoin, KindOfCrypto); err != nil {
-	//		return nil, common.Hash{}, err
-	//	}
-	//}
+	genesisBlock := rawdb.ReadBlock(db, fastHash, 0)
+	if genesisBlock != nil {
+		data := genesisBlock.Header().Extra
+		crypto.SetCrtptoType(data[0])
+		if err := crypto.BaseCheck(data[0]); err != nil {
+			return nil, common.Hash{}, err
+		}
+	}
 	return fastConfig, fastHash,fastErr
 }
 
@@ -273,13 +271,20 @@ func (g *Genesis) configOrDefault(ghash common.Hash) *params.ChainConfig {
 	}
 }
 
+func (g *Genesis) makeCryptoData() []byte {
+	h := []byte{g.Crypto}
+	g.ExtraData = h
+	return g.ExtraData
+}
+
 // ToBlock creates the genesis block and writes state of a genesis specification
 // to the given database (or discards it if nil).
 func (g *Genesis) ToBlock(db ethdb.Database) *types.Block {
 	if db == nil {
 		db = rawdb.NewMemoryDatabase()
 	}
-
+	g.ExtraData = g.makeCryptoData()
+	crypto.SetCrtptoType(uint8(g.ExtraData[0]))
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	for addr, account := range g.Alloc {
 		statedb.AddBalance(addr, account.Balance)

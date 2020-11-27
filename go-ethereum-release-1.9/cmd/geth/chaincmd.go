@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -217,11 +218,9 @@ func initGenesis(ctx *cli.Context) error {
 	defer file.Close()
 
 	genesis := new(core.Genesis)
-	fmt.Println(genesis)
 	if err := json.NewDecoder(file).Decode(genesis); err != nil {
 		utils.Fatalf("invalid genesis file: %v", err)
 	}
-	fmt.Println(genesis)
 	// Open an initialise both full and light databases
 	stack := makeFullNode(ctx)
 	defer stack.Close()
@@ -245,6 +244,7 @@ func initGenesis(ctx *cli.Context) error {
 			utils.Fatalf("Failed to write genesis block: %v", err)
 		}
 		chaindb.Close()
+		log.Info("crypto","kind",crypto.CryptoType)
 		log.Info("Successfully wrote genesis state", "database", name, "hash", hash)
 	}
 	return nil
