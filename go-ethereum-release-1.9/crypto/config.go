@@ -11,7 +11,7 @@ const (
 
 var CryptoType = CRYPTO_ECC_SH3_AES
 
-func SetCrtptoType(cryptoType uint8) {
+func SetCryptoType(cryptoType uint8) {
 	if(cryptoType == CRYPTO_ECC_SH3_AES){
 		CryptoType = CRYPTO_ECC_SH3_AES
 	}else if(cryptoType == CRYPTO_SM2_SM3_SM4){
