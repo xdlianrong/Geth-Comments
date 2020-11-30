@@ -22,7 +22,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto/sm2"
 
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -85,9 +84,4 @@ func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
 // S256 returns an instance of the secp256k1 curve.
 func S256() elliptic.Curve {
 	return secp256k1.S256()
-}
-
-//导入SM2椭圆曲线
-func Sm2p256() elliptic.Curve{
-	return sm2.P256Sm2()
 }
