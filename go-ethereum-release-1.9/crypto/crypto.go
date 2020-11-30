@@ -23,6 +23,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm2"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -96,23 +97,48 @@ func CreateAddress2(b common.Address, salt [32]byte, inithash []byte) common.Add
 
 // ToECDSA creates a private key with the given D value.
 func ToECDSA(d []byte) (*ecdsa.PrivateKey, error) {
-	return toECDSA(d, true)
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		ecdsapri, err := toECDSA(S256(), d, true)
+		if err != nil {
+			return nil, err
+		}
+		return ecdsapri, nil
+	}
+	//guomi
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		ecdsapri, err := toECDSA(sm2.GetSm2P256V1(), d, true)
+		if err != nil {
+			return nil, err
+		}
+		return ecdsapri, nil
+	}
+	return nil, nil
 }
 
 // ToECDSAUnsafe blindly converts a binary blob to a private key. It should almost
 // never be used unless you are sure the input is valid and want to avoid hitting
 // errors due to bad origin encoding (0 prefixes cut off).
 func ToECDSAUnsafe(d []byte) *ecdsa.PrivateKey {
-	priv, _ := toECDSA(d, false)
-	return priv
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		ecdsapri, _ := toECDSA(S256(), d, true)
+		return ecdsapri
+	}
+	//guomi
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		ecdsapri, _ := toECDSA(sm2.GetSm2P256V1(), d, true)
+		return ecdsapri
+	}
+	return nil
 }
 
 // toECDSA creates a private key with the given D value. The strict parameter
 // controls whether the key's length should be enforced at the curve size or
 // it can also accept legacy encodings (0 prefixes).
-func toECDSA(d []byte, strict bool) (*ecdsa.PrivateKey, error) {
+// 指定椭圆曲线参数，生成公私钥对
+func toECDSA(curve elliptic.Curve, d []byte, strict bool) (*ecdsa.PrivateKey, error) {
 	priv := new(ecdsa.PrivateKey)
-	priv.PublicKey.Curve = S256()
+	//priv.PublicKey.Curve = S256()
+	priv.PublicKey.Curve = curve
 	if strict && 8*len(d) != priv.Params().BitSize {
 		return nil, fmt.Errorf("invalid length, need %d bits", priv.Params().BitSize)
 	}
@@ -144,19 +170,41 @@ func FromECDSA(priv *ecdsa.PrivateKey) []byte {
 
 // UnmarshalPubkey converts bytes to a secp256k1 public key.
 func UnmarshalPubkey(pub []byte) (*ecdsa.PublicKey, error) {
-	x, y := elliptic.Unmarshal(S256(), pub)
-	if x == nil {
-		return nil, errInvalidPubkey
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		x, y := elliptic.Unmarshal(S256(), pub)
+		if x == nil {
+			return nil, errInvalidPubkey
+		}
+		return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}, nil
 	}
-	return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}, nil
+	//guomi
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		//ecdsapri, _ := toECDSA(sm2.P256Sm2(),d,true)
+		x, y := elliptic.Unmarshal(sm2.GetSm2P256V1(), pub)
+		if x == nil {
+			return nil, errInvalidPubkey
+		}
+		return &ecdsa.PublicKey{Curve: sm2.GetSm2P256V1(), X: x, Y: y}, nil
+	}
+	return nil, nil
 }
 
 
 func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
-	if pub == nil || pub.X == nil || pub.Y == nil {
-		return nil
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		if pub == nil || pub.X == nil || pub.Y == nil {
+			return nil
+		}
+		return elliptic.Marshal(S256(), pub.X, pub.Y)
 	}
-	return elliptic.Marshal(S256(), pub.X, pub.Y)
+	//guomi
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		if pub == nil || pub.X == nil || pub.Y == nil {
+			return nil
+		}
+		return elliptic.Marshal(sm2.GetSm2P256V1(), pub.X, pub.Y)
+	}
+	return nil
 }
 
 
@@ -202,6 +250,23 @@ func SaveECDSA(file string, key *ecdsa.PrivateKey) error {
 func GenerateKey() (*ecdsa.PrivateKey, error) {
 	return ecdsa.GenerateKey(S256(), rand.Reader)
 }
+
+//func GenerateKey() (*ecdsa.PrivateKey, error) {
+//	switch CryptoType {
+//	//guoji P256
+//	case CRYPTO_ECC_SH3_AES:
+//		ecdsapri, err := ecies.GenerateKey(rand.Reader, S256(), nil)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return (ecdsapri.ExportECDSA()), nil
+//	//	guomi
+//	case CRYPTO_SM2_SM3_SM4:
+//		smpri, _ := ecies.GenerateKey(rand.Reader, sm2.GetSm2P256V1(), nil)
+//		return (smpri.ExportECDSA()), nil
+//	}
+//	return nil, nil
+//}
 
 // ValidateSignatureValues verifies whether the signature values are valid with
 // the given chain rules. The v value is assumed to be either 0 or 1.
