@@ -23,7 +23,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto/gm/sm2"
+	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -31,6 +31,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm2"
 	"github.com/ethereum/go-ethereum/rlp"
 	"golang.org/x/crypto/sha3"
 )
@@ -104,7 +105,6 @@ func ToECDSA(d []byte) (*ecdsa.PrivateKey, error) {
 		}
 		return ecdsapri, nil
 	}
-	//guomi
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
 		ecdsapri, err := toECDSA(sm2.GetSm2P256V1(), d, true)
 		if err != nil {
@@ -123,7 +123,6 @@ func ToECDSAUnsafe(d []byte) *ecdsa.PrivateKey {
 		ecdsapri, _ := toECDSA(S256(), d, true)
 		return ecdsapri
 	}
-	//guomi
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
 		ecdsapri, _ := toECDSA(sm2.GetSm2P256V1(), d, true)
 		return ecdsapri
@@ -177,9 +176,7 @@ func UnmarshalPubkey(pub []byte) (*ecdsa.PublicKey, error) {
 		}
 		return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}, nil
 	}
-	//guomi
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
-		//ecdsapri, _ := toECDSA(sm2.P256Sm2(),d,true)
 		x, y := elliptic.Unmarshal(sm2.GetSm2P256V1(), pub)
 		if x == nil {
 			return nil, errInvalidPubkey
@@ -197,7 +194,6 @@ func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 		}
 		return elliptic.Marshal(S256(), pub.X, pub.Y)
 	}
-	//guomi
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
 		if pub == nil || pub.X == nil || pub.Y == nil {
 			return nil
@@ -246,42 +242,52 @@ func SaveECDSA(file string, key *ecdsa.PrivateKey) error {
 	return ioutil.WriteFile(file, []byte(k), 0600)
 }
 
-
 func GenerateKey() (*ecdsa.PrivateKey, error) {
-	return ecdsa.GenerateKey(S256(), rand.Reader)
+	switch CryptoType {
+	case CRYPTO_ECC_SH3_AES:
+		eciespri, _ := ecies.GenerateKey(rand.Reader, S256(), nil)
+		return (eciespri.ExportECDSA()), nil
+	case CRYPTO_SM2_SM3_SM4:
+		smpri, _ := ecies.GenerateKey(rand.Reader, sm2.GetSm2P256V1(), nil)
+		return (smpri.ExportECDSA()), nil
+	}
+	return nil, nil
 }
-
-//func GenerateKey() (*ecdsa.PrivateKey, error) {
-//	switch CryptoType {
-//	//guoji P256
-//	case CRYPTO_ECC_SH3_AES:
-//		ecdsapri, err := ecies.GenerateKey(rand.Reader, S256(), nil)
-//		if err != nil {
-//			return nil, err
-//		}
-//		return (ecdsapri.ExportECDSA()), nil
-//	//	guomi
-//	case CRYPTO_SM2_SM3_SM4:
-//		smpri, _ := ecies.GenerateKey(rand.Reader, sm2.GetSm2P256V1(), nil)
-//		return (smpri.ExportECDSA()), nil
-//	}
-//	return nil, nil
-//}
 
 // ValidateSignatureValues verifies whether the signature values are valid with
 // the given chain rules. The v value is assumed to be either 0 or 1.
 // TODO: 修改SM2验签算法对于参数v，r，s的验证
+//func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
+//	if r.Cmp(common.Big1) < 0 || s.Cmp(common.Big1) < 0 {
+//		return false
+//	}
+//	// reject upper range of s values (ECDSA malleability)
+//	// see discussion in secp256k1/libsecp256k1/include/secp256k1.h
+//	if homestead && s.Cmp(secp256k1halfN) > 0 {
+//		return false
+//	}
+//	// Frontier: allow s to be in full N range
+//	return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
+//}
+
 func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
-	if r.Cmp(common.Big1) < 0 || s.Cmp(common.Big1) < 0 {
-		return false
+	switch CryptoType {
+	case CRYPTO_ECC_SH3_AES:
+		if r.Cmp(common.Big1) < 0 || s.Cmp(common.Big1) < 0 {
+			return false
+		}
+		// reject upper range of s values (ECDSA malleability)
+		// see discussion in secp256k1/libsecp256k1/include/secp256k1.h
+		if homestead && s.Cmp(secp256k1halfN) > 0 {
+			return false
+		}
+		// Frontier: allow s to be in full N range
+		return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
+	case CRYPTO_SM2_SM3_SM4:
+		return sm2.ValidateSignatureValues(v, r, s, homestead)
+
 	}
-	// reject upper range of s values (ECDSA malleability)
-	// see discussion in secp256k1/libsecp256k1/include/secp256k1.h
-	if homestead && s.Cmp(secp256k1halfN) > 0 {
-		return false
-	}
-	// Frontier: allow s to be in full N range
-	return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
+	return false
 }
 
 func PubkeyToAddress(p ecdsa.PublicKey) common.Address {

@@ -40,13 +40,17 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm2"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm3"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm4"
 	"hash"
 
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	//ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/crypto/secp256k1"
 )
 
 var (
-	DefaultCurve                  = ethcrypto.S256()
+	DefaultCurve                  = secp256k1.S256()
 	ErrUnsupportedECDHAlgorithm   = fmt.Errorf("ecies: unsupported ECDH algorithm")
 	ErrUnsupportedECIESParameters = fmt.Errorf("ecies: unsupported ECIES parameters")
 )
@@ -97,13 +101,22 @@ var (
 		BlockSize: aes.BlockSize,
 		KeyLen:    32,
 	}
+
+	ECIES_SM4_SM3256 = &ECIESParams{
+		Hash:      sm3.New,
+		hashAlgo:  crypto.SHA256,
+		Cipher:    sm4.NewCipher,
+		BlockSize: sm4.BlockSize,
+		KeyLen:    16,
+	}
 )
 
 var paramsFromCurve = map[elliptic.Curve]*ECIESParams{
-	ethcrypto.S256(): ECIES_AES128_SHA256,
+	secp256k1.S256(): ECIES_AES128_SHA256,
 	elliptic.P256():  ECIES_AES128_SHA256,
 	elliptic.P384():  ECIES_AES256_SHA384,
 	elliptic.P521():  ECIES_AES256_SHA512,
+	sm2.GetSm2P256V1(): ECIES_SM4_SM3256,
 }
 
 func AddParamsForCurve(curve elliptic.Curve, params *ECIESParams) {
