@@ -1592,7 +1592,7 @@ func Hash(str string) []byte {
 	h.Write([]byte(str))
 	return h.Sum(nil)
 }
-func (args *SendTxArgs) chechParameter() error {
+func (args *SendTxArgs) checkParameter() error {
 	lackofParameterError := errors.New(`lack of parameter`)
 	if args.ID == nil {
 		return errors.New(`transaction ID should be decleared`)
@@ -1854,7 +1854,7 @@ func (s *PublicTransactionPoolAPI) SendTransaction(ctx context.Context, args Sen
 		return common.Hash{}, err
 	}
 	// 检查发来的值够不够
-	err = args.chechParameter()
+	err = args.checkParameter()
 	if err != nil {
 		return common.Hash{}, err
 	}

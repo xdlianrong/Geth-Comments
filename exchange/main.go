@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	cmp = 1
+	cmp       = 1
 	app       = cli.NewApp()
 	baseFlags = []cli.Flag{
 		utils.PortFlag,
@@ -22,7 +22,7 @@ var (
 		utils.EthKeyFlag,
 	}
 	ethaccount    string
-	usrpub         = crypto.PublicKey{}
+	usrpub        = crypto.PublicKey{}
 	publisherpub  = crypto.PublicKey{}
 	publisherpriv = crypto.PrivateKey{}
 	regulatorpub  = crypto.PublicKey{}
@@ -30,9 +30,9 @@ var (
 	elgamal_info  = crypto.CypherText{}
 	elgamal_r     = crypto.CypherText{}
 	signature     = crypto.Signature{}
-	ea string
-	ek string
-	gk string
+	ea            string
+	ek            string
+	gk            string
 )
 
 func init() {
@@ -55,8 +55,10 @@ func exchange(ctx *cli.Context) {
 	ea = ctx.String("ethaccount")
 	ek = ctx.String("ethkey")
 	ethaccount = ctx.String("ethaccount")
+	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
+	regulatorpub = utils.SetRegulator()
 	//if utils.UnlockAccount(ea, ek) == true {
-		startNetwork(ctx)
+	startNetwork(ctx)
 	//} else {
 	//	fmt.Println("erro unlock exchanger eth_account")
 	//	return
@@ -84,18 +86,19 @@ func buy(c echo.Context) error {
 		return err
 	}
 
-	if(u.G1 == "" || u.G2 == ""  || u.P == "" || u.H == "" || u.Amount == "") {
+	if u.G1 == "" || u.G2 == "" || u.P == "" || u.H == "" || u.Amount == "" {
 		return c.JSON(http.StatusCreated, "err params lack")
 	}
 
 	if utils.Verify(u.H) == false {
 		return c.JSON(http.StatusCreated, "error publickey, please check again or registe now")
 	} else {
-		usrpub          = utils.CreateUsrPub(u.G1, u.G2, u.P, u.H)
-		cm_and_r        = utils.CreateCM_v(regulatorpub, u.Amount)
-		elgamal_info    = utils.CreateElgamalInfo(regulatorpub, u.Amount, u.H)
-		elgamal_r       = utils.CreateElgamalR(usrpub, cm_and_r.R)
-		signature       = utils.CreateSign(publisherpriv, u.Amount)
+		usrpub = utils.CreateUsrPub(u.G1, u.G2, u.P, u.H)
+		cm_and_r = utils.CreateCM_v(regulatorpub, u.Amount)
+		elgamal_info = utils.CreateElgamalInfo(regulatorpub, u.Amount, u.H)
+		elgamal_r = utils.CreateElgamalR(usrpub, cm_and_r.R)
+		signature = utils.CreateSign(publisherpriv, u.Amount)
+		//TODO: sendTranscation
 		if utils.SendTransaction(elgamal_info, elgamal_r, signature, cm_and_r, ethaccount) == true {
 			result := utils.Toreceipt(cm_and_r.Commitment, elgamal_r.C1, elgamal_r.C2)
 			return c.JSON(http.StatusCreated, result)
@@ -106,16 +109,13 @@ func buy(c echo.Context) error {
 }
 
 func pubpub(c echo.Context) error {
-
-	publisherpub, publisherpriv, _ = utils.GenerateKey(gk)
-	regulatorpub, _ = utils.GenerateRegKey()
-	if cmp == 1{
+	if cmp == 1 {
 		go unlock()
 	}
 	return c.JSON(http.StatusCreated, publisherpub)
 }
-func unlock(){
-	time.Sleep(3*time.Second)
+func unlock() {
+	time.Sleep(3 * time.Second)
 	utils.UnlockAccount(ea, ek)
 	cmp = 0
 }

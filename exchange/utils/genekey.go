@@ -19,7 +19,7 @@ type PublisherInfo struct {
 func GenerateKey(gk string) (pub crypto.PublicKey, priv crypto.PrivateKey, err error) {
 	filePtr, err := os.OpenFile("info.json", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
-		fmt.Println("Open file failed [Err:%s]", err.Error())
+		fmt.Printf("Open file failed [Err:%s]\n", err.Error())
 		return
 	}
 	decoder := json.NewDecoder(filePtr)
