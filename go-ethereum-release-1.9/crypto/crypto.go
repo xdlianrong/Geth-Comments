@@ -256,20 +256,6 @@ func GenerateKey() (*ecdsa.PrivateKey, error) {
 
 // ValidateSignatureValues verifies whether the signature values are valid with
 // the given chain rules. The v value is assumed to be either 0 or 1.
-// TODO: 修改SM2验签算法对于参数v，r，s的验证
-//func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
-//	if r.Cmp(common.Big1) < 0 || s.Cmp(common.Big1) < 0 {
-//		return false
-//	}
-//	// reject upper range of s values (ECDSA malleability)
-//	// see discussion in secp256k1/libsecp256k1/include/secp256k1.h
-//	if homestead && s.Cmp(secp256k1halfN) > 0 {
-//		return false
-//	}
-//	// Frontier: allow s to be in full N range
-//	return r.Cmp(secp256k1N) < 0 && s.Cmp(secp256k1N) < 0 && (v == 0 || v == 1)
-//}
-
 func ValidateSignatureValues(v byte, r, s *big.Int, homestead bool) bool {
 	switch CryptoType {
 	case CRYPTO_ECC_SH3_AES:
@@ -294,6 +280,54 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	pubBytes := FromECDSAPub(&p)
 	return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
 }
+
+// ecies/sm2加密
+func Encrypt(pub *ecdsa.PublicKey, m, s1, s2 []byte) (ct []byte, err error) {
+	if pub == nil || m == nil {
+		return nil, errors.New("Encrypt pub is nil or m is nil ")
+	}
+	switch CryptoType {
+	case CRYPTO_ECC_SH3_AES:
+		return ecies.Encrypt(rand.Reader, ecies.ImportECDSAPublic(pub), m, s1, s2)
+	case CRYPTO_SM2_SM3_SM4:
+		return sm2.Encrypt(sm2.ToSm2Publickey(pub), m, sm2.C1C2C3)
+
+	}
+	return nil, nil
+}
+
+// ecies/SM2解密
+func Decrypt(pri *ecdsa.PrivateKey, c, s1, s2 []byte) (m []byte, err error) {
+	if pri == nil || c == nil {
+		return nil, errors.New("Decrypt pri is nil or c is nil")
+	}
+	switch CryptoType {
+	case CRYPTO_ECC_SH3_AES:
+		return ecies.ImportECDSA(pri).Decrypt(c, s1, s2)
+	case CRYPTO_SM2_SM3_SM4:
+		return sm2.Decrypt(sm2.ToSm2privatekey(pri), c, sm2.C1C2C3)
+	}
+	return nil, nil
+}
+
+// ecdh和sm2密钥协商协议
+func GenerateShared(pri *ecdsa.PrivateKey, pub *ecdsa.PublicKey, skLen, macLen int) (sk []byte, err error) {
+	if pri == nil || pub == nil {
+		return nil, errors.New("GenerateShared pri is nil or pub is nil")
+	}
+	if skLen == 0 || macLen == 0 {
+		return nil, errors.New("GenerateShared skLen is 0 or macLen is 0")
+	}
+	switch CryptoType {
+	case CRYPTO_ECC_SH3_AES:
+		return ecies.ImportECDSA(pri).GenerateShared(ecies.ImportECDSAPublic(pub), skLen, macLen)
+	case CRYPTO_SM2_SM3_SM4:
+		return sm2.ToSm2privatekey(pri).GenerateShared(sm2.ToSm2Publickey(pub), skLen, macLen)
+	}
+	return nil, nil
+}
+
+
 
 
 func zeroBytes(bytes []byte) {

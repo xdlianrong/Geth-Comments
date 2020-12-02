@@ -1224,6 +1224,7 @@ func (net *Network) checkTopicRegister(data *topicRegister) (*pong, error) {
 	return pongpkt.data.(*pong), nil
 }
 
+// TODO:这里同core/types/block.go，修改添加sm3
 func rlpHash(x interface{}) (h common.Hash) {
 	hw := sha3.NewLegacyKeccak256()
 	rlp.Encode(hw, x)

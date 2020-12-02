@@ -129,6 +129,7 @@ func (h *Header) SanityCheck() error {
 	return nil
 }
 
+// TODO:修改添加sm3的方法
 func rlpHash(x interface{}) (h common.Hash) {
 	hw := sha3.NewLegacyKeccak256()
 	rlp.Encode(hw, x)
