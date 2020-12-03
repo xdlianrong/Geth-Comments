@@ -1178,9 +1178,9 @@ type RPCTransaction struct {
 	SigS             *hexutil.Bytes  `json:"sigs"`
 	CmV              *hexutil.Bytes  `json:"cmv"`
 	CmSRC1           *hexutil.Bytes  `json:"cmsrc1"`
-	CmSRC2           *hexutil.Bytes  `json:" cmsrc2"`
-	CmRRC1           *hexutil.Bytes  `json:" cmrrc1"`
-	CmRRC2           *hexutil.Bytes  `json:" cmrrc2"`
+	CmSRC2           *hexutil.Bytes  `json:"cmsrc2"`
+	CmRRC1           *hexutil.Bytes  `json:"cmrrc1"`
+	CmRRC2           *hexutil.Bytes  `json:"cmrrc2"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
