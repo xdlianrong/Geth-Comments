@@ -22,6 +22,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"fmt"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm2"
+	"math/big"
 
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/crypto/secp256k1"
@@ -29,18 +31,39 @@ import (
 
 // Ecrecover returns the uncompressed public key that created the given signature.
 func Ecrecover(hash, sig []byte) ([]byte, error) {
-	return secp256k1.RecoverPubkey(hash, sig)
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		return secp256k1.RecoverPubkey(hash, sig[:65])
+	}
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		ee := new(big.Int).SetBytes(sig[65:])
+		smpub, err := sm2.SigToPub(hash, sig[:65], nil, ee)
+		if err != nil {
+			return nil, err
+		}
+		return FromECDSAPub(smpub), nil
+	}
+	return nil, nil
 }
 
 // SigToPub returns the public key that created the given signature.
 func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
-	s, err := Ecrecover(hash, sig)
-	if err != nil {
-		return nil, err
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		s, err := Ecrecover(hash, sig)
+		if err != nil {
+			return nil, err
+		}
+		x, y := elliptic.Unmarshal(S256(), s)
+		return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}, nil
 	}
-
-	x, y := elliptic.Unmarshal(S256(), s)
-	return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}, nil
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		ee := new(big.Int).SetBytes(sig[65:])
+		smpub, err := sm2.SigToPub(hash, sig[:65], nil, ee)
+		if err != nil {
+			return nil, err
+		}
+		return smpub, nil
+	}
+	return nil, nil
 }
 
 // Sign calculates an ECDSA signature.
@@ -52,33 +75,84 @@ func SigToPub(hash, sig []byte) (*ecdsa.PublicKey, error) {
 //
 // The produced signature is in the [R || S || V] format where V is 0 or 1.
 func Sign(digestHash []byte, prv *ecdsa.PrivateKey) (sig []byte, err error) {
-	if len(digestHash) != DigestLength {
-		return nil, fmt.Errorf("hash is required to be exactly %d bytes (%d)", DigestLength, len(digestHash))
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		if len(digestHash) != DigestLength {
+			return nil, fmt.Errorf("hash is required to be exactly %d bytes (%d)", DigestLength, len(digestHash))
+		}
+		seckey := math.PaddedBigBytes(prv.D, prv.Params().BitSize/8)
+		defer zeroBytes(seckey)
+		smsign, err := secp256k1.Sign(digestHash, seckey)
+		if err != nil {
+			return nil, err
+		}
+
+		var pad [32]byte
+		smsign = append(smsign, pad[:]...)
+		return smsign, nil
 	}
-	seckey := math.PaddedBigBytes(prv.D, prv.Params().BitSize/8)
-	defer zeroBytes(seckey)
-	return secp256k1.Sign(digestHash, seckey)
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		smsign, e, err := sm2.Sign(sm2.ToSm2privatekey(prv), nil, digestHash)
+		if err != nil {
+			return nil, err
+		}
+		var pad [32]byte
+		buf := e.Bytes()
+		copy(pad[32-len(buf):], buf)
+		smsign = append(smsign, pad[:]...)
+		return smsign, nil
+	}
+	return nil, nil
 }
 
 // VerifySignature checks that the given public key created signature over digest.
 // The public key should be in compressed (33 bytes) or uncompressed (65 bytes) format.
 // The signature should have the 64 byte [R || S] format.
 func VerifySignature(pubkey, digestHash, signature []byte) bool {
-	return secp256k1.VerifySignature(pubkey, digestHash, signature)
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		return secp256k1.VerifySignature(pubkey, digestHash, signature[:64])
+	}
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		if len(pubkey) == 33 {
+			smpub, err := DecompressPubkey(pubkey)
+			if err != nil {
+				return false
+			}
+			return sm2.Verify(sm2.ToSm2Publickey(smpub), nil, digestHash, signature)
+		}
+		smpub, err := UnmarshalPubkey(pubkey)
+		if err != nil {
+			return false
+		}
+		return sm2.Verify(sm2.ToSm2Publickey(smpub), nil, digestHash, signature)
+	}
+	return false
 }
 
 // DecompressPubkey parses a public key in the 33-byte compressed format.
 func DecompressPubkey(pubkey []byte) (*ecdsa.PublicKey, error) {
-	x, y := secp256k1.DecompressPubkey(pubkey)
-	if x == nil {
-		return nil, fmt.Errorf("invalid public key")
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		x, y := secp256k1.DecompressPubkey(pubkey)
+		if x == nil {
+			return nil, fmt.Errorf("invalid public key")
+		}
+		return &ecdsa.PublicKey{X: x, Y: y, Curve: S256()}, nil
 	}
-	return &ecdsa.PublicKey{X: x, Y: y, Curve: S256()}, nil
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		return sm2.ToECDSAPublickey(sm2.Decompress(pubkey)), nil
+	}
+	return nil, nil
 }
 
 // CompressPubkey encodes a public key to the 33-byte compressed format.
 func CompressPubkey(pubkey *ecdsa.PublicKey) []byte {
-	return secp256k1.CompressPubkey(pubkey.X, pubkey.Y)
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		return secp256k1.CompressPubkey(pubkey.X, pubkey.Y)
+	}
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		return sm2.Compress(sm2.ToSm2Publickey(pubkey))
+
+	}
+	return nil
 }
 
 // S256 returns an instance of the secp256k1 curve.
