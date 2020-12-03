@@ -105,6 +105,10 @@ type txdata struct {
 	SigR         *hexutil.Bytes  `json:"sigr"          gencodec:"required"` //发行者签名的密文r
 	SigS         *hexutil.Bytes  `json:"sigs"          gencodec:"required"` //发行者签名的密文s
 	CmV          *hexutil.Bytes  `json:"cmv"           gencodec:"required"` //监管者公钥生成的本次购币的承诺
+	CmSRC1       *hexutil.Bytes  `json:"cmsrc1"        gencodec:"required"` //发送出的承诺，接收方公钥加密密文C1
+	CmSRC2       *hexutil.Bytes  `json:" cmsrc2"       gencodec:"required"` //发送出的承诺，接收方公钥加密密文C2
+	CmRRC1       *hexutil.Bytes  `json:" cmrrc1"       gencodec:"required"` //找零承诺，发送方公钥加密密文C1
+	CmRRC2       *hexutil.Bytes  `json:" cmrrc2"       gencodec:"required"` //找零承诺，发送方公钥加密密文C2
 	// Signature values
 	V *big.Int `json:"v" gencodec:"required"` //v, r, s: 与交易签名相符的若干数值，用于确定交易的发送者，由 Tw，Tr 和 Ts 表示。
 	R *big.Int `json:"r" gencodec:"required"`
@@ -136,18 +140,18 @@ func NewTransaction(nonce uint64, to common.Address, amount *big.Int, gasLimit u
 	EvOEPs1 *hexutil.Bytes, EvOEPs2 *hexutil.Bytes, EvOEPs3 *hexutil.Bytes, EvOEPt *hexutil.Bytes, BPC *hexutil.Bytes,
 	BPRV *hexutil.Bytes, BPRR *hexutil.Bytes, BPSV *hexutil.Bytes, BPSR *hexutil.Bytes, BPSOr *hexutil.Bytes,
 	EpkrC1 *hexutil.Bytes, EpkrC2 *hexutil.Bytes, EpkpC1 *hexutil.Bytes, EpkpC2 *hexutil.Bytes, SigM *hexutil.Bytes,
-	SigMHash *hexutil.Bytes, SigR *hexutil.Bytes, SigS *hexutil.Bytes, CmV *hexutil.Bytes) *Transaction {
-	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, ID, ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, CmS, CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr, EpkrC1, EpkrC2, EpkpC1, EpkpC2, SigM, SigMHash, SigR, SigS, CmV)
+	SigMHash *hexutil.Bytes, SigR *hexutil.Bytes, SigS *hexutil.Bytes, CmV *hexutil.Bytes, CmSRC1 *hexutil.Bytes, CmSRC2 *hexutil.Bytes, CmRRC1 *hexutil.Bytes, CmRRC2 *hexutil.Bytes) *Transaction {
+	return newTransaction(nonce, &to, amount, gasLimit, gasPrice, data, ID, ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, CmS, CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr, EpkrC1, EpkrC2, EpkpC1, EpkpC2, SigM, SigMHash, SigR, SigS, CmV, CmSRC1, CmSRC2, CmRRC1, CmRRC2)
 }
 
 func NewContractCreation(nonce uint64, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, ID uint64, ErpkC1 *hexutil.Bytes, ErpkC2 *hexutil.Bytes, EspkC1 *hexutil.Bytes, EspkC2 *hexutil.Bytes, CMRpk *hexutil.Bytes, CMSpk *hexutil.Bytes, ErpkEPs0 *hexutil.Bytes, ErpkEPs1 *hexutil.Bytes, ErpkEPs2 *hexutil.Bytes, ErpkEPs3 *hexutil.Bytes, ErpkEPt *hexutil.Bytes, EspkEPs0 *hexutil.Bytes, EspkEPs1 *hexutil.Bytes, EspkEPs2 *hexutil.Bytes, EspkEPs3 *hexutil.Bytes, EspkEPt *hexutil.Bytes, EvSC1 *hexutil.Bytes, EvSC2 *hexutil.Bytes, EvRC1 *hexutil.Bytes, EvRC2 *hexutil.Bytes, CmS *hexutil.Bytes, CmR *hexutil.Bytes, CMsFPC *hexutil.Bytes, CMsFPZ1 *hexutil.Bytes, CMsFPZ2 *hexutil.Bytes, CMrFPC *hexutil.Bytes, CMrFPZ1 *hexutil.Bytes, CMrFPZ2 *hexutil.Bytes, EvsBsC1 *hexutil.Bytes, EvsBsC2 *hexutil.Bytes, EvOC1 *hexutil.Bytes, EvOC2 *hexutil.Bytes, CmO *hexutil.Bytes, EvOEPs0 *hexutil.Bytes, EvOEPs1 *hexutil.Bytes, EvOEPs2 *hexutil.Bytes, EvOEPs3 *hexutil.Bytes, EvOEPt *hexutil.Bytes, BPC *hexutil.Bytes, BPRV *hexutil.Bytes, BPRR *hexutil.Bytes, BPSV *hexutil.Bytes, BPSR *hexutil.Bytes, BPSOr *hexutil.Bytes, EpkrC1 *hexutil.Bytes, EpkrC2 *hexutil.Bytes, EpkpC1 *hexutil.Bytes, EpkpC2 *hexutil.Bytes, SigM *hexutil.Bytes,
-	SigMHash *hexutil.Bytes, SigR *hexutil.Bytes, SigS *hexutil.Bytes, CmV *hexutil.Bytes) *Transaction {
-	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, ID, ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, CmS, CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr, EpkrC1, EpkrC2, EpkpC1, EpkpC2, SigM, SigMHash, SigR, SigS, CmV)
+	SigMHash *hexutil.Bytes, SigR *hexutil.Bytes, SigS *hexutil.Bytes, CmV *hexutil.Bytes, CmSRC1 *hexutil.Bytes, CmSRC2 *hexutil.Bytes, CmRRC1 *hexutil.Bytes, CmRRC2 *hexutil.Bytes) *Transaction {
+	return newTransaction(nonce, nil, amount, gasLimit, gasPrice, data, ID, ErpkC1, ErpkC2, EspkC1, EspkC2, CMRpk, CMSpk, ErpkEPs0, ErpkEPs1, ErpkEPs2, ErpkEPs3, ErpkEPt, EspkEPs0, EspkEPs1, EspkEPs2, EspkEPs3, EspkEPt, EvSC1, EvSC2, EvRC1, EvRC2, CmS, CmR, CMsFPC, CMsFPZ1, CMsFPZ2, CMrFPC, CMrFPZ1, CMrFPZ2, EvsBsC1, EvsBsC2, EvOC1, EvOC2, CmO, EvOEPs0, EvOEPs1, EvOEPs2, EvOEPs3, EvOEPt, BPC, BPRV, BPRR, BPSV, BPSR, BPSOr, EpkrC1, EpkrC2, EpkpC1, EpkpC2, SigM, SigMHash, SigR, SigS, CmV, CmSRC1, CmSRC2, CmRRC1, CmRRC2)
 }
 
 func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit uint64, gasPrice *big.Int, data []byte, ID uint64, ErpkC1 *hexutil.Bytes, ErpkC2 *hexutil.Bytes, EspkC1 *hexutil.Bytes, EspkC2 *hexutil.Bytes, CMRpk *hexutil.Bytes, CMSpk *hexutil.Bytes, ErpkEPs0 *hexutil.Bytes, ErpkEPs1 *hexutil.Bytes, ErpkEPs2 *hexutil.Bytes, ErpkEPs3 *hexutil.Bytes, ErpkEPt *hexutil.Bytes, EspkEPs0 *hexutil.Bytes, EspkEPs1 *hexutil.Bytes, EspkEPs2 *hexutil.Bytes, EspkEPs3 *hexutil.Bytes, EspkEPt *hexutil.Bytes, EvSC1 *hexutil.Bytes, EvSC2 *hexutil.Bytes, EvRC1 *hexutil.Bytes, EvRC2 *hexutil.Bytes, CmS *hexutil.Bytes, CmR *hexutil.Bytes, CMsFPC *hexutil.Bytes, CMsFPZ1 *hexutil.Bytes, CMsFPZ2 *hexutil.Bytes, CMrFPC *hexutil.Bytes, CMrFPZ1 *hexutil.Bytes, CMrFPZ2 *hexutil.Bytes, EvsBsC1 *hexutil.Bytes, EvsBsC2 *hexutil.Bytes, EvOC1 *hexutil.Bytes, EvOC2 *hexutil.Bytes, CmO *hexutil.Bytes, EvOEPs0 *hexutil.Bytes, EvOEPs1 *hexutil.Bytes, EvOEPs2 *hexutil.Bytes, EvOEPs3 *hexutil.Bytes, EvOEPt *hexutil.Bytes, BPC *hexutil.Bytes, BPRV *hexutil.Bytes, BPRR *hexutil.Bytes, BPSV *hexutil.Bytes, BPSR *hexutil.Bytes, BPSOr *hexutil.Bytes,
 	EpkrC1 *hexutil.Bytes, EpkrC2 *hexutil.Bytes, EpkpC1 *hexutil.Bytes, EpkpC2 *hexutil.Bytes, SigM *hexutil.Bytes,
-	SigMHash *hexutil.Bytes, SigR *hexutil.Bytes, SigS *hexutil.Bytes, CmV *hexutil.Bytes) *Transaction {
+	SigMHash *hexutil.Bytes, SigR *hexutil.Bytes, SigS *hexutil.Bytes, CmV *hexutil.Bytes, CmSRC1 *hexutil.Bytes, CmSRC2 *hexutil.Bytes, CmRRC1 *hexutil.Bytes, CmRRC2 *hexutil.Bytes) *Transaction {
 	if len(data) > 0 {
 		data = common.CopyBytes(data)
 	}
@@ -215,6 +219,10 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		SigR:         SigR,
 		SigS:         SigS,
 		CmV:          CmV,
+		CmSRC1:       CmSRC1,
+		CmSRC2:       CmSRC2,
+		CmRRC1:       CmRRC1,
+		CmRRC2:       CmRRC2,
 	}
 	if amount != nil {
 		d.Amount.Set(amount)
@@ -351,35 +359,39 @@ func (tx *Transaction) SigMHash() *hexutil.Bytes { return tx.data.SigMHash }
 func (tx *Transaction) SigR() *hexutil.Bytes     { return tx.data.SigR }
 func (tx *Transaction) SigS() *hexutil.Bytes     { return tx.data.SigS }
 func (tx *Transaction) CmV() *hexutil.Bytes      { return tx.data.CmV }
+func (tx *Transaction) CmSRC1() *hexutil.Bytes   { return tx.data.CmSRC1 }
+func (tx *Transaction) CmSRC2() *hexutil.Bytes   { return tx.data.CmSRC2 }
+func (tx *Transaction) CmRRC1() *hexutil.Bytes   { return tx.data.CmRRC1 }
+func (tx *Transaction) CmRRC2() *hexutil.Bytes   { return tx.data.CmRRC2 }
 func (tx *Transaction) CheckNonce() bool         { return true }
 
-func (tx *Transaction) EVS() zkp.CypherText{
+func (tx *Transaction) EVS() zkp.CypherText {
 	c := zkp.CypherText{}
 	c.C1 = tx.EvSC1().Btob()
 	c.C2 = tx.EvSC2().Btob()
 	return c
 }
-func (tx *Transaction) EVR() zkp.CypherText{
+func (tx *Transaction) EVR() zkp.CypherText {
 	c := zkp.CypherText{}
 	c.C1 = tx.EvRC1().Btob()
 	c.C2 = tx.EvRC2().Btob()
 	return c
 }
-func (tx *Transaction) CMsFP() zkp.FormatProof{
+func (tx *Transaction) CMsFP() zkp.FormatProof {
 	f := zkp.FormatProof{}
 	f.C = tx.CMsFPC().Btob()
 	f.Z1 = tx.CMsFPZ1().Btob()
 	f.Z2 = tx.CMsFPZ2().Btob()
 	return f
 }
-func (tx *Transaction) CMrFP() zkp.FormatProof{
+func (tx *Transaction) CMrFP() zkp.FormatProof {
 	f := zkp.FormatProof{}
 	f.C = tx.CMrFPC().Btob()
 	f.Z1 = tx.CMrFPZ1().Btob()
 	f.Z2 = tx.CMrFPZ2().Btob()
 	return f
 }
-func (tx *Transaction) BP() zkp.BalanceProof{
+func (tx *Transaction) BP() zkp.BalanceProof {
 	b := zkp.BalanceProof{}
 	b.C = tx.BPC().Btob()
 	b.R_r = tx.BPRR().Btob()
@@ -389,60 +401,73 @@ func (tx *Transaction) BP() zkp.BalanceProof{
 	b.S_v = tx.BPSV().Btob()
 	return b
 }
-func (tx *Transaction) EVO() zkp.CypherText{
+func (tx *Transaction) EVO() zkp.CypherText {
 	c := zkp.CypherText{}
 	c.C1 = tx.EvOC1().Btob()
 	c.C2 = tx.EvOC2().Btob()
 	return c
 }
-func (tx *Transaction) ERPK() zkp.CypherText{
+func (tx *Transaction) CmSR() zkp.CypherText {
+	return zkp.CypherText{
+		C1: tx.CmSRC1().Btob(),
+		C2: tx.CmSRC1().Btob(),
+	}
+}
+func (tx *Transaction) CmRR() zkp.CypherText {
+	return zkp.CypherText{
+		C1: tx.CmRRC1().Btob(),
+		C2: tx.CmRRC1().Btob(),
+	}
+}
+func (tx *Transaction) ERPK() zkp.CypherText {
 	c := zkp.CypherText{}
 	c.C1 = tx.ErpkC1().Btob()
 	c.C2 = tx.ErpkC2().Btob()
 	return c
 }
-func (tx *Transaction) ESPK() zkp.CypherText{
+func (tx *Transaction) ESPK() zkp.CypherText {
 	c := zkp.CypherText{}
 	c.C1 = tx.EspkC1().Btob()
 	c.C2 = tx.EspkC2().Btob()
 	return c
 }
-func (tx *Transaction) EvoEP() zkp.EqualityProof{
-	s1 := make([][]byte,4)
-	t1 := make([]byte,32)
-	l := zkp.LinearEquationProof{s1,t1}
+func (tx *Transaction) EvoEP() zkp.EqualityProof {
+	s1 := make([][]byte, 4)
+	t1 := make([]byte, 32)
+	l := zkp.LinearEquationProof{s1, t1}
 	e := zkp.EqualityProof{l}
 	e.LinearEquationProof.S[0] = tx.EvOEPs0().Btob()
 	e.LinearEquationProof.S[1] = tx.EvOEPs1().Btob()
 	e.LinearEquationProof.S[2] = tx.EvOEPs2().Btob()
 	e.LinearEquationProof.S[3] = tx.EvOEPs3().Btob()
-	e.LinearEquationProof.T= tx.EvOEPt().Btob()
+	e.LinearEquationProof.T = tx.EvOEPt().Btob()
 	return e
 }
-func (tx *Transaction) ErpkEP() zkp.EqualityProof{
-	s1 := make([][]byte,4)
-	t1 := make([]byte,32)
-	l := zkp.LinearEquationProof{s1,t1}
+func (tx *Transaction) ErpkEP() zkp.EqualityProof {
+	s1 := make([][]byte, 4)
+	t1 := make([]byte, 32)
+	l := zkp.LinearEquationProof{s1, t1}
 	e := zkp.EqualityProof{l}
 	e.LinearEquationProof.S[0] = tx.ErpkEPs0().Btob()
 	e.LinearEquationProof.S[1] = tx.ErpkEPs1().Btob()
 	e.LinearEquationProof.S[2] = tx.ErpkEPs2().Btob()
 	e.LinearEquationProof.S[3] = tx.ErpkEPs3().Btob()
-	e.LinearEquationProof.T= tx.ErpkEPt().Btob()
+	e.LinearEquationProof.T = tx.ErpkEPt().Btob()
 	return e
 }
-func (tx *Transaction) EspkEP() zkp.EqualityProof{
-	s1 := make([][]byte,4)
-	t1 := make([]byte,32)
-	l := zkp.LinearEquationProof{s1,t1}
+func (tx *Transaction) EspkEP() zkp.EqualityProof {
+	s1 := make([][]byte, 4)
+	t1 := make([]byte, 32)
+	l := zkp.LinearEquationProof{s1, t1}
 	e := zkp.EqualityProof{l}
 	e.LinearEquationProof.S[0] = tx.EspkEPs0().Btob()
 	e.LinearEquationProof.S[1] = tx.EspkEPs1().Btob()
 	e.LinearEquationProof.S[2] = tx.EspkEPs2().Btob()
 	e.LinearEquationProof.S[3] = tx.EspkEPs3().Btob()
-	e.T= tx.EspkEPt().Btob()
+	e.T = tx.EspkEPt().Btob()
 	return e
 }
+
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.
 func (tx *Transaction) To() *common.Address {

@@ -85,14 +85,13 @@ func buy(c echo.Context) error {
 	if err := c.Bind(u); err != nil {
 		return err
 	}
-
 	if u.G1 == "" || u.G2 == "" || u.P == "" || u.H == "" || u.Amount == "" {
 		return c.JSON(http.StatusCreated, "err params lack")
 	}
-
 	if utils.Verify(u.H) == false {
 		return c.JSON(http.StatusCreated, "error publickey, please check again or registe now")
 	} else {
+		utils.UnlockAccount(ea, ek)
 		usrpub = utils.CreateUsrPub(u.G1, u.G2, u.P, u.H)
 		cm_and_r = utils.CreateCM_v(regulatorpub, u.Amount)
 		elgamal_info = utils.CreateElgamalInfo(regulatorpub, u.Amount, u.H)

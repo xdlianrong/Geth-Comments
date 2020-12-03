@@ -182,7 +182,7 @@ func (b *benchmarkTxSend) init(h *serverHandler, count int) error {
 		data := make([]byte, txSizeCostLimit)
 		rand.Read(data)
 
-		tx, err := types.SignTx(types.NewTransaction(0, addr, new(big.Int), 0, new(big.Int), data, 0, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd), signer, key)
+		tx, err := types.SignTx(types.NewTransaction(0, addr, new(big.Int), 0, new(big.Int), data, 0, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd, &rnd), signer, key)
 		if err != nil {
 			panic(err)
 		}

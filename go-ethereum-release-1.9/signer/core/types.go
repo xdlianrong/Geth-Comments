@@ -130,6 +130,10 @@ type SendTxArgs struct {
 	SigR     *hexutil.Bytes  `json:"sigr"`
 	SigS     *hexutil.Bytes  `json:"sigs"`
 	CmV      *hexutil.Bytes  `json:"cmv"`
+	CmSRC1   *hexutil.Bytes  `json:"cmsrc1"`
+	CmSRC2   *hexutil.Bytes  `json:" cmsrc2"`
+	CmRRC1   *hexutil.Bytes  `json:" cmrrc1"`
+	CmRRC2   *hexutil.Bytes  `json:" cmrrc2"`
 }
 
 func (args SendTxArgs) String() string {
@@ -148,7 +152,7 @@ func (args *SendTxArgs) toTransaction() *types.Transaction {
 		input = *args.Input
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV)
+		return types.NewContractCreation(uint64(args.Nonce), (*big.Int)(&args.Value), uint64(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV, args.CmSRC1, args.CmSRC2, args.CmRRC1, args.CmRRC2)
 	}
-	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV)
+	return types.NewTransaction(uint64(args.Nonce), args.To.Address(), (*big.Int)(&args.Value), (uint64)(args.Gas), (*big.Int)(&args.GasPrice), input, uint64(*args.ID), args.ErpkC1, args.ErpkC2, args.EspkC1, args.EspkC2, args.CMRpk, args.CMSpk, args.ErpkEPs0, args.ErpkEPs1, args.ErpkEPs2, args.ErpkEPs3, args.ErpkEPt, args.EspkEPs0, args.EspkEPs1, args.EspkEPs2, args.EspkEPs3, args.EspkEPt, args.EvSC1, args.EvSC2, args.EvRC1, args.EvRC2, args.CmS, args.CmR, args.CMsFPC, args.CMsFPZ1, args.CMsFPZ2, args.CMrFPC, args.CMrFPZ1, args.CMrFPZ2, args.EvsBsC1, args.EvsBsC2, args.EvOC1, args.EvOC2, args.CmO, args.EvOEPs0, args.EvOEPs1, args.EvOEPs2, args.EvOEPs3, args.EvOEPt, args.BPC, args.BPRV, args.BPRR, args.BPSV, args.BPSR, args.BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV, args.CmSRC1, args.CmSRC2, args.CmRRC1, args.CmRRC2)
 }

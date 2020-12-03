@@ -1509,6 +1509,10 @@ type SendTxArgs struct {
 	SigR     *hexutil.Bytes  `json:"sigr"`
 	SigS     *hexutil.Bytes  `json:"sigs"`
 	CmV      *hexutil.Bytes  `json:"cmv"`
+	CmSRC1   *hexutil.Bytes  `json:"cmsrc1"`
+	CmSRC2   *hexutil.Bytes  `json:" cmsrc2"`
+	CmRRC1   *hexutil.Bytes  `json:" cmrrc1"`
+	CmRRC2   *hexutil.Bytes  `json:" cmrrc2"`
 }
 
 // setDefaults is a helper function that fills in default values for unspecified tx fields.
@@ -1618,8 +1622,8 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 
 	Vs := uint64(*args.Vs)
 	Vr := uint64(*args.Vr)
-	Rpk, _ := paraPK(*args.Rpk) // 接收方公钥，不写入交易
-	//Spk, _ := paraPK(*args.Spk)                      // 发送方公钥，不写入交易
+	Rpk, _ := paraPK(*args.Rpk)                    // 接收方公钥，不写入交易
+	Spk, _ := paraPK(*args.Spk)                    // 发送方公钥，不写入交易
 	VoR := []byte(*args.VoR)                       // 被花费承诺的随机数，不写入交易
 	CmO := []byte(*args.CmO)                       // 被花费承诺
 	regulatorPubk := zkp.PublicKey(regulator.PubK) // 监管者公钥，不写入交易
@@ -1639,9 +1643,11 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 	EvS, CmS, _ := zkp.EncryptValue(regulatorPubk, Vs)
 	CMsFP := zkp.GenerateFormatProof(regulatorPubk, Vs, CmS.R)
 	Evs, _, _ := zkp.EncryptValue(Rpk, Vs) // 接收方公钥加密发送金额
+	CmSR := zkp.Encrypt(Rpk, CmS.R)
 	// 找零承诺，格式正确证明
 	EvR, CmR, _ := zkp.EncryptValue(regulatorPubk, Vr)
 	CMrFP := zkp.GenerateFormatProof(regulatorPubk, Vr, CmR.R)
+	CmRR := zkp.Encrypt(Spk, CmR.R)
 	// 总花费额，由找零和发出相加求得
 	EvO, CMo, _ := zkp.EncryptValue(regulatorPubk, Vr+Vs)
 	// 总额度相等证明
@@ -1661,6 +1667,7 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 	EvSC1, EvSC2 := hexutil.Bytes(EvS.C1), hexutil.Bytes(EvS.C2)
 	EvRC1, EvRC2 := hexutil.Bytes(EvR.C1), hexutil.Bytes(EvR.C2)
 	_CmS, _CmR := hexutil.Bytes(CmS.Commitment), hexutil.Bytes(CmR.Commitment)
+	_CmSRC1, _CmSRC2, _CmRRC1, _CmRRC2 := hexutil.Bytes(CmSR.C1), hexutil.Bytes(CmSR.C2), hexutil.Bytes(CmRR.C1), hexutil.Bytes(CmRR.C2)
 	CMsFPC, CMsFPZ1, CMsFPZ2 := hexutil.Bytes(CMsFP.C), hexutil.Bytes(CMsFP.Z1), hexutil.Bytes(CMsFP.Z2)
 	CMrFPC, CMrFPZ1, CMrFPZ2 := hexutil.Bytes(CMrFP.C), hexutil.Bytes(CMrFP.Z1), hexutil.Bytes(CMrFP.Z2)
 	EvsBsC1, EvsBsC2 := hexutil.Bytes(Evs.C1), hexutil.Bytes(Evs.C2)
@@ -1719,9 +1726,9 @@ func (args *SendTxArgs) toZeroTransaction(regulator types.Regulator) (*types.Tra
 		input = *args.Data
 	}
 	if args.To == nil {
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV, &_CmSRC1, &_CmSRC2, &_CmRRC1, &_CmRRC2), nil
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 0, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV, &_CmSRC1, &_CmSRC2, &_CmRRC1, &_CmRRC2), nil
 }
 
 func (args *SendTxArgs) toExTransaction(regulator types.Regulator) (*types.Transaction, error) {
@@ -1775,10 +1782,14 @@ func (args *SendTxArgs) toExTransaction(regulator types.Regulator) (*types.Trans
 	BPSV := hexutil.Bytes(nil)
 	BPSR := hexutil.Bytes(nil)
 	BPSOr := hexutil.Bytes(nil)
+	CmSRC1 := hexutil.Bytes(nil)
+	CmSRC2 := hexutil.Bytes(nil)
+	CmRRC1 := hexutil.Bytes(nil)
+	CmRRC2 := hexutil.Bytes(nil)
 	if args.To == nil {
-		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 1, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
+		return types.NewContractCreation(uint64(*args.Nonce), (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 1, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV, &CmSRC1, &CmSRC2, &CmRRC1, &CmRRC2), nil
 	}
-	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 1, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV), nil
+	return types.NewTransaction(uint64(*args.Nonce), *args.To, (*big.Int)(args.Value), uint64(*args.Gas), (*big.Int)(args.GasPrice), input, 1, &ErpkC1, &ErpkC2, &EspkC1, &EspkC2, &CMRpk, &CMSpk, &ErpkEPs0, &ErpkEPs1, &ErpkEPs2, &ErpkEPs3, &ErpkEPt, &EspkEPs0, &EspkEPs1, &EspkEPs2, &EspkEPs3, &EspkEPt, &EvSC1, &EvSC2, &EvRC1, &EvRC2, &_CmS, &_CmR, &CMsFPC, &CMsFPZ1, &CMsFPZ2, &CMrFPC, &CMrFPZ1, &CMrFPZ2, &EvsBsC1, &EvsBsC2, &EvOC1, &EvOC2, &_CmO, &EvOEPs0, &EvOEPs1, &EvOEPs2, &EvOEPs3, &EvOEPt, &BPC, &BPRV, &BPRR, &BPSV, &BPSR, &BPSOr, args.EpkrC1, args.EpkrC2, args.EpkpC1, args.EpkpC2, args.SigM, args.SigMHash, args.SigR, args.SigS, args.CmV, &CmSRC1, &CmSRC2, &CmRRC1, &CmRRC2), nil
 }
 
 func (args *SendTxArgs) toTransaction() (*types.Transaction, error) {
