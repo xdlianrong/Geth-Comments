@@ -1177,6 +1177,10 @@ type RPCTransaction struct {
 	SigR             *hexutil.Bytes  `json:"sigr"`
 	SigS             *hexutil.Bytes  `json:"sigs"`
 	CmV              *hexutil.Bytes  `json:"cmv"`
+	CmSRC1           *hexutil.Bytes  `json:"cmsrc1"`
+	CmSRC2           *hexutil.Bytes  `json:" cmsrc2"`
+	CmRRC1           *hexutil.Bytes  `json:" cmrrc1"`
+	CmRRC2           *hexutil.Bytes  `json:" cmrrc2"`
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -1255,6 +1259,10 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		SigR:     tx.SigR(),
 		SigS:     tx.SigS(),
 		CmV:      tx.CmV(),
+		CmSRC1:   tx.CmSRC1(),
+		CmSRC2:   tx.CmSRC2(),
+		CmRRC1:   tx.CmRRC1(),
+		CmRRC2:   tx.CmRRC2(),
 	}
 	if blockHash != (common.Hash{}) {
 		result.BlockHash = &blockHash
