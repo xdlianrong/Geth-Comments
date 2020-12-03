@@ -19,7 +19,12 @@ package crypto
 import (
 	"bytes"
 	"crypto/ecdsa"
+	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"github.com/ethereum/go-ethereum/crypto/ecies"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm2"
+	"golang.org/x/crypto/sha3"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -33,6 +38,38 @@ import (
 var testAddrHex = "970e8128ab834e8eac17ab8e3812f010678cf791"
 var testPrivHex = "289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"
 
+// 测试sm2
+func TestDecrypt(t *testing.T) {
+	CryptoType = CRYPTO_SM2_SM3_SM4
+	ecdsapri, _ := ecies.GenerateKey(rand.Reader, sm2.GetSm2P256V1(), nil)
+	ecdsapri1 := ecdsapri.ExportECDSA()
+	fmt.Println(ecdsapri)
+	ecdsabyte := FromECDSA(ecdsapri1)
+	ecdsapri1, _ = ToECDSA(ecdsabyte)
+	fmt.Println(ecdsapri)
+	h := sha3.NewLegacyKeccak256()
+	hash := h.Sum(nil)
+	sign, _ := Sign(hash, ecdsapri1)
+	fmt.Println(len(sign))
+	pubbyte := FromECDSAPub(&ecdsapri1.PublicKey)
+	ecdpub, _ := UnmarshalPubkey(pubbyte)
+	fmt.Println(ecdpub)
+	fmt.Println(ecdsapri.PublicKey)
+
+	boolverify := VerifySignature(pubbyte, hash, sign)
+	fmt.Println(boolverify)
+
+	// 测试sm2压缩公钥
+	compreebyte := CompressPubkey(&ecdsapri1.PublicKey)
+	fmt.Println(compreebyte)
+	ecdsapub, _ := DecompressPubkey(compreebyte)
+
+	src := "hello"
+	data := []byte(src)
+	ct, _ := Encrypt(ecdsapub, data, nil, nil)
+	m, _ := Decrypt(ecdsapri1, ct, nil, nil)
+	fmt.Println(string(m))
+}
 // These tests are sanity checks.
 // They should ensure that we don't e.g. use Sha3-224 instead of Sha3-256
 // and that the sha3 library uses keccak-f permutation.
