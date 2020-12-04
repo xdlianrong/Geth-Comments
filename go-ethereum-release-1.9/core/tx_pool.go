@@ -778,12 +778,12 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		knownTxMeter.Mark(1)
 		return false, ErrAlreadyKnown
 	}
-	//// 若交易承诺检验未通过，丢弃
-	//if err := pool.validateCM(tx); err != nil {
-	//	log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
-	//	invalidTxMeter.Mark(1)
-	//	return false, err
-	//}
+	// 若交易承诺检验未通过，丢弃
+	if err := pool.validateCM(tx); err != nil {
+		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
+		invalidTxMeter.Mark(1)
+		return false, err
+	}
 	// purchase sig verify
 	if tx.ID() == 1 {
 		// sig fail abondon
@@ -1625,7 +1625,7 @@ func (pool *TxPool) demoteUnexecutables() {
 		olds := list.Forward(nonce)
 		for _, tx := range olds {
 			hash := tx.Hash()
-			pool.reorgCM(tx)
+			// TODO 不做pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed old pending transaction", "hash", hash)
 		}
