@@ -19,6 +19,7 @@ package miner
 import (
 	"bytes"
 	"errors"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -90,6 +91,15 @@ const (
 	/* FuM:指可接受的旧区块的最大深度。注意，目前，这个值与 miningLogAtDepth 都是 7，且表达的意思也基本差不多，是不是有一定的内存联系。*/
 	// staleThreshold is the maximum depth of the acceptable stale block.
 	staleThreshold = 7
+)
+
+var (
+	// err信息
+	ErrExistedCM = errors.New("existed commitment to purchase coins")
+
+	ErrInvalidCM = errors.New("invalid commitment to transfer coins")
+
+	ErrID = errors.New("unsupported ID")
 )
 
 /* FuM:定义了数据结构 environment，用于描述当前挖矿所需的环境。
@@ -770,13 +780,19 @@ func (w *worker) updateSnapshot() {
 
 //此函数执行单个交易
 func (w *worker) commitTransaction(tx *types.Transaction, coinbase common.Address) ([]*types.Log, error) {
-	snap := w.current.state.Snapshot()
 
+	snap := w.current.state.Snapshot()
+	// 验证CM
+	if err := w.validateCM(tx); err != nil {
+		log.Trace("Discarding invalid transaction", "hash", tx.Hash(), "err", err)
+		return nil, err
+	}
 	receipt, err := core.ApplyTransaction(w.chainConfig, w.chain, &coinbase, w.current.gasPool, w.current.state, w.current.header, tx, &w.current.header.GasUsed, *w.chain.GetVMConfig())
 	if err != nil {
 		w.current.state.RevertToSnapshot(snap)
 		return nil, err
 	}
+	w.processCM(tx)
 	w.current.txs = append(w.current.txs, tx)
 	w.current.receipts = append(w.current.receipts, receipt)
 
@@ -895,6 +911,103 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 		w.resubmitAdjustCh <- &intervalAdjust{inc: false}
 	}
 	return false
+}
+
+// validateCM 验证CM的有效性
+func (w *worker) validateCM(tx *types.Transaction) error {
+	// 三种情况报错：
+	// 1、购币交易的购币承诺已存在于CMdb中
+	// 2、转账交易的CmO 不存在 或 存在但已使用
+	// 3、交易ID既不为0也不为1,暂未知类型交易
+
+	CMdb := w.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hash := CmV.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		} else {
+			return nil
+		}
+	}
+	if tx.ID() == 0 {
+		// used to debug
+		//return nil
+		// 转账交易
+		CmO := types.NewDefaultCM(tx.CmO())
+		hash := CmO.Hash()
+		CmO_ := rawdb.ReadCM(CMdb, hash)
+		if CmO_ == nil || CmO_.Spent == true {
+			return ErrInvalidCM
+		}
+		CmS := types.NewDefaultCM(tx.CmS())
+		hash = CmS.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+		CmR := types.NewDefaultCM(tx.CmR())
+		hash = CmR.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+		return nil
+	}
+	return ErrID
+}
+
+// processCM 根据ID分别处理交易中的CM
+func (w *worker) processCM(tx *types.Transaction) {
+	CMdb := w.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hashV := CmV.Hash()
+		rawdb.WriteCM(CMdb, hashV, CmV)
+		log.Info("Succeed to store CMV into CMdb", "CMV", CmV, "hash", hashV)
+	}
+	if tx.ID() == 0 {
+		// 转账交易
+		CmO := types.NewCM(tx.CmO(), true)
+		hashO := CmO.Hash()
+		rawdb.WriteCM(CMdb, hashO, CmO)
+		log.Info("Succeed to store CMO into CMdb", "CMO", CmO, "hash", hashO)
+		CmS := types.NewDefaultCM(tx.CmS())
+		hashS := CmS.Hash()
+		rawdb.WriteCM(CMdb, hashS, CmS)
+		log.Info("Succeed to store CMS into CMdb", "CMS", CmS, "hash", hashS)
+		CmR := types.NewDefaultCM(tx.CmR())
+		hashR := CmR.Hash()
+		rawdb.WriteCM(CMdb, hashR, CmR)
+		log.Info("Succeed to store CMR into CMdb", "CMR", CmR, "hash", hashR)
+	}
+}
+
+// reorgCM 回滚因将交易中CM状态改变
+func (w *worker) reorgCM(tx *types.Transaction) {
+	CMdb := w.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hashV := CmV.Hash()
+		rawdb.DeleteCM(CMdb, hashV)
+		log.Info("Succeed to delete CMV from CMdb", "CMV", CmV, "hash", hashV)
+	}
+	if tx.ID() == 0 {
+		// 转账交易
+		CmO := types.NewCM(tx.CmO(), false)
+		hashO := CmO.Hash()
+		rawdb.WriteCM(CMdb, hashO, CmO)
+		log.Info("Succeed to modify CMO from CMdb", "CMO", CmO, "hash", hashO)
+		CmS := types.NewDefaultCM(tx.CmS())
+		hashS := CmS.Hash()
+		rawdb.DeleteCM(CMdb, hashS)
+		log.Info("Succeed to delete CMS from CMdb", "CMS", CmS, "hash", hashS)
+		CmR := types.NewDefaultCM(tx.CmR())
+		hashR := CmR.Hash()
+		rawdb.DeleteCM(CMdb, hashR)
+		log.Info("Succeed to delete CMR from CMdb", "CMR", CmR, "hash", hashR)
+	}
 }
 
 /* FuM:基于父区块生成几个新的签名任务。*/
