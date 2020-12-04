@@ -18,6 +18,7 @@ package core
 
 import (
 	"errors"
+	"github.com/ethereum/go-ethereum/core/rawdb"
 	"github.com/ethereum/go-ethereum/crypto/zkp"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"math"
@@ -112,6 +113,13 @@ var (
 	ErrVerifyRpkEqualityProof = errors.New("verify Rpk equality proof failed")
 
 	ErrIDFormat = errors.New("ID is not 1 or 0, or ID format is wrong")
+
+	// err信息
+	ErrExistedCM = errors.New("existed commitment to purchase coins")
+
+	ErrInvalidCM = errors.New("invalid commitment to transfer coins")
+
+	ErrID = errors.New("unsupported ID")
 )
 
 var (
@@ -650,6 +658,108 @@ func (pool *TxPool) verifyzkp(tx *types.Transaction) error {
 	return nil
 }
 
+// validateCM 验证CM的有效性
+func (pool *TxPool) validateCM(tx *types.Transaction) error {
+	// 三种情况报错：
+	// 1、购币交易的购币承诺已存在于CMdb中
+	// 2、转账交易的CmO 不存在 或 存在但已使用
+	// 3、交易ID既不为0也不为1,暂未知类型交易
+
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hash := CmV.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		} else {
+			return nil
+		}
+	}
+	if tx.ID() == 0 {
+		// used to debug
+		//return nil
+		// 转账交易
+		CmO := types.NewDefaultCM(tx.CmO())
+		hash := CmO.Hash()
+		CmO_ := rawdb.ReadCM(CMdb, hash)
+		if CmO_ == nil || CmO_.Spent == true || CmO_.Lock == true {
+			return ErrInvalidCM
+		}
+		CmS := types.NewDefaultCM(tx.CmS())
+		hash = CmS.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+		CmR := types.NewDefaultCM(tx.CmR())
+		hash = CmR.Hash()
+		if rawdb.HasCM(CMdb, hash) {
+			return ErrExistedCM
+		}
+		return nil
+	}
+	return ErrID
+}
+
+// processCM 根据ID分别处理交易中的CM
+func (pool *TxPool) processCM(tx *types.Transaction) {
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		CmV.Lock = true
+		hashV := CmV.Hash()
+		rawdb.WriteCM(CMdb, hashV, CmV)
+		log.Info("Succeed to Lock CMV into CMdb", "CMV", CmV, "hash", hashV)
+	}
+	if tx.ID() == 0 {
+		// 转账交易
+		//CmO := types.NewCM(tx.CmO(), true)
+		CmO := types.NewDefaultCM(tx.CmO())
+		CmO.Lock = true
+		hashO := CmO.Hash()
+		rawdb.WriteCM(CMdb, hashO, CmO)
+		log.Info("Succeed to Lock CMO into CMdb", "CMO", CmO, "hash", hashO)
+		//CmS := types.NewDefaultCM(tx.CmS())
+		//CmS.Lock = true
+		//hashS := CmS.Hash()
+		//rawdb.WriteCM(CMdb, hashS, CmS)
+		//log.Info("Succeed to Lock CMS into CMdb", "CMS", CmS, "hash", hashS)
+		//CmR := types.NewDefaultCM(tx.CmR())
+		//CmR.Lock = true
+		//hashR := CmR.Hash()
+		//rawdb.WriteCM(CMdb, hashR, CmR)
+		//log.Info("Succeed to Lock CMR into CMdb", "CMR", CmR, "hash", hashR)
+	}
+}
+
+// reorgCM 回滚因将交易中CM状态改变
+func (pool *TxPool) reorgCM(tx *types.Transaction) {
+	CMdb := pool.chain.GetCMdb()
+	if tx.ID() == 1 {
+		// 购币交易
+		CmV := types.NewDefaultCM(tx.CmV())
+		hashV := CmV.Hash()
+		rawdb.WriteCM(CMdb, hashV, CmV)
+		log.Info("Succeed to unlock CMV from CMdb", "CMV", CmV, "hash", hashV)
+	}
+	if tx.ID() == 0 {
+		// 转账交易
+		CmO := types.NewDefaultCM(tx.CmO())
+		hashO := CmO.Hash()
+		rawdb.WriteCM(CMdb, hashO, CmO)
+		log.Info("Succeed to unlock CMO from CMdb", "CMO", CmO, "hash", hashO)
+		//CmS := types.NewDefaultCM(tx.CmS())
+		//hashS := CmS.Hash()
+		//rawdb.DeleteCM(CMdb, hashS)
+		//log.Info("Succeed to unlock CMS from CMdb", "CMS", CmS, "hash", hashS)
+		//CmR := types.NewDefaultCM(tx.CmR())
+		//hashR := CmR.Hash()
+		//rawdb.DeleteCM(CMdb, hashR)
+		//log.Info("Succeed to unlock CMR from CMdb", "CMR", CmR, "hash", hashR)
+	}
+}
+
 // add validates a transaction and inserts it into the non-executable queue for later
 // pending promotion and execution. If the transaction is a replacement for an already
 // pending or queued one, it overwrites the previous transaction if its price is higher.
@@ -734,12 +844,12 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (replaced bool, err e
 		}
 		// New transaction is better, replace old one
 		if old != nil {
-			//pool.reorgCM(old)
+			pool.reorgCM(old)
 			pool.all.Remove(old.Hash())
 			pool.priced.Removed(1)
 			pendingReplaceMeter.Mark(1)
 		}
-		//pool.processCM(tx)
+		pool.processCM(tx)
 		pool.all.Add(tx)
 		pool.priced.Put(tx)
 		pool.journalTx(from, tx)
@@ -785,7 +895,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	}
 	// Discard any previous transaction and mark this
 	if old != nil {
-		//pool.reorgCM(old)
+		pool.reorgCM(old)
 		pool.all.Remove(old.Hash())
 		pool.priced.Removed(1)
 		queuedReplaceMeter.Mark(1)
@@ -794,7 +904,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 		queuedGauge.Inc(1)
 	}
 	if pool.all.Get(hash) == nil {
-		//pool.processCM(tx)
+		pool.processCM(tx)
 		pool.all.Add(tx)
 		pool.priced.Put(tx)
 	}
@@ -827,7 +937,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	inserted, old := list.Add(tx, pool.config.PriceBump)
 	if !inserted {
 		// An older transaction was better, discard this
-		//pool.reorgCM(tx)
+		pool.reorgCM(tx)
 		pool.all.Remove(hash)
 		pool.priced.Removed(1)
 
@@ -836,7 +946,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	// Otherwise discard any previous transaction and mark this
 	if old != nil {
-		//pool.reorgCM(old)
+		pool.reorgCM(old)
 		pool.all.Remove(old.Hash())
 		pool.priced.Removed(1)
 
@@ -847,7 +957,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all.Get(hash) == nil {
-		//pool.processCM(tx)
+		pool.processCM(tx)
 		pool.all.Add(tx)
 		pool.priced.Put(tx)
 	}
@@ -1010,7 +1120,7 @@ func (pool *TxPool) removeTx(hash common.Hash, outofbound bool) {
 	addr, _ := types.Sender(pool.signer, tx) // already validated during insertion
 
 	// Remove it from the list of known transactions
-	//pool.reorgCM(tx)
+	pool.reorgCM(tx)
 	pool.all.Remove(hash)
 	if outofbound {
 		pool.priced.Removed(1)
@@ -1318,7 +1428,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 		forwards := list.Forward(pool.currentState.GetNonce(addr))
 		for _, tx := range forwards {
 			hash := tx.Hash()
-			//pool.reorgCM(tx)
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed old queued transaction", "hash", hash)
 		}
@@ -1326,7 +1436,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 		drops, _ := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
 		for _, tx := range drops {
 			hash := tx.Hash()
-			//pool.reorgCM(tx)
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed unpayable queued transaction", "hash", hash)
 		}
@@ -1349,7 +1459,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) []*types.Trans
 			caps = list.Cap(int(pool.config.AccountQueue))
 			for _, tx := range caps {
 				hash := tx.Hash()
-				//pool.reorgCM(tx)
+				pool.reorgCM(tx)
 				pool.all.Remove(hash)
 				log.Trace("Removed cap-exceeding queued transaction", "hash", hash)
 			}
@@ -1411,7 +1521,7 @@ func (pool *TxPool) truncatePending() {
 					for _, tx := range caps {
 						// Drop the transaction from the global pools too
 						hash := tx.Hash()
-						//pool.reorgCM(tx)
+						pool.reorgCM(tx)
 						pool.all.Remove(hash)
 
 						// Update the account nonce to the dropped transaction
@@ -1439,7 +1549,7 @@ func (pool *TxPool) truncatePending() {
 				for _, tx := range caps {
 					// Drop the transaction from the global pools too
 					hash := tx.Hash()
-					//pool.reorgCM(tx)
+					pool.reorgCM(tx)
 					pool.all.Remove(hash)
 
 					// Update the account nonce to the dropped transaction
@@ -1515,7 +1625,7 @@ func (pool *TxPool) demoteUnexecutables() {
 		olds := list.Forward(nonce)
 		for _, tx := range olds {
 			hash := tx.Hash()
-			//pool.reorgCM(tx)
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 			log.Trace("Removed old pending transaction", "hash", hash)
 		}
@@ -1524,7 +1634,7 @@ func (pool *TxPool) demoteUnexecutables() {
 		for _, tx := range drops {
 			hash := tx.Hash()
 			log.Trace("Removed unpayable pending transaction", "hash", hash)
-			//pool.reorgCM(tx)
+			pool.reorgCM(tx)
 			pool.all.Remove(hash)
 		}
 		pool.priced.Removed(len(olds) + len(drops))

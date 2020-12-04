@@ -10,12 +10,14 @@ import (
 type CM struct {
 	Cm    *hexutil.Bytes
 	Spent bool
+	Lock  bool
 }
 
 func NewDefaultCM(Cm *hexutil.Bytes) *CM {
 	return &CM{
 		Cm:    Cm,
 		Spent: false,
+		Lock:  false,
 	}
 }
 
@@ -23,6 +25,7 @@ func NewCM(Cm *hexutil.Bytes, Spent bool) *CM {
 	return &CM{
 		Cm:    Cm,
 		Spent: Spent,
+		Lock:  false,
 	}
 }
 
