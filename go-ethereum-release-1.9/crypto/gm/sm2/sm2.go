@@ -26,7 +26,6 @@ const (
 	// DefaultUID The default user id as specified in GM/T 0009-2012
 	DefaultUID = "1234567812345678"
 )
-
 type Sm2CipherTextType int32
 
 const (
