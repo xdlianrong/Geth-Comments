@@ -75,7 +75,7 @@ func (s *PublicEthereumAPI) ProtocolVersion() hexutil.Uint {
 	return hexutil.Uint(s.b.ProtocolVersion())
 }
 
-// ProtocolVersion1 returns the current Ethereum protocol version this node supports
+// GetCMState returns the current numbers of invalid and valid commints
 func (s *PublicEthereumAPI) GetCMState() map[string]hexutil.Uint {
 	valid, invalid := s.b.GetCMState()
 	return map[string]hexutil.Uint{
