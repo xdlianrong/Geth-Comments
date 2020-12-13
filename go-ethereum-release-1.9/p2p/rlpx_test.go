@@ -566,11 +566,12 @@ func TestHandshakeForwardCompatibility(t *testing.T) {
 	}
 
 	// check derivation for (Auth₂, Ack₂) on recipient side
+	testrandomkey, _ := crypto.GenerateKey()
 	var (
 		hs = &encHandshake{
 			initiator:     false,
 			respNonce:     nonceB,
-			randomPrivKey: ecies.ImportECDSA(ephB),
+			randomPrivKey: testrandomkey,
 		}
 		authCiphertext     = unhex(eip8HandshakeAuthTests[1].input)
 		authRespCiphertext = unhex(eip8HandshakeRespTests[1].input)
