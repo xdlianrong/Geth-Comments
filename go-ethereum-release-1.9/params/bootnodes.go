@@ -32,6 +32,10 @@ var MainnetBootnodes = []string{
 	"enode://5d6d7cd20d6da4bb83a1d28cadb5d409b64edf314c0335df658c1a54e32c7c4a7ab7823d57c39b6a757556e68ff1df17c748b698544a55cb488b52479a92b60f@104.42.217.25:30303",   // bootnode-azure-westus-001
 }
 
+var MainnetGMBootnodes = []string{
+	"enode://c9107dd7157cee6325e20f1ad6a5edeeffa130db06e0b365dca5e524c840b27ca2394e7e0f7dd69ca3eeb19d22cead58685a53347eee21297670df5ae156b353@101.132.183.35:30313", // CN
+}
+
 // TestnetBootnodes are the enode URLs of the P2P bootstrap nodes running on the
 // Ropsten test network.
 var TestnetBootnodes = []string{

@@ -52,6 +52,7 @@ func TestDecrypt(t *testing.T) {
 	sign, _ := Sign(hash, ecdsapri1)
 	fmt.Println(len(sign))
 	pubbyte := FromECDSAPub(&ecdsapri1.PublicKey)
+	fmt.Println(new(big.Int).SetBytes(pubbyte[1:65]).Text(16))
 	ecdpub, _ := UnmarshalPubkey(pubbyte)
 	fmt.Println(ecdpub)
 	fmt.Println(ecdsapri.PublicKey)

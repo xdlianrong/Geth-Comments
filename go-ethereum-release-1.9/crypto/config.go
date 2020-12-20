@@ -19,6 +19,10 @@ func SetCryptoType(cryptoType uint8) {
 	}
 }
 
+func GetCryptoType()(int){
+	return CryptoType
+}
+
 func BaseCheck(cryptoType byte) error {
 	if (int(cryptoType) != CRYPTO_ECC_SH3_AES && int(cryptoType) != CRYPTO_SM2_SM3_SM4 ){
 		return errors.New("wrong param on kindCrypto")
