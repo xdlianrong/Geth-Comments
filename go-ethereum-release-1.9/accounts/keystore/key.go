@@ -17,7 +17,6 @@
 package keystore
 
 import (
-	"bytes"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
@@ -152,8 +151,9 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 	if err != nil {
 		panic("key generation: could not read from random source: " + err.Error())
 	}
-	reader := bytes.NewReader(randBytes)
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), reader)
+	//reader := bytes.NewReader(randBytes)
+	//privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), reader)
+	privateKeyECDSA, err := crypto.GenerateKey()
 	if err != nil {
 		panic("key generation: ecdsa.GenerateKey failed: " + err.Error())
 	}
@@ -165,7 +165,8 @@ func NewKeyForDirectICAP(rand io.Reader) *Key {
 }
 //将私钥进行椭圆数字签名
 func newKey(rand io.Reader) (*Key, error) {
-	privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
+	//privateKeyECDSA, err := ecdsa.GenerateKey(crypto.S256(), rand)
+	privateKeyECDSA, err := crypto.GenerateKey()
 	if err != nil {
 		return nil, err
 	}
