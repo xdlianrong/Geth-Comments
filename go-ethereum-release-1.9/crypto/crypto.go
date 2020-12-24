@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
+	"github.com/ethereum/go-ethereum/crypto/gm/sm3"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -57,22 +58,43 @@ var errInvalidPubkey = errors.New("invalid secp256k1 public key")
 
 // Keccak256 calculates and returns the Keccak256 hash of the input data.
 func Keccak256(data ...[]byte) []byte {
-	d := sha3.NewLegacyKeccak256()
-	for _, b := range data {
-		d.Write(b)
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		d := sha3.NewLegacyKeccak256()
+		for _, b := range data {
+			d.Write(b)
+		}
+		return d.Sum(nil)
 	}
-	return d.Sum(nil)
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		d := sm3.New()
+		for _, b := range data {
+			d.Write(b)
+		}
+		return d.Sum(nil)
+	}
+	return nil
 }
 
 // Keccak256Hash calculates and returns the Keccak256 hash of the input data,
 // converting it to an internal Hash data structure.
 func Keccak256Hash(data ...[]byte) (h common.Hash) {
-	d := sha3.NewLegacyKeccak256()
-	for _, b := range data {
-		d.Write(b)
+	if CryptoType == CRYPTO_ECC_SH3_AES {
+		d := sha3.NewLegacyKeccak256()
+		for _, b := range data {
+			d.Write(b)
+		}
+		d.Sum(h[:0])
+		return h
 	}
-	d.Sum(h[:0])
-	return h
+	if CryptoType == CRYPTO_SM2_SM3_SM4 {
+		d := sm3.New()
+		for _, b := range data {
+			d.Write(b)
+		}
+		d.Sum(h[:0])
+		return h
+	}
+	return
 }
 
 // Keccak512 calculates and returns the Keccak512 hash of the input data.
