@@ -83,6 +83,7 @@ func Sign(digestHash []byte, prv *ecdsa.PrivateKey) (sig []byte, err error) {
 		seckey := math.PaddedBigBytes(prv.D, prv.Params().BitSize/8)
 		defer zeroBytes(seckey)
 		return secp256k1.Sign(digestHash, seckey)
+		// 拓展签名
 		//smsign, err := secp256k1.Sign(digestHash, seckey)
 		//if err != nil {
 		//	return nil, err

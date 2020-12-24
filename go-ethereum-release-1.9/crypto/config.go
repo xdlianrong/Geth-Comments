@@ -9,7 +9,7 @@ const (
 	CRYPTO_SM2_SM3_SM4 = 1 //国密标准算法
 )
 
-var CryptoType = CRYPTO_ECC_SH3_AES
+var CryptoType = CRYPTO_ECC_SH3_AES //CRYPTO_ECC_SH3_AES
 
 func SetCryptoType(cryptoType uint8) {
 	if(cryptoType == CRYPTO_ECC_SH3_AES){
