@@ -32,8 +32,8 @@ import (
 // Ecrecover returns the uncompressed public key that created the given signature.
 func Ecrecover(hash, sig []byte) ([]byte, error) {
 	if CryptoType == CRYPTO_ECC_SH3_AES {
-		//return secp256k1.RecoverPubkey(hash, sig[:65])
-		return secp256k1.RecoverPubkey(hash, sig)
+		return secp256k1.RecoverPubkey(hash, sig[:65])
+		//return secp256k1.RecoverPubkey(hash, sig)
 	}
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
 		ee := new(big.Int).SetBytes(sig[65:])
@@ -82,16 +82,16 @@ func Sign(digestHash []byte, prv *ecdsa.PrivateKey) (sig []byte, err error) {
 		}
 		seckey := math.PaddedBigBytes(prv.D, prv.Params().BitSize/8)
 		defer zeroBytes(seckey)
-		return secp256k1.Sign(digestHash, seckey)
+		//return secp256k1.Sign(digestHash, seckey)
 		// 拓展签名
-		//smsign, err := secp256k1.Sign(digestHash, seckey)
-		//if err != nil {
-		//	return nil, err
-		//}
-		//
-		//var pad [32]byte
-		//smsign = append(smsign, pad[:]...)
-		//return smsign, nil
+		smsign, err := secp256k1.Sign(digestHash, seckey)
+		if err != nil {
+			return nil, err
+		}
+
+		var pad [32]byte
+		smsign = append(smsign, pad[:]...)
+		return smsign, nil
 	}
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
 		smsign, e, err := sm2.Sign(sm2.ToSm2privatekey(prv), nil, digestHash)
@@ -112,8 +112,8 @@ func Sign(digestHash []byte, prv *ecdsa.PrivateKey) (sig []byte, err error) {
 // The signature should have the 64 byte [R || S] format.
 func VerifySignature(pubkey, digestHash, signature []byte) bool {
 	if CryptoType == CRYPTO_ECC_SH3_AES {
-		//return secp256k1.VerifySignature(pubkey, digestHash, signature[:64])
-		return secp256k1.VerifySignature(pubkey, digestHash, signature)
+		return secp256k1.VerifySignature(pubkey, digestHash, signature[:64])
+		//return secp256k1.VerifySignature(pubkey, digestHash, signature)
 	}
 	if CryptoType == CRYPTO_SM2_SM3_SM4 {
 		if len(pubkey) == 33 {

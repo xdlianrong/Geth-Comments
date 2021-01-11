@@ -871,6 +871,7 @@ func recoverKeyFromSignatureSM2_2(curve P256V1Curve,ee *big.Int, sig *Sm2Signatu
 	// TODO: this would be faster if we did a mult and add in one
 	// step to prevent the jacobian conversion back and forth.
 	Qx, Qy := curve.Add(sRx, sRy, minuseGx, minuseGy)
+	//fmt.Println(curve,Qx,Qy)
 	return &PublicKey{
 		Curve: curve,
 		X:     Qx,
