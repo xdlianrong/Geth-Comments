@@ -71,6 +71,54 @@ func TestDecrypt(t *testing.T) {
 	m, _ := Decrypt(ecdsapri1, ct, nil, nil)
 	fmt.Println(string(m))
 }
+
+func TestSm2(t *testing.T) {
+	CryptoType = CRYPTO_SM2_SM3_SM4
+	for i := 0; i < 1000; i++ {
+		priv, err := GenerateKey()
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Printf("%v\n", priv.Curve.IsOnCurve(priv.X, priv.Y))
+		pub := &priv.PublicKey
+		fmt.Println(hex.EncodeToString(FromECDSAPub(pub)))
+		msg := []byte("123456hhsdhdsjhsjhjhsfjdhjhjhsdfjhjhsdfjhjhsfjhjhsdfhjjhsdfhhjhsfdhjhjsdfhjjhfffffffffjhjhsfjhjhdsfjhhfhhsdhsdfhjhsdjhjhhsdhjhjsdhjhjfjhsjhjhjhdshjfhsdfhhjsfhjjfshdhhhjfshjjhsdfhjhsfhdhfsjddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+		d0, err := Encrypt(pub, msg, nil, nil)
+		if err != nil {
+			fmt.Printf("Error: failed to encrypt %s: %v\n", msg, err)
+			return
+		}
+		fmt.Printf("Cipher text = %v\n", d0)
+		d1, err := Decrypt(priv, d0, nil, nil)
+		if err != nil {
+			fmt.Printf("Error: failed to decrypt: %v\n", err)
+		}
+		fmt.Printf("clear text = %s\n", d1)
+
+		msg, _ = ioutil.ReadFile("ifile")
+		//Keccak256(msg)
+		sign, err := Sign(Keccak256(msg), priv)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		signdata := sign
+		_, err = Ecrecover(Keccak256(msg), signdata)
+		if err != nil {
+			fmt.Printf("VerifyTransaction error\n")
+		} else {
+			fmt.Printf("VerifyTransaction ok\n")
+		}
+		ok := VerifySignature(FromECDSAPub(pub), Keccak256(msg), signdata)
+		//ValidateSignatureValues(signdata[65],sign[])
+		if ok != true {
+			fmt.Printf("Verify error\n")
+		} else {
+			fmt.Printf("Verify ok\n")
+		}
+	}
+}
+
 // These tests are sanity checks.
 // They should ensure that we don't e.g. use Sha3-224 instead of Sha3-256
 // and that the sha3 library uses keccak-f permutation.

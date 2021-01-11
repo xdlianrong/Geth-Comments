@@ -161,6 +161,8 @@ func (s EIP155Signer) SignatureValues(tx *Transaction, sig []byte) (R, S, V *big
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	// TODO: add tx.pk to tx
+	//tx.data.PK = sig[65:]
 	if s.chainId.Sign() != 0 {
 		V = big.NewInt(int64(sig[64] + 35))
 		V.Add(V, s.chainIdMul)
@@ -252,6 +254,7 @@ func recoverPlain(sighash common.Hash, R, S, Vb *big.Int, homestead bool) (commo
 	copy(sig[64-len(s):64], s)
 	sig[64] = V
 	// recover the public key from the signature
+	// TODO: add Publickey in tx_data
 	pub, err := crypto.Ecrecover(sighash[:], sig)
 	if err != nil {
 		return common.Address{}, err
