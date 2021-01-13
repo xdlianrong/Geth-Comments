@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/ethereum/go-ethereum/crypto/gm/sm3"
+	"github.com/ethereum/go-ethereum/params"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -350,8 +351,14 @@ func GenerateShared(pri *ecdsa.PrivateKey, pub *ecdsa.PublicKey, skLen, macLen i
 	return nil, nil
 }
 
-
-
+func SetNode() (urls []string){
+	if(CryptoType == CRYPTO_ECC_SH3_AES){
+		urls = params.MainnetBootnodes
+	}else if(CryptoType == CRYPTO_SM2_SM3_SM4){
+		urls = params.MainnetGMBootnodes
+	}
+	return
+}
 
 func zeroBytes(bytes []byte) {
 	for i := range bytes {
