@@ -159,7 +159,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		return nil, err
 	}
 	crypto.SetCryptoType(chainConfig.CryptoType)
-	log.Info("CryptoType(ECC_SH3_AES/SM2_SM3_SM4)","type",chainConfig.CryptoType)
+	log.Info("CryptoType(ECC_SH3_AES/SM2_SM3_SM4)", "type", chainConfig.CryptoType)
 
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr
@@ -639,4 +639,8 @@ func (s *Ethereum) CountCm() (int, int) {
 		}
 	}
 	return valid, invalid
+}
+
+func (s *Ethereum) CountTransactions() int {
+	return 3
 }

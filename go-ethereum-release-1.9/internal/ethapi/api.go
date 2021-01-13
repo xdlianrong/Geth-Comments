@@ -84,6 +84,14 @@ func (s *PublicEthereumAPI) GetCMState() map[string]hexutil.Uint {
 	}
 }
 
+// GetCMState returns the current numbers of invalid and valid commints
+func (s *PublicEthereumAPI) GetTransactionsCount() map[string]hexutil.Uint {
+	count := s.b.GetTransactionsCount()
+	return map[string]hexutil.Uint{
+		"count": hexutil.Uint(count),
+	}
+}
+
 // Syncing returns false in case the node is currently not syncing with the network. It can be up to date or has not
 // yet received the latest block headers from its pears. In case it is synchronizing:
 // - startingBlock: block number this node started to synchronise from

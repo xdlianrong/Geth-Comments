@@ -45,6 +45,7 @@ type Backend interface {
 	ChainDb() ethdb.Database
 	CMDb() ethdb.Database
 	GetCMState() (int, int)
+	GetTransactionsCount() int
 	AccountManager() *accounts.Manager
 	ExtRPCEnabled() bool
 	RPCGasCap() *big.Int // global gas cap for eth_call over rpc: DoS protection
