@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 	"github.com/ethereum/go-ethereum/crypto/gm/sm3"
-	"github.com/ethereum/go-ethereum/params"
+	//"github.com/ethereum/go-ethereum/params"
 	"io"
 	"io/ioutil"
 	"math/big"
@@ -52,8 +52,8 @@ var (
 	secp256k1N, _  = new(big.Int).SetString("fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364141", 16)
 	secp256k1halfN = new(big.Int).Div(secp256k1N, big.NewInt(2))
 
-	sm2P256N, _    = new(big.Int).SetString("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123", 16)
-	sm2P256halfN   = new(big.Int).Div(sm2P256N, big.NewInt(2))
+	sm2P256N, _  = new(big.Int).SetString("FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123", 16)
+	sm2P256halfN = new(big.Int).Div(sm2P256N, big.NewInt(2))
 )
 
 var errInvalidPubkey = errors.New("invalid secp256k1 public key")
@@ -210,7 +210,6 @@ func UnmarshalPubkey(pub []byte) (*ecdsa.PublicKey, error) {
 	return nil, nil
 }
 
-
 func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 	if CryptoType == CRYPTO_ECC_SH3_AES {
 		if pub == nil || pub.X == nil || pub.Y == nil {
@@ -227,7 +226,6 @@ func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 	return nil
 }
 
-
 // HexToECDSA parses a secp256k1 private key.
 func HexToECDSA(hexkey string) (*ecdsa.PrivateKey, error) {
 	b, err := hex.DecodeString(hexkey)
@@ -236,7 +234,6 @@ func HexToECDSA(hexkey string) (*ecdsa.PrivateKey, error) {
 	}
 	return ToECDSA(b)
 }
-
 
 // LoadECDSA loads a secp256k1 private key from the given file.
 func LoadECDSA(file string) (*ecdsa.PrivateKey, error) {
@@ -256,8 +253,6 @@ func LoadECDSA(file string) (*ecdsa.PrivateKey, error) {
 	}
 	return ToECDSA(key)
 }
-
-
 
 // SaveECDSA saves a secp256k1 private key to the given file with
 // restrictive permissions. The key data is saved hex-encoded.
@@ -351,14 +346,14 @@ func GenerateShared(pri *ecdsa.PrivateKey, pub *ecdsa.PublicKey, skLen, macLen i
 	return nil, nil
 }
 
-func SetNode() (urls []string){
-	if(CryptoType == CRYPTO_ECC_SH3_AES){
-		urls = params.MainnetBootnodes
-	}else if(CryptoType == CRYPTO_SM2_SM3_SM4){
-		urls = params.MainnetGMBootnodes
-	}
-	return
-}
+//func SetNode() (urls []string){
+//	if(CryptoType == CRYPTO_ECC_SH3_AES){
+//		urls = params.MainnetBootnodes
+//	}else if(CryptoType == CRYPTO_SM2_SM3_SM4){
+//		urls = params.MainnetGMBootnodes
+//	}
+//	return
+//}
 
 func zeroBytes(bytes []byte) {
 	for i := range bytes {

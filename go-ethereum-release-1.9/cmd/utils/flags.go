@@ -834,7 +834,13 @@ func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
 // flags, reverting to pre-configured ones if none have been specified.
 func setBootstrapNodes(ctx *cli.Context, cfg *p2p.Config) {
 	var urls []string
-	urls = crypto.SetNode()
+	if crypto.GetCryptoType() == 0 {
+		urls = params.MainnetBootnodes
+	} else if crypto.GetCryptoType() == 1 {
+		urls = params.MainnetGMBootnodes
+	} else {
+		return
+	}
 	switch {
 	case ctx.GlobalIsSet(BootnodesFlag.Name) || ctx.GlobalIsSet(BootnodesV4Flag.Name):
 		if ctx.GlobalIsSet(BootnodesV4Flag.Name) {
