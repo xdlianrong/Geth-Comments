@@ -113,6 +113,7 @@ type txdata struct {
 	V *big.Int `json:"v" gencodec:"required"` //v, r, s: 与交易签名相符的若干数值，用于确定交易的发送者，由 Tw，Tr 和 Ts 表示。
 	R *big.Int `json:"r" gencodec:"required"`
 	S *big.Int `json:"s" gencodec:"required"`
+	PK           []byte          `json:"pk"   gencodec:"required"`
 
 	// This is only used when marshaling to JSON.
 	Hash *common.Hash `json:"hash" rlp:"-"`
@@ -364,6 +365,7 @@ func (tx *Transaction) CmSRC2() *hexutil.Bytes   { return tx.data.CmSRC2 }
 func (tx *Transaction) CmRRC1() *hexutil.Bytes   { return tx.data.CmRRC1 }
 func (tx *Transaction) CmRRC2() *hexutil.Bytes   { return tx.data.CmRRC2 }
 func (tx *Transaction) CheckNonce() bool         { return true }
+func (tx *Transaction) Pk() []byte       { return tx.data.PK }
 
 func (tx *Transaction) EVS() zkp.CypherText {
 	c := zkp.CypherText{}
