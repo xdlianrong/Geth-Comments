@@ -261,10 +261,6 @@ func (b *LesApiBackend) GetCMState() (int, int) {
 	return 0, 0
 }
 
-func (b *LesApiBackend) GetTransactionsCount() int {
-	return 0
-}
-
 func (b *LesApiBackend) AccountManager() *accounts.Manager {
 	return b.eth.accountManager
 }

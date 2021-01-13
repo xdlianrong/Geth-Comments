@@ -640,7 +640,3 @@ func (s *Ethereum) CountCm() (int, int) {
 	}
 	return valid, invalid
 }
-
-func (s *Ethereum) CountTransactions() int {
-	return 3
-}

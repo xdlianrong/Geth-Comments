@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,14 +82,6 @@ func (s *PublicEthereumAPI) GetCMState() map[string]hexutil.Uint {
 	return map[string]hexutil.Uint{
 		"valid":   hexutil.Uint(valid),
 		"invalid": hexutil.Uint(invalid),
-	}
-}
-
-// GetCMState returns the current numbers of invalid and valid commints
-func (s *PublicEthereumAPI) GetTransactionsCount() map[string]hexutil.Uint {
-	count := s.b.GetTransactionsCount()
-	return map[string]hexutil.Uint{
-		"count": hexutil.Uint(count),
 	}
 }
 
@@ -1323,6 +1316,22 @@ type PublicTransactionPoolAPI struct {
 // NewPublicTransactionPoolAPI creates a new RPC service with methods specific for the transaction pool.
 func NewPublicTransactionPoolAPI(b Backend, nonceLock *AddrLocker) *PublicTransactionPoolAPI {
 	return &PublicTransactionPoolAPI{b, nonceLock}
+}
+
+// GetCMState returns the current numbers of invalid and valid commints
+func (s *PublicTransactionPoolAPI) GetTotalTransactionsCount(ctx context.Context) *hexutil.Uint {
+	x := s.b.CurrentBlock().NumberU64()
+	int64Str := strconv.FormatUint(x, 10)
+	intNum, _ := strconv.Atoi(int64Str)
+	total := 0
+	for i := 0; i <= intNum; i++ {
+		if block, _ := s.b.BlockByNumber(ctx, rpc.BlockNumber(i)); block != nil {
+			total += len(block.Transactions())
+
+		}
+	}
+	n := hexutil.Uint(total)
+	return &n
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.

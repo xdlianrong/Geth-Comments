@@ -287,10 +287,6 @@ func (b *EthAPIBackend) GetCMState() (int, int) {
 	return b.eth.CountCm()
 }
 
-func (b *EthAPIBackend) GetTransactionsCount() int {
-	return b.eth.CountTransactions()
-}
-
 func (b *EthAPIBackend) EventMux() *event.TypeMux {
 	return b.eth.EventMux()
 }
