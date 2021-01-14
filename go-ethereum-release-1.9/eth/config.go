@@ -166,6 +166,9 @@ type Config struct {
 	// MuirGlacier block override (TODO: remove after the fork)
 	OverrideMuirGlacier *big.Int `toml:",omitempty"`
 
+	// cryptotype gm or gj
+	CryptoType  uint8
+
 	//监管者
 	Regulator types.Regulator
 

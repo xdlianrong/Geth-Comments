@@ -21,7 +21,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
 	"math/big"
 	"runtime"
 	"sync"
@@ -154,12 +153,7 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 	// 或者是从代码里面获取默认值。并返回区块链的config和创世块的hash。
 	chainConfig, genesisHash, genesisErr := core.SetupGenesisBlockWithOverride(chainDb, config.Genesis, config.OverrideIstanbul, config.OverrideMuirGlacier)
 
-	// 配置密码算法
-	if err := crypto.BaseCheck(chainConfig.CryptoType); err != nil {
-		return nil, err
-	}
-	crypto.SetCryptoType(chainConfig.CryptoType)
-	log.Info("CryptoType(ECC_SH3_AES/SM2_SM3_SM4)", "type", chainConfig.CryptoType)
+	config.CryptoType = chainConfig.CryptoType
 
 	if _, ok := genesisErr.(*params.ConfigCompatError); genesisErr != nil && !ok {
 		return nil, genesisErr

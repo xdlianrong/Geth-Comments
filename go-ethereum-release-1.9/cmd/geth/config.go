@@ -146,7 +146,7 @@ func enableWhisper(ctx *cli.Context) bool {
 }
 
 /* FuM:该函数先构造了一个节点，然后注册一个Ethereum Service */
-func makeFullNode(ctx *cli.Context) *node.Node {
+func makeFullNode(ctx *cli.Context, genesis bool) *node.Node {
 	stack, cfg := makeConfigNode(ctx) /* FuM:构造了一个节点 */
 	if ctx.GlobalIsSet(utils.OverrideIstanbulFlag.Name) {
 		cfg.Eth.OverrideIstanbul = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideIstanbulFlag.Name))
@@ -155,6 +155,10 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		cfg.Eth.OverrideMuirGlacier = new(big.Int).SetUint64(ctx.GlobalUint64(utils.OverrideMuirGlacierFlag.Name))
 	}
 	utils.RegisterEthService(stack, &cfg.Eth)
+	// crypto type gm/gj
+	if(genesis == false){
+		utils.SetCryptoType(stack, &cfg.Eth)
+	}
 	// Whisper must be explicitly enabled by specifying at least 1 whisper flag or in dev mode
 	shhEnabled := enableWhisper(ctx)
 	shhAutoEnabled := !ctx.GlobalIsSet(utils.WhisperEnabledFlag.Name) && ctx.GlobalIsSet(utils.DeveloperFlag.Name)

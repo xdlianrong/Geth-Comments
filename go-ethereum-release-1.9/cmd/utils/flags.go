@@ -1628,6 +1628,23 @@ func setDNSDiscoveryDefaults(cfg *eth.Config, url string) {
 	cfg.DiscoveryURLs = []string{url}
 }
 
+func SetCryptoType(stack *node.Node, cfg *eth.Config) {
+	chaindb, err := stack.OpenDatabase("chaindata", 0, 0, "")
+	if err != nil {
+		log.Error("Failed to open database: %v", err)
+	}
+	chainConfig, _, _ := core.SetupGenesisBlockWithOverride(chaindb, cfg.Genesis, cfg.OverrideIstanbul, cfg.OverrideMuirGlacier)
+	crypto.SetCryptoType(chainConfig.CryptoType)
+	// 配置密码算法
+	if err := crypto.BaseCheck(chainConfig.CryptoType); err != nil {
+		log.Error("Crypto type check erro", err)
+	}
+	crypto.SetCryptoType(chainConfig.CryptoType)
+	chaindb.Close()
+	log.Info("CryptoType(ECC_SH3_AES/SM2_SM3_SM4)", "type", chainConfig.CryptoType)
+}
+
+
 // RegisterEthService adds an Ethereum client to the stack.
 func RegisterEthService(stack *node.Node, cfg *eth.Config) {
 	var err error

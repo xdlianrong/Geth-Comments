@@ -78,7 +78,7 @@ JavaScript API. See https://github.com/ethereum/go-ethereum/wiki/JavaScript-Cons
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
 	prepare(ctx)
-	node := makeFullNode(ctx) /* FuM:初始化一些配置信息 */
+	node := makeFullNode(ctx, false) /* FuM:初始化一些配置信息 */
 	startNode(ctx, node)      /* FuM:开启节点 */
 	defer node.Close()
 
@@ -179,7 +179,7 @@ func dialRPC(endpoint string) (*rpc.Client, error) {
 // everything down.
 func ephemeralConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags
-	node := makeFullNode(ctx)
+	node := makeFullNode(ctx, false)
 	startNode(ctx, node)
 	defer node.Close()
 
