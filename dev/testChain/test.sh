@@ -1,7 +1,7 @@
 #首次运行需要修改以下3个变量
-gethDir="/Users/fuming/go/src/Geth-Comments" #Geth的GitHub项目所在文件夹
-testDataDir="/Users/fuming/Downloads/testChain" #一个空文件夹，用于存储节点数据
-SM="0" #和genesis.json中cryptoType值相等，若genesis.json中无此值，请令SM="0"
+gethDir="/home/jassy/GolandProjects/Geth-Comments" #Geth的GitHub项目所在文件夹
+testDataDir="/home/jassy/chain/testChain" #一个空文件夹，用于存储节点数据
+SM="1" #和genesis.json中cryptoType值相等，若genesis.json中无此值，请令SM="0"
 #首次运行需要修改以上3个变量
 genesisPath=""$gethDir"/dev/testChain/genesis.json"
 gethCodeDir=""$gethDir"/go-ethereum-release-1.9"
@@ -10,12 +10,11 @@ regulatorIP="39.106.173.191"
 exchangeIP="127.0.0.1"
 rpcAPI="eth,net,web3,personal,admin,txpool,debug,miner"
 identity="666"
-kill -9 $(lsof -i:8545 | awk '{print $2}')
-kill -9 $(lsof -i:8546 | awk '{print $2}')
-kill -9 $(lsof -i:8547 | awk '{print $2}')
-kill -9 $(lsof -i:8548 | awk '{print $2}')
-kill -9 $(lsof -i:8549 | awk '{print $2}')
-kill -9 $(lsof -i:1323 | awk '{print $2}')
+pid=$(ps x | grep geth | grep -v grep | awk '{print $1}')
+for i in $pid
+do
+  kill -9 $i
+done
 screen -S exchange -X quit
 cd $gethCodeDir \
 && make geth \
