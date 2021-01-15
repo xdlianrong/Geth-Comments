@@ -207,7 +207,6 @@ func (a Address) Bytes() []byte { return a[:] }
 func (a Address) Hash() Hash { return BytesToHash(a[:]) }
 
 // Hex returns an EIP55-compliant hex string representation of the address.
-// TODO:修改添加sm3的方法
 func (a Address) Hex() string {
 	unchecksummed := hex.EncodeToString(a[:])
 	sha := sha3.NewLegacyKeccak256()
