@@ -95,6 +95,9 @@ func register(c echo.Context) error {
 		return c.String(http.StatusOK, "Fail!")
 	}
 	hash := utils.Hash(u.Hashky)
+	if regdb.Exists(regDb, hash) {
+		return c.String(http.StatusOK, "Account registered!") //不允许重复注册
+	}
 	if err := regdb.Set(regDb, hash, u); err != nil {
 		utils.Fatalf("Failed to set : %v", err)
 		return c.String(http.StatusOK, "Fail!")
