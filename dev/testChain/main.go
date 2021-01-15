@@ -17,7 +17,7 @@ const url = "http://127.0.0.1"
 const regulatorURL = "http://39.106.173.191:1423/"
 const exchangeURL = "http://127.0.0.1:1323/"
 const nodeCount = 5
-const miningTimeout = 60 //挖矿超时时间，如果挖矿挖了miningTimeout秒还没有成功，则停止挖矿
+const consensusTimeout = 60 //共识超时时间，如果打包成功后consensusTimeout秒还没有成功，则停止等待共识结果，认为共识失败
 
 func main() {
 	var rpcPorts = [nodeCount]int{8545, 8546, 8547, 8548, 8549}
@@ -124,18 +124,7 @@ func adminNodeinfo(rpcPort int) string {
 		Params:  nil,
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	if resp == nil {
-		Fatalf("RPC端口为" + strconv.Itoa(rpcPort) + "的Geth节点未启动")
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var info NodeInfo
 	json.Unmarshal(body, &info)
 	enode := info.Result.Enode
@@ -150,15 +139,7 @@ func adminAddPeer(rpcPort int, peerUrl string) bool {
 		Params:  []string{peerUrl},
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var result AddPeerResult
 	json.Unmarshal(body, &result)
 	return result.Result
@@ -170,15 +151,7 @@ func netPeerCount(rpcPort int) string {
 		Params:  nil,
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var peerCount PeerCountResult
 	json.Unmarshal(body, &peerCount)
 	return peerCount.Result
@@ -190,30 +163,14 @@ func ethAccounts(rpcPort int) []string {
 		Params:  nil,
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var accounts AccountsResult
 	json.Unmarshal(body, &accounts)
 	return accounts.Result
 }
 func register(account accounts.Account) string {
 	data := account.Info
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(regulatorURL+"register",
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, regulatorURL+"register")
 	res := string(body)
 	if res == "Successful!" {
 		fmt.Println("账户" + account.Info.Name + "注册成功")
@@ -240,15 +197,7 @@ func buyCoin(account accounts.Account, amount int) Receipt {
 		H:      key.H.String(),
 		Amount: strconv.Itoa(amount),
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(exchangeURL+"buy",
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, exchangeURL+"buy")
 	var receipt Receipt
 	json.Unmarshal(body, &receipt)
 	if receipt.Cmv == "" || receipt.Epkrc1 == "" || receipt.Epkrc2 == "" || receipt.Hash == "" {
@@ -264,15 +213,7 @@ func minerStart(rpcPort int) bool {
 		Params:  nil,
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var result AddPeerResult
 	json.Unmarshal(body, &result)
 	return result.Result
@@ -284,15 +225,7 @@ func minerStop(rpcPort int) bool {
 		Params:  nil,
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var result AddPeerResult
 	json.Unmarshal(body, &result)
 	return result.Result
@@ -304,15 +237,7 @@ func ethGetTransactionByHash(rpcPort int, txHash string) RPCtx {
 		Params:  []string{txHash},
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var result RPCtx
 	json.Unmarshal(body, &result)
 	return result
@@ -320,19 +245,25 @@ func ethGetTransactionByHash(rpcPort int, txHash string) RPCtx {
 func mineTx(rpcPort int, allRPCPort [nodeCount]int, TxHash string) bool {
 	fmt.Println("打包共识使交易", TxHash, "生效")
 	minerStart(rpcPort)
-	for i := miningTimeout; i > 0; i-- {
-		if res := ethGetTransactionByHash(rpcPort, TxHash); res.Result.BlockHash == "" {
-			time.Sleep(time.Duration(1) * time.Second) //等一秒
-		} else {
+	for {
+		if res := ethGetTransactionByHash(rpcPort, TxHash); res.Result.BlockHash != "" {
 			fmt.Println("交易", TxHash, "已被打包")
 			break
 		}
+		time.Sleep(time.Duration(1) * time.Second) //等一秒
 	}
-	time.Sleep(time.Duration(5) * time.Second) //多挖几个块，不然不好共识
+	//多挖几个块，不然不好共识
+	blockNum := ethBlockNumber(rpcPort)
+	for {
+		if ethBlockNumber(rpcPort)-blockNum >= 10 {
+			break
+		}
+		time.Sleep(time.Duration(1) * time.Second) //等一秒
+	}
 	minerStop(rpcPort)
 	consensus := 1
 	//必须所有节点都在块中拿到此交易才算共识成功
-	for j := miningTimeout; j > 0; j-- {
+	for j := consensusTimeout; j > 0; j-- {
 		for i := 0; i < nodeCount; i++ {
 			if res := ethGetTransactionByHash(allRPCPort[i], TxHash); res.Result.BlockHash == "" {
 				//fmt.Println("交易", TxHash, "未生效")
@@ -358,15 +289,7 @@ func personalUnlockAccount(rpcPort int, account string, passphrase string) bool 
 		Params:  []string{account, passphrase},
 		ID:      67,
 	}
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(rpcPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
 	var result AddPeerResult
 	json.Unmarshal(body, &result)
 	return result.Result
@@ -403,15 +326,7 @@ func ethSendTransaction(senderRPCPort int, senderGethAccount string, receiverGet
 	}
 	txs := perpareTX(senderGethAccount, receiverGethAccount, senderAccount, receiverAccount, coin, total, amount)
 	data := txs
-	jsonStr, _ := json.Marshal(data)
-	resp, err := http.Post(url+":"+strconv.Itoa(senderRPCPort),
-		"application/json",
-		bytes.NewBuffer(jsonStr))
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	body := ethRPCPost(data, url+":"+strconv.Itoa(senderRPCPort))
 	var result PeerCountResult
 	json.Unmarshal(body, &result)
 	if result.Result != "" {
@@ -420,4 +335,29 @@ func ethSendTransaction(senderRPCPort int, senderGethAccount string, receiverGet
 		Fatalf("转账交易发送失败")
 	}
 	return result.Result
+}
+func ethBlockNumber(rpcPort int) int {
+	data := RPCbody{
+		Jsonrpc: "2.0",
+		Method:  "eth_blockNumber",
+		Params:  nil,
+		ID:      67,
+	}
+	body := ethRPCPost(data, url+":"+strconv.Itoa(rpcPort))
+	var result PeerCountResult
+	json.Unmarshal(body, &result)
+	num, _ := strconv.ParseUint(result.Result[2:], 16, 64)
+	return int(num)
+}
+func ethRPCPost(data interface{}, url string) []byte {
+	jsonStr, _ := json.Marshal(data)
+	resp, err := http.Post(url,
+		"application/json",
+		bytes.NewBuffer(jsonStr))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	return body
 }

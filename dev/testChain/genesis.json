@@ -11,7 +11,7 @@
     "petersburgBlock": 0,
     "istanbulBlock": 0,
     "ethash": {},
-    "cryptoType": 1
+    "cryptoType": 0
   },
   "nonce": "0x0",
   "timestamp": "0x5fc496af",
