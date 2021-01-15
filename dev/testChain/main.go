@@ -1,6 +1,5 @@
 package main
 
-import "C"
 import (
 	"bytes"
 	"encoding/hex"
@@ -23,7 +22,7 @@ func main() {
 	var rpcPorts = [nodeCount]int{8545, 8546, 8547, 8548, 8549}
 	var nodeInfo = [nodeCount]string{adminNodeinfo(rpcPorts[0]), adminNodeinfo(rpcPorts[1]), adminNodeinfo(rpcPorts[2]), adminNodeinfo(rpcPorts[3]), adminNodeinfo(rpcPorts[4])}
 	addPeer(rpcPorts, nodeInfo)
-	fmt.Println("节点4账户为交易所账户")
+	fmt.Println("节点0账户为交易所账户")
 	checkGethAccounts(rpcPorts, nodeInfo)
 	Alice := accounts.GenerateAccount("日照香炉生紫烟", "A", "1", "")
 	Bob := accounts.GenerateAccount("遥看瀑布挂前川", "B", "2", "")
@@ -35,11 +34,11 @@ func main() {
 	register(David)
 	coinReceipt := buyCoin(Alice, 100)
 	coin := decryptCoinReceipt(coinReceipt, Alice.Priv)
-	mineTx(8549, rpcPorts, coin.Hash)
+	mineTx(8545, rpcPorts, coin.Hash)
 	fmt.Println("账户A花费上述购币承诺，向账户B转5单位金额，找零为95金额")
-	txHash := ethSendTransaction(8545, ethAccounts(rpcPorts[0])[0], ethAccounts(rpcPorts[1])[0], Alice, Bob, coin, 100, 5)
-	mineTx(8545, rpcPorts, txHash)
-	rpcTx := ethGetTransactionByHash(8545, txHash)
+	txHash := ethSendTransaction(8546, ethAccounts(rpcPorts[1])[0], ethAccounts(rpcPorts[2])[0], Alice, Bob, coin, 100, 5)
+	mineTx(8546, rpcPorts, txHash)
+	rpcTx := ethGetTransactionByHash(8546, txHash)
 	tx := rpcTx.Result
 	fmt.Println("接收方B用自己的私钥解密得到交易金额")
 	sendAmount := decryptValue(tx.Evsbsc1, tx.Evsbsc2, Bob.Priv)
@@ -51,15 +50,16 @@ func main() {
 		Cmv: tx.Cms,
 		Vor: sendCMr,
 	}
-	txHash = ethSendTransaction(8545, ethAccounts(rpcPorts[0])[0], ethAccounts(rpcPorts[1])[0], Bob, Calvin, coin, 5, 2)
-	mineTx(8545, rpcPorts, txHash)
-	rpcTx = ethGetTransactionByHash(8545, txHash)
+	txHash = ethSendTransaction(8547, ethAccounts(rpcPorts[2])[0], ethAccounts(rpcPorts[3])[0], Bob, Calvin, coin, 5, 2)
+	mineTx(8547, rpcPorts, txHash)
+	rpcTx = ethGetTransactionByHash(8547, txHash)
 	tx = rpcTx.Result
 	fmt.Println("接收方C用自己的私钥解密得到交易金额")
 	sendAmount = decryptValue(tx.Evsbsc1, tx.Evsbsc2, Calvin.Priv)
 	fmt.Println("找零额承诺为 " + tx.Cmr + " 随机数为" + decrypt(tx.Cmrrc1, tx.Cmrrc2, Bob.Priv))
 	sendCMr = decrypt(tx.Cmsrc1, tx.Cmsrc2, Calvin.Priv)
 	fmt.Println("发送额为 " + sendAmount + " 承诺为 " + tx.Cms + " 随机数为" + sendCMr)
+	fmt.Println("测试完毕，测试通过")
 }
 func decrypt(hex0xStringC1 string, hex0xStringC2 string, priv accounts.PrivateKey) string {
 	hexData1, _ := hex.DecodeString(hex0xStringC1[2:])
@@ -129,6 +129,9 @@ func adminNodeinfo(rpcPort int) string {
 		bytes.NewBuffer(jsonStr))
 	if err != nil {
 		fmt.Println(err)
+	}
+	if resp == nil {
+		Fatalf("RPC端口为" + strconv.Itoa(rpcPort) + "的Geth节点未启动")
 	}
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
@@ -348,7 +351,6 @@ func mineTx(rpcPort int, allRPCPort [nodeCount]int, TxHash string) bool {
 	return true
 }
 func personalUnlockAccount(rpcPort int, account string, passphrase string) bool {
-
 	data := RPCbody{
 		Jsonrpc: "2.0",
 		Method:  "personal_unlockAccount",

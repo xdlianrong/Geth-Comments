@@ -4,7 +4,7 @@ package params
 var (
 	Verifyurl = "http://39.106.173.191:1423/verify"
 	Getpuburl = "http://39.106.173.191:1423/regkey?chainID=1"
-	Ethurl    = "http://127.0.0.1:8549"
+	Ethurl    = "http://127.0.0.1:8545"
 
 	//Verifyurl = "http://localhost:1423/verify"
 	//Getpuburl = "http://localhost:1423/regkey?chainID=1"
