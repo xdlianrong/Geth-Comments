@@ -354,6 +354,51 @@ func GenerateShared(pri *ecdsa.PrivateKey, pub *ecdsa.PublicKey, skLen, macLen i
 //	}
 //	return
 //}
+func AddressToHex(a common.Address) string {
+	switch CryptoType {
+	case CRYPTO_ECC_SH3_AES:
+		unchecksummed := hex.EncodeToString(a[:])
+		sha := sha3.NewLegacyKeccak256()
+		sha.Write([]byte(unchecksummed))
+		hash := sha.Sum(nil)
+
+		result := []byte(unchecksummed)
+		for i := 0; i < len(result); i++ {
+			hashByte := hash[i/2]
+			if i%2 == 0 {
+				hashByte = hashByte >> 4
+			} else {
+				hashByte &= 0xf
+			}
+			if result[i] > '9' && hashByte > 7 {
+				result[i] -= 32
+			}
+		}
+		return "0x" + string(result)
+
+	case CRYPTO_SM2_SM3_SM4:
+		unchecksummed := hex.EncodeToString(a[:])
+		s3 := sm3.New()
+		s3.Write([]byte(unchecksummed))
+		hash := s3.Sum(nil)
+
+		result := []byte(unchecksummed)
+		for i := 0; i < len(result); i++ {
+			hashByte := hash[i/2]
+			if i%2 == 0 {
+				hashByte = hashByte >> 4
+			} else {
+				hashByte &= 0xf
+			}
+			if result[i] > '9' && hashByte > 7 {
+				result[i] -= 32
+			}
+		}
+		return "0x" + string(result)
+	}
+
+	return ""
+}
 
 func zeroBytes(bytes []byte) {
 	for i := range bytes {
