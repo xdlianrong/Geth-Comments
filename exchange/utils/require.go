@@ -47,10 +47,10 @@ type SendTx struct {
 
 // get result from send exchangetx to ethereum
 type SendTxget struct {
-	Jsonrpc string   `json:"jsonrpc"`
-	Id      int      `json:"id"`
-	Result  string   `json:"result"`
-	Error   string   `json:"error"`
+	Jsonrpc string `json:"jsonrpc"`
+	Id      int    `json:"id"`
+	Result  string `json:"result"`
+	Error   string `json:"error"`
 }
 
 // verify the publickey of usr to regulator
@@ -116,16 +116,16 @@ func UnlockAccount(ethaccount string, ethkey string) bool {
 	var s unlockget
 	json.Unmarshal([]byte(bodyC), &s)
 	if s.Result == true {
-		log.Println(string(bodyC),"Succeed to unlock account",ethaccount)
+		log.Println(string(bodyC), "Succeed to unlock account", ethaccount)
 		return true
 	} else {
-		log.Println(string(bodyC),"Failed to unlock account",ethaccount)
+		log.Println(string(bodyC), "Failed to unlock account", ethaccount)
 		return false
 	}
 }
 
 // send exchange tx to eth
-func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, sig crypto.Signature, cm crypto.Commitment, ethaccount string) bool {
+func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, sig crypto.Signature, cm crypto.Commitment, ethaccount string) (bool, string) {
 	paramstx := make([]interface{}, 1)
 	epkrc1 := byteto0xstring(elgamalr.C1)
 	epkrc2 := byteto0xstring(elgamalr.C2)
@@ -144,7 +144,7 @@ func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, 
 	datapost, err := json.Marshal(data)
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return false, ""
 	}
 	req, err := http.NewRequest("POST", params.Ethurl, bytes.NewBuffer(datapost))
 	req.Header.Set("Content-Type", "application/json")
@@ -152,17 +152,17 @@ func SendTransaction(elgamalinfo crypto.CypherText, elgamalr crypto.CypherText, 
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println(err)
-		return false
+		return false, ""
 	}
 	defer resp.Body.Close()
 	bodyC, _ := ioutil.ReadAll(resp.Body)
 	var s SendTxget
-	json.Unmarshal([]byte(bodyC), &s)
+	json.Unmarshal(bodyC, &s)
 	if s.Result != "" {
-		log.Println(string(bodyC),"Succeed to send exchangetx",s.Result)
-		return true
+		log.Println(string(bodyC), "Succeed to send exchangetx", s.Result)
+		return true, s.Result
 	} else {
-		log.Println(string(bodyC),"Failed to send exchangetx",ethaccount)
-		return false
+		log.Println(string(bodyC), "Failed to send exchangetx", ethaccount)
+		return false, ""
 	}
 }
