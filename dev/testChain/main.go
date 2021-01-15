@@ -17,6 +17,7 @@ const url = "http://127.0.0.1"
 const regulatorURL = "http://39.106.173.191:1423/"
 const exchangeURL = "http://127.0.0.1:1323/"
 const nodeCount = 5
+const miningTimeout = 60 //挖矿超时时间，如果挖矿挖了miningTimeout秒还没有成功，则停止挖矿
 
 func main() {
 	var rpcPorts = [nodeCount]int{8545, 8546, 8547, 8548, 8549}
@@ -319,7 +320,7 @@ func ethGetTransactionByHash(rpcPort int, txHash string) RPCtx {
 func mineTx(rpcPort int, allRPCPort [nodeCount]int, TxHash string) bool {
 	fmt.Println("打包共识使交易", TxHash, "生效")
 	minerStart(rpcPort)
-	for i := 60; i > 0; i-- {
+	for i := miningTimeout; i > 0; i-- {
 		if res := ethGetTransactionByHash(rpcPort, TxHash); res.Result.BlockHash == "" {
 			time.Sleep(time.Duration(1) * time.Second) //等一秒
 		} else {
@@ -331,7 +332,7 @@ func mineTx(rpcPort int, allRPCPort [nodeCount]int, TxHash string) bool {
 	minerStop(rpcPort)
 	consensus := 1
 	//必须所有节点都在块中拿到此交易才算共识成功
-	for j := 60; j > 0; j-- {
+	for j := miningTimeout; j > 0; j-- {
 		for i := 0; i < nodeCount; i++ {
 			if res := ethGetTransactionByHash(allRPCPort[i], TxHash); res.Result.BlockHash == "" {
 				//fmt.Println("交易", TxHash, "未生效")

@@ -10,7 +10,8 @@
     "constantinopleBlock": 0,
     "petersburgBlock": 0,
     "istanbulBlock": 0,
-    "ethash": {}
+    "ethash": {},
+    "cryptoType": 1
   },
   "nonce": "0x0",
   "timestamp": "0x5fc496af",
