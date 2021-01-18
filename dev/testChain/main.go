@@ -18,7 +18,7 @@ const regulatorURL = "http://39.106.173.191:1423/"
 const exchangeURL = "http://127.0.0.1:1323/"
 const nodeCount = 5
 const consensusTimeout = 60 //共识超时时间，如果打包成功后consensusTimeout秒还没有成功，则停止等待共识结果，认为共识失败
-
+const networkType = 2       //网络拓扑；1:星型网 2:环形网
 func main() {
 	var rpcPorts = [nodeCount]int{8545, 8546, 8547, 8548, 8549}
 	var nodeInfo = [nodeCount]string{adminNodeinfo(rpcPorts[0]), adminNodeinfo(rpcPorts[1]), adminNodeinfo(rpcPorts[2]), adminNodeinfo(rpcPorts[3]), adminNodeinfo(rpcPorts[4])}
@@ -90,21 +90,33 @@ func decryptCoinReceipt(recript Receipt, priv accounts.PrivateKey) Coin {
 	}
 }
 func addPeer(rpcPorts [nodeCount]int, nodeInfo [nodeCount]string) bool {
-	for i := 0; i < nodeCount; i++ {
-		for j := 0; j < nodeCount; j++ {
-			if i < j {
-				adminAddPeer(rpcPorts[i], nodeInfo[j])
+	if networkType == 1 {
+		for i := 0; i < nodeCount; i++ {
+			for j := 0; j < nodeCount; j++ {
+				if i < j {
+					adminAddPeer(rpcPorts[i], nodeInfo[j])
+				}
 			}
+		}
+	} else if networkType == 2 {
+		for i := 0; i < nodeCount; i++ {
+			adminAddPeer(rpcPorts[i], nodeInfo[(i+1)%nodeCount])
 		}
 	}
 	time.Sleep(time.Duration(2) * time.Second) //等两秒
 	for i := 0; i < nodeCount; i++ {
 		peerCount := netPeerCount(rpcPorts[i])
-		if !strings.EqualFold(peerCount, "0x4") {
-			Fatalf("节点" + strconv.Itoa(i) + "添加节点失败，期待：0x4，拥有：" + peerCount)
+		if networkType == 1 {
+			if !strings.EqualFold(peerCount, "0x"+fmt.Sprintf("%x", nodeCount-1)) {
+				Fatalf("节点" + strconv.Itoa(i) + "添加节点失败，期待：0x" + fmt.Sprintf("%x", nodeCount-1) + "，拥有：" + peerCount)
+			}
+		} else if networkType == 2 {
+			if strings.EqualFold(peerCount, "0x0") {
+				Fatalf("节点" + strconv.Itoa(i) + "添加节点失败，期待：>0x0，拥有：" + peerCount)
+			}
 		}
 	}
-	fmt.Println(strconv.Itoa(nodeCount) + "个节点两两添加成功")
+	fmt.Println(strconv.Itoa(nodeCount) + "个节点组网成功")
 	return true
 }
 func checkGethAccounts(rpcPorts [nodeCount]int, nodeInfo [nodeCount]string) bool {
