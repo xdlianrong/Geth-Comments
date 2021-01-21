@@ -1184,6 +1184,14 @@ type RPCTransaction struct {
 	CmRRC2           *hexutil.Bytes  `json:"cmrrc2"`
 }
 
+func newRPCTransactions(block *types.Block) []*RPCTransaction {
+	var temp []*RPCTransaction
+	for _, transaction := range block.Transactions() {
+		temp = append(temp, newRPCTransaction(transaction, block.Hash(), block.NumberU64(), transaction.ID()))
+	}
+	return temp
+}
+
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
@@ -1316,6 +1324,55 @@ type PublicTransactionPoolAPI struct {
 // NewPublicTransactionPoolAPI creates a new RPC service with methods specific for the transaction pool.
 func NewPublicTransactionPoolAPI(b Backend, nonceLock *AddrLocker) *PublicTransactionPoolAPI {
 	return &PublicTransactionPoolAPI{b, nonceLock}
+}
+
+func (s *PublicTransactionPoolAPI) GetTotalTransactions(ctx context.Context) [14][]*RPCTransaction {
+	x := s.b.CurrentBlock().NumberU64()
+	int64Str := strconv.FormatUint(x, 10)
+	intNum, _ := strconv.Atoi(int64Str)
+	total := 0
+	var totalTransactions [14][]*RPCTransaction
+	var ADayTransactions []*RPCTransaction
+	var temp []*RPCTransaction
+	OneDayTimes := 24 * 60 * 60
+	NowTime := time.Now()
+	var blockTime time.Time
+	var blockDay int
+	lastBetweenDay := 0
+	nowBetweenDay := 0
+	NowDay := int(NowTime.Unix())
+	NowDay = NowDay - 60*60*NowTime.Hour() - 60*NowTime.Minute() - NowTime.Second()
+	i := 0
+	for {
+		if block, _ := s.b.BlockByNumber(ctx, rpc.BlockNumber(intNum-i)); block != nil {
+			total += len(block.Transactions())
+			temp = newRPCTransactions(block)
+			blockTime = time.Unix(int64(block.Time()), 0)
+			blockDay = int(block.Time())
+			blockDay = int(block.Time()) - 60*60*blockTime.Hour() - 60*blockTime.Minute() - blockTime.Second()
+			nowBetweenDay = (NowDay - blockDay) / OneDayTimes
+			if i == 0 {
+				lastBetweenDay = nowBetweenDay
+			}
+			if nowBetweenDay <= 14 {
+				i = i + 1
+				if lastBetweenDay == nowBetweenDay {
+					ADayTransactions = append(ADayTransactions, temp...)
+				} else {
+					totalTransactions[lastBetweenDay] = append(totalTransactions[lastBetweenDay], ADayTransactions...)
+					lastBetweenDay = nowBetweenDay
+					ADayTransactions = []*RPCTransaction{}
+					ADayTransactions = append(ADayTransactions, temp...)
+				}
+			} else {
+				totalTransactions[lastBetweenDay] = append(totalTransactions[lastBetweenDay], ADayTransactions...)
+				ADayTransactions = []*RPCTransaction{}
+				break
+			}
+		}
+	}
+
+	return totalTransactions
 }
 
 // GetCMState returns the current numbers of invalid and valid commints
